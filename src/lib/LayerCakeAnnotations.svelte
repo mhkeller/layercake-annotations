@@ -1,24 +1,30 @@
 <script>
 	import { Svg, Html } from 'layercake';
-	import { onMount, getContext } from 'svelte';
+	import { getContext, setContext } from 'svelte';
 
-	import AnnotationsData from '$lib/components/AnnotationsData.html.svelte';
+	import AnnotationWrapper from '$lib/components/AnnotationWrapper.svelte';
 	import ArrowheadMarker from '$lib/components/ArrowheadMarker.svelte';
 	import Arrows from '$lib/components/Arrows.svelte';
 	import ordinalInvert from './modules/ordinalInvert.js';
+	import createRef from './modules/createRef.svelte.js';
 
 	const { width, height, xScale, yScale, config } = getContext('LayerCake');
 
 	let { containerClass, annotationClass } = $props();
 
-	let el = $state();
 	let annotations = $state([]);
+
+	let isEditing = createRef(false);
+
+	setContext('isEditing', isEditing);
 
 	function invertScale(scale, pos) {
 		return scale.invert ? [scale.invert(pos), 0] : ordinalInvert(scale, pos);
 	}
 
-	function clickHandler(e) {
+	function onclick(e) {
+		if (isEditing.value === true) return;
+
 		const xVal = invertScale($xScale, e.offsetX);
 		const yVal = invertScale($yScale, e.offsetY);
 
@@ -33,13 +39,6 @@
 		};
 		annotations.push(note);
 	}
-
-	onMount(() => {
-		el.addEventListener('click', clickHandler);
-		return () => {
-			el.removeEventListener('click', clickHandler);
-		};
-	});
 
 	/**
 	 * @param {Number} id - The id of the annotation being dragged.
@@ -62,8 +61,15 @@
 </Svg>
 
 <Html>
-	<div bind:this={el} class="note-listener"></div>
-	<AnnotationsData {annotations} {ondrag} />
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div {onclick} class="note-listener"></div>
+
+	<div class="layercake-annotations">
+		{#each annotations as d}
+			<AnnotationWrapper data={d} {ondrag} />
+		{/each}
+	</div>
 </Html>
 
 <style>
