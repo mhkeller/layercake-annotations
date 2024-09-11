@@ -1,7 +1,7 @@
 <script>
 	let moving = $state(false);
 
-	let { left = 100, top = 100, children } = $props();
+	let { id, left = 100, top = 100, ondrag, children } = $props();
 
 	function onmousedown() {
 		moving = true;
@@ -9,10 +9,7 @@
 
 	function onmousemove(e) {
 		if (moving) {
-			// TODO broadcast this up to the json spec
-			// left += e.movementX;
-			// top += e.movementY;
-			console.log(e.movementX, e.movementY);
+			ondrag(id, { x: e.movementX, y: e.movementY });
 		}
 	}
 

@@ -7,7 +7,7 @@
 	import Arrows from '$lib/components/Arrows.svelte';
 	import ordinalInvert from './modules/ordinalInvert.js';
 
-	const { xScale, yScale, config } = getContext('LayerCake');
+	const { width, height, xScale, yScale, config } = getContext('LayerCake');
 
 	let { containerClass, annotationClass } = $props();
 
@@ -40,6 +40,18 @@
 			el.removeEventListener('click', clickHandler);
 		};
 	});
+
+	/**
+	 * @param {Number} id - The id of the annotation being dragged.
+	 * @param {Object} { x, y } - The x and y movement of the annotation.
+	 * @returns {void}
+	 */
+	function ondrag(id, { x, y }) {
+		const note = annotations.find((d) => d.id === id);
+		// TODO, could be better to redo the scale inversion with a new position
+		note.dx += (x / $width) * 100;
+		note.dy += (y / $height) * 100;
+	}
 </script>
 
 <Svg>
@@ -51,7 +63,7 @@
 
 <Html>
 	<div bind:this={el} class="note-listener"></div>
-	<AnnotationsData {annotations} />
+	<AnnotationsData {annotations} {ondrag} />
 </Html>
 
 <style>
