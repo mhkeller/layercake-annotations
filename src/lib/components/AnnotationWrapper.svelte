@@ -3,6 +3,7 @@
 
 	import Draggable from './Draggable.svelte';
 	import EditableText from './EditableText.svelte';
+	import ResizeHandles from './ResizeHandles.svelte';
 
 	let { data, ondrag } = $props();
 
@@ -20,4 +21,12 @@
 	<div class="layercake-annotation" data-id={data.id}>
 		<EditableText text={data.text} bind:isEditable />
 	</div>
+	<ResizeHandles debug={false} grabbers={['east']} />
 </Draggable>
+
+<style>
+	.layercake-annotation {
+		width: 100%;
+		height: 100%;
+	}
+</style>
