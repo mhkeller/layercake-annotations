@@ -82,16 +82,28 @@
 
 {#each grabbers as grabber}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="grabber {grabber}" class:debug={!debug} {onmousedown}></div>
+	<div class="grabber {grabber}" class:debug {onmousedown}></div>
 {/each}
 
 <style>
 	.grabber {
 		position: absolute;
 		box-sizing: border-box;
+		transition: opacity 0.2s;
+		opacity: 0;
+	}
+	.grabber.east {
+		width: 4px;
+		height: 75%;
+		background: red;
+		right: -0.5px;
+		/* border-right: 2px solid red; */
+		cursor: col-resize;
+		top: 12.5%;
+		transform: translateX(50%);
 	}
 
-	.grabber.east {
+	.grabber.debug.east {
 		width: 10px;
 		height: 100%;
 		background: red;
@@ -100,7 +112,7 @@
 		top: 0;
 	}
 
-	.grabber.west {
+	.grabber.debug.west {
 		width: 10px;
 		height: 100%;
 		background: blue;
@@ -109,7 +121,7 @@
 		top: 0;
 	}
 
-	.grabber.north {
+	.grabber.debug.north {
 		height: 10px;
 		width: 100%;
 		background: green;
@@ -117,7 +129,7 @@
 		cursor: row-resize;
 	}
 
-	.grabber.south {
+	.grabber.debug.south {
 		height: 10px;
 		width: 100%;
 		background: orange;
@@ -125,7 +137,7 @@
 		cursor: row-resize;
 	}
 
-	.grabber.northwest {
+	.grabber.debug.northwest {
 		height: 20px;
 		width: 20px;
 		background: orange;
@@ -135,7 +147,7 @@
 		border-radius: 100%;
 	}
 
-	.grabber.northeast {
+	.grabber.debug.northeast {
 		height: 20px;
 		width: 20px;
 		background: orange;
@@ -145,7 +157,7 @@
 		border-radius: 100%;
 	}
 
-	.grabber.southwest {
+	.grabber.debug.southwest {
 		height: 20px;
 		width: 20px;
 		background: green;
@@ -155,7 +167,7 @@
 		border-radius: 100%;
 	}
 
-	.grabber.southeast {
+	.grabber.debug.southeast {
 		height: 20px;
 		width: 20px;
 		background: green;
@@ -165,12 +177,7 @@
 		border-radius: 100%;
 	}
 
-	.grabber.debug {
-		background: transparent !important;
-		border: none !important;
-	}
-
 	.grabber.selected {
-		border: solid 1px black;
+		opacity: 1;
 	}
 </style>

@@ -19,9 +19,9 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<section {onmousedown} style:left style:top class="draggable" class:canDrag>
+<div {onmousedown} style:left style:top class="draggable" class:canDrag>
 	{@render children()}
-</section>
+</div>
 
 <svelte:window {onmouseup} {onmousemove} />
 
@@ -29,11 +29,21 @@
 	.draggable {
 		position: absolute;
 		width: auto;
+		border: 1px solid transparent;
+		padding: 3px;
+		transition: border-color 0.2s;
+	}
+	.draggable:hover {
+		border-color: red;
 	}
 
 	.draggable.canDrag {
 		user-select: none;
 		cursor: move;
 		/* border: solid 5px gray; */
+	}
+
+	.draggable:hover :global(.grabber) {
+		opacity: 1;
 	}
 </style>

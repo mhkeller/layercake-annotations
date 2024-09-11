@@ -76,6 +76,6 @@
 	.note-listener {
 		width: 100%;
 		height: 100%;
-		background-color: #00000020;
+		/* background-color: #00000020; */
 	}
 </style>
