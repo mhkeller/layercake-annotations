@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 
-	import ChartNotes from '$lib/ChartNotes.svelte';
+	import Annotations from '$lib/index.js';
 
 	import Line from './_components/Line.svelte';
 	import Area from './_components/Area.svelte';
@@ -34,7 +34,7 @@
 			<Area />
 		</Svg>
 
-		<ChartNotes />
+		<Annotations />
 	</LayerCake>
 </div>
 

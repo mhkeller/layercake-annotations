@@ -1,8 +1,8 @@
-Chart Notes
+LayerCake Annotations
 ===
 
 ## Install
 
 ```sh
-npm i @mhkeller/chart-notes
+npm i @mhkeller/layercake-annotations
 ```

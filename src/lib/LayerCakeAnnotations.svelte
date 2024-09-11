@@ -2,7 +2,7 @@
 	import { Svg, Html } from 'layercake';
 	import { onMount, getContext } from 'svelte';
 
-	import Annotations from '$lib/components/AnnotationsData.html.svelte';
+	import AnnotationsData from '$lib/components/AnnotationsData.html.svelte';
 	import ArrowheadMarker from '$lib/components/ArrowheadMarker.svelte';
 	import Arrows from '$lib/components/Arrows.svelte';
 	import ordinalInvert from './modules/ordinalInvert.js';
@@ -51,7 +51,7 @@
 
 <Html>
 	<div bind:this={el} class="note-listener"></div>
-	<Annotations {annotations} />
+	<AnnotationsData {annotations} />
 </Html>
 
 <style>

@@ -1,2 +1,2 @@
 // reexport ChartNote.svelte as the default one
-export { default } from './ChartNotes.svelte';
+export { default } from './LayerCakeAnnotations.svelte';

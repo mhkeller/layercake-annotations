@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleBand } from 'd3-scale';
-	import ChartNotes from '$lib/ChartNotes.svelte';
+	import Annotations from '$lib/index.js';
 
 	import Column from './_components/Column.svelte';
 	import AxisX from './_components/AxisX.svelte';
@@ -34,7 +34,7 @@
 			<AxisY snapBaselineLabel />
 			<Column />
 		</Svg>
-		<ChartNotes />
+		<Annotations />
 	</LayerCake>
 </div>
 
