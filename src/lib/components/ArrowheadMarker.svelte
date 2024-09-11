@@ -11,7 +11,7 @@
 </script>
 
 <marker
-	id="layercake-chartnote"
+	id="layercake-annotation-arrowhead"
 	viewBox="-10 -10 20 20"
 	markerWidth="17"
 	markerHeight="17"

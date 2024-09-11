@@ -9,7 +9,7 @@
 
 	const { xScale, yScale, config } = getContext('LayerCake');
 
-	let { containerClass, chartNoteClass } = $props();
+	let { containerClass, annotationClass } = $props();
 
 	let el = $state();
 	let annotations = $state([]);
@@ -46,7 +46,7 @@
 	<svelte:fragment slot="defs">
 		<ArrowheadMarker />
 	</svelte:fragment>
-	<Arrows {annotations} {containerClass} {chartNoteClass} />
+	<Arrows {annotations} {containerClass} {annotationClass} />
 </Svg>
 
 <Html>

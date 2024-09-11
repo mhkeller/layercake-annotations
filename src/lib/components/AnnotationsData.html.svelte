@@ -20,12 +20,12 @@
 	$: units = pr === true ? '%' : 'px';
 </script>
 
-<div class="layercake-chartnotes">
+<div class="layercake-annotations">
 	{#each annotations as d, i}
 		{@const left = `calc(${$xGet(d)}${units} + ${d.dx}px)`}
 		{@const top = `calc(${$yGet(d)}${units} + ${d.dy}px)`}
 		<Draggable {left} {top}>
-			<div class="layercake-chartnote" data-id={d.id}>
+			<div class="layercake-annotation" data-id={d.id}>
 				{getText(d)}
 			</div>
 		</Draggable>
@@ -33,7 +33,7 @@
 </div>
 
 <style>
-	.layercake-chartnote {
+	.layercake-annotation {
 		position: absolute;
 	}
 </style>

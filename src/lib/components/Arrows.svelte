@@ -12,8 +12,8 @@
 	/** @type {String} [containerClass='.chart-container'] - The class name / CSS selector of the parent element of the `<LayerCake>` component. This is used to crawl the DOM for the text annotations. */
 	export let containerClass = '.chart-container';
 
-	/** @type {String} [chartNoteClass='.layercake-chartnote'] - The class name of the text annotation divs. */
-	export let chartNoteClass = '.layercake-chartnote';
+	/** @type {String} [annotationClass='.layercake-annotation'] - The class name of the text annotation divs. */
+	export let annotationClass = '.layercake-annotation';
 
 	let container;
 
@@ -39,7 +39,7 @@
 	// otherwise it won't find anything
 	onMount(async () => {
 		await tick();
-		annotationEls = Array.from(container.closest(containerClass).querySelectorAll(chartNoteClass));
+		annotationEls = Array.from(container.closest(containerClass).querySelectorAll(annotationClass));
 	});
 
 	function setPath(w, h) {
@@ -110,7 +110,7 @@
 			{#each annotations as anno, i}
 				{#if anno.arrows}
 					{#each anno.arrows as arrow}
-						<path marker-end="url(#layercake-chartnote-arrowhead)" d={d(anno, i, arrow)}></path>
+						<path marker-end="url(#layercake-annotation-arrowhead)" d={d(anno, i, arrow)}></path>
 					{/each}
 				{/if}
 			{/each}
