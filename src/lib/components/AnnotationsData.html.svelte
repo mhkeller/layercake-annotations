@@ -21,9 +21,11 @@
 </script>
 
 <div class="layercake-annotations">
-	{#each annotations as d, i}
-		{@const left = `calc(${$xGet(d)}${units} + ${d.dx}px)`}
-		{@const top = `calc(${$yGet(d)}${units} + ${d.dy}px)`}
+	{#each annotations as d}
+		{@const left = `calc(${$xGet(d)}${units} + ${d.dx}%)`}
+		{@const top = `calc(${$yGet(d)}${units} + ${d.dy}%)`}
+		{console.log(left, top)}
+
 		<Draggable {left} {top}>
 			<div class="layercake-annotation" data-id={d.id}>
 				{getText(d)}

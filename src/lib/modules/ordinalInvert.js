@@ -16,7 +16,7 @@ export default function ordinalInvert(scale, pos) {
 			return [previous, offset];
 		}
 		previous = dm;
-		offset = pos - scale(dm);
+		offset = ((pos - scale(dm)) / Math.max(...scale.range())) * 100;
 	}
 	return [previous, offset];
 }
