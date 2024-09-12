@@ -1,19 +1,25 @@
 <script>
 	let { id, anchor, addArrow } = $props();
+
+	function onmouseup(e) {
+		const rect = e.target.getBoundingClientRect();
+		const x = e.clientX - e.offsetX - rect.width;
+		const y = e.clientY - e.offsetY;
+
+		addArrow(id, { anchor, x, y });
+	}
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-	class="arrow-zone {anchor}"
-	onmouseup={(e) => addArrow(id, { anchor, x: e.clientX, y: e.clientY })}
-></div>
+<div class="arrow-zone {anchor}" {onmouseup}></div>
 
 <style>
 	.arrow-zone {
+		--radius: 15px;
 		position: absolute;
-		width: 15px;
-		height: 15px;
+		width: var(--radius);
+		height: var(--radius);
 		border-radius: 50%;
 		border: 1px dashed #333;
 		--distance: 18px;

@@ -62,8 +62,6 @@
 			 */
 			const arrowSource = getElPosition(el);
 
-			console.log(arrowSource);
-
 			const sourceCoords = arrow.source.anchor.split('-').map((q, j) => {
 				const point =
 					q === 'middle'
@@ -79,8 +77,6 @@
 					)
 				);
 			});
-
-			console.log(arrow.source.anchor.split('-'), sourceCoords);
 
 			/* --------------------------------------------
 			 * Default to clockwise

@@ -31,9 +31,6 @@ export function getElPosition(el) {
 	const annotationBbox = el.getBoundingClientRect();
 	const parentBbox = el.parentNode.parentNode.parentNode.getBoundingClientRect();
 
-	console.log({ annotationBbox });
-	console.log('parent', el.parentNode.parentNode.parentNode);
-
 	const coords = {
 		top: annotationBbox.top - parentBbox.top,
 		right: annotationBbox.right - parentBbox.left,

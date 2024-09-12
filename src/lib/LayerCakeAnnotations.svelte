@@ -27,6 +27,8 @@
 
 		const xVal = invertScale($xScale, e.offsetX);
 		const yVal = invertScale($yScale, e.offsetY);
+		console.log('onclick offset', e.offsetX, e.offsetY, xVal);
+		console.log('onclick client', e.clientX, e.clientY, yVal);
 
 		const id = annotations.length;
 		const note = {
@@ -55,10 +57,10 @@
 
 	function addArrow(id, { anchor, x, y }) {
 		const note = annotations.find((d) => d.id === id);
+
 		const xVal = invertScale($xScale, x);
 		const yVal = invertScale($yScale, y);
-
-		console.log(xVal, yVal);
+		console.log(x, xVal);
 
 		const arrow = {
 			source: { anchor },
@@ -69,8 +71,6 @@
 				// dy: yVal[1]
 			}
 		};
-
-		console.log(arrow);
 
 		note.arrows.push(arrow);
 	}
