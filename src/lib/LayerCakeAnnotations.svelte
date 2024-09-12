@@ -72,7 +72,13 @@
 			}
 		};
 
-		note.arrows.push(arrow);
+		const existingArrow = note.arrows.find((d) => d.source.anchor === anchor);
+
+		if (!existingArrow) {
+			note.arrows.push(arrow);
+		} else {
+			existingArrow.target = arrow.target;
+		}
 	}
 
 	$inspect(annotations);

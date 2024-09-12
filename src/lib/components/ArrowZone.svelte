@@ -1,18 +1,48 @@
 <script>
 	let { id, anchor, addArrow } = $props();
 
-	function onmouseup(e) {
-		const rect = e.target.getBoundingClientRect();
-		const x = e.clientX - e.offsetX - rect.width;
-		const y = e.clientY - e.offsetY;
+	let moving = $state(false);
+	let left = $state(0);
+	let top = $state(0);
+	let el = $state();
+	function onmousedown() {
+		moving = true;
+	}
 
-		addArrow(id, { anchor, x, y });
+	function onmousemove(e) {
+		if (moving) {
+			left += e.movementX;
+			top += e.movementY;
+
+			const rect = el.getBoundingClientRect();
+			// --distance and radius
+			const x = rect.left - 18 - rect.width / 2;
+			const y = rect.top - rect.height / 2;
+
+			addArrow(id, { anchor, x, y });
+		}
+	}
+
+	function onmouseup() {
+		moving = false;
+	}
+
+	function onclick() {
+		// TODO, togglle clockwise
 	}
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="arrow-zone {anchor}" {onmouseup}></div>
+<div
+	bind:this={el}
+	{onmousedown}
+	{onclick}
+	class="arrow-zone {anchor}"
+	style="transform:translate({left}px, {top}px);"
+></div>
+
+<svelte:window {onmouseup} {onmousemove} />
 
 <style>
 	.arrow-zone {
