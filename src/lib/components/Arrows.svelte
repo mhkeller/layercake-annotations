@@ -56,8 +56,6 @@
 		return (anno, i, arrow) => {
 			const el = annotationEls[i];
 
-			console.log('here', el);
-
 			/* --------------------------------------------
 			 * Parse our attachment directives to know where to start the arrowhead
 			 * measuring a bounding box based on our annotation el

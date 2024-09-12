@@ -29,16 +29,16 @@ export function parseCssValue(d, i, width, height) {
  */
 export function getElPosition(el) {
 	const annotationBbox = el.getBoundingClientRect();
-	const parentBbox = el.parentNode.parentNode.getBoundingClientRect();
+	const parentBbox = el.parentNode.parentNode.parentNode.getBoundingClientRect();
 
 	console.log({ annotationBbox });
-	console.log({ parentBbox });
+	console.log('parent', el.parentNode.parentNode.parentNode);
 
 	const coords = {
-		top: annotationBbox.top, //- parentBbox.top,
-		right: annotationBbox.right, //- parentBbox.left,
-		bottom: annotationBbox.bottom, //- parentBbox.top,
-		left: annotationBbox.left, //- parentBbox.left,
+		top: annotationBbox.top - parentBbox.top,
+		right: annotationBbox.right - parentBbox.left,
+		bottom: annotationBbox.bottom - parentBbox.top,
+		left: annotationBbox.left - parentBbox.left,
 		width: annotationBbox.width,
 		height: annotationBbox.height
 	};

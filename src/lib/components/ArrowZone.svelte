@@ -20,38 +20,38 @@
 		cursor: pointer;
 		opacity: 0;
 	}
-	.arrow-zone.middle-top {
+	.arrow-zone.left-top {
 		top: calc(var(--distance) * -1);
 		left: calc(var(--distance) * -1);
 	}
-	.arrow-zone.right-top {
+	.arrow-zone.middle-top {
 		top: calc(var(--distance) * -1);
 		left: 50%;
 		transform: translateX(-50%);
 	}
-	.arrow-zone.right-middle {
+	.arrow-zone.right-top {
 		top: calc(var(--distance) * -1);
 		right: calc(var(--distance) * -1);
 	}
-	.arrow-zone.right-bottom {
+	.arrow-zone.right-middle {
 		top: 50%;
 		right: calc(var(--distance) * -1);
 		transform: translateY(-50%);
 	}
-	.arrow-zone.middle-bottom {
+	.arrow-zone.right-bottom {
 		bottom: calc(var(--distance) * -1);
 		right: calc(var(--distance) * -1);
 	}
-	.arrow-zone.left-bottom {
+	.arrow-zone.middle-bottom {
 		bottom: calc(var(--distance) * -1);
 		left: 50%;
 		transform: translateX(-50%);
 	}
-	.arrow-zone.left-middle {
+	.arrow-zone.left-bottom {
 		bottom: calc(var(--distance) * -1);
 		left: calc(var(--distance) * -1);
 	}
-	.arrow-zone.left-top {
+	.arrow-zone.left-middle {
 		top: 50%;
 		left: calc(var(--distance) * -1);
 		transform: translateY(-50%);
