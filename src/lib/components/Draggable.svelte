@@ -54,7 +54,8 @@
 		/* border: solid 5px gray; */
 	}
 
-	.draggable:hover :global(.grabber) {
+	.draggable:hover :global(.grabber),
+	.draggable:hover :global(.arrow-zone) {
 		opacity: 1;
 	}
 </style>

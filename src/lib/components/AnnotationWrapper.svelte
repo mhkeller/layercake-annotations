@@ -4,7 +4,7 @@
 	import Draggable from './Draggable.svelte';
 	import EditableText from './EditableText.svelte';
 	import ResizeHandles from './ResizeHandles.svelte';
-	import ArrowZones from './ArrowZones.svelte';
+	import ArrowZone from './ArrowZone.svelte';
 
 	let { data, ondrag } = $props();
 
@@ -23,7 +23,14 @@
 		<EditableText text={data.text} bind:isEditable />
 	</div>
 	<ResizeHandles debug={false} grabbers={['east']} />
-	<ArrowZones />
+	<ArrowZone location="north" />
+	<ArrowZone location="northeast" />
+	<ArrowZone location="east" />
+	<ArrowZone location="southeast" />
+	<ArrowZone location="south" />
+	<ArrowZone location="southwest" />
+	<ArrowZone location="west" />
+	<ArrowZone location="northwest" />
 </Draggable>
 
 <style>
