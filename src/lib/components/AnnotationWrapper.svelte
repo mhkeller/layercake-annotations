@@ -4,6 +4,7 @@
 	import Draggable from './Draggable.svelte';
 	import EditableText from './EditableText.svelte';
 	import ResizeHandles from './ResizeHandles.svelte';
+	import ArrowZones from './ArrowZones.svelte';
 
 	let { data, ondrag } = $props();
 
@@ -17,11 +18,12 @@
 	let isEditable = $state(false);
 </script>
 
-<Draggable {left} {top} {ondrag} id={data.id} canDrag={!isEditable}>
+<Draggable {left} {top} {ondrag} id={data.id} canDrag={!isEditable} bannedTargets={['arrow-zone']}>
 	<div class="layercake-annotation" data-id={data.id}>
 		<EditableText text={data.text} bind:isEditable />
 	</div>
 	<ResizeHandles debug={false} grabbers={['east']} />
+	<ArrowZones />
 </Draggable>
 
 <style>

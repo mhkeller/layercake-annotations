@@ -1,14 +1,25 @@
 <script>
 	let moving = $state(false);
 
-	let { id, left = 100, top = 100, ondrag, canDrag = true, children } = $props();
+	let {
+		id,
+		left = 100,
+		top = 100,
+		ondrag,
+		canDrag = true,
+		bannedTargets = [],
+		children
+	} = $props();
 
-	function onmousedown() {
+	let isBanned = $state(false);
+
+	function onmousedown(e) {
 		moving = true;
+		isBanned = [...e.target.classList].some((c) => bannedTargets.includes(c));
 	}
 
 	function onmousemove(e) {
-		if (moving && canDrag) {
+		if (moving && canDrag && !isBanned) {
 			ondrag(id, { x: e.movementX, y: e.movementY });
 		}
 	}
