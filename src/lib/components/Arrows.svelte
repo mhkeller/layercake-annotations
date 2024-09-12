@@ -39,18 +39,33 @@
 	// otherwise it won't find anything
 	onMount(async () => {
 		await tick();
-		annotationEls = Array.from(container.closest(containerClass).querySelectorAll(annotationClass));
+		gatherEls();
 	});
+
+	function gatherEls() {
+		if (container) {
+			annotationEls = Array.from(
+				container.closest(containerClass).querySelectorAll(annotationClass)
+			);
+		}
+	}
+
+	$: annotations, gatherEls();
 
 	function setPath(w, h) {
 		return (anno, i, arrow) => {
 			const el = annotationEls[i];
+
+			console.log('here', el);
 
 			/* --------------------------------------------
 			 * Parse our attachment directives to know where to start the arrowhead
 			 * measuring a bounding box based on our annotation el
 			 */
 			const arrowSource = getElPosition(el);
+
+			console.log(arrowSource);
+
 			const sourceCoords = arrow.source.anchor.split('-').map((q, j) => {
 				const point =
 					q === 'middle'
@@ -66,6 +81,8 @@
 					)
 				);
 			});
+
+			console.log(arrow.source.anchor.split('-'), sourceCoords);
 
 			/* --------------------------------------------
 			 * Default to clockwise

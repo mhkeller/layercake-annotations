@@ -35,7 +35,8 @@
 			[$config.y]: yVal[0],
 			dx: xVal[1],
 			dy: yVal[1],
-			text: 'Enter your note here...'
+			text: 'Enter your note here...',
+			arrows: []
 		};
 		annotations.push(note);
 	}
@@ -51,6 +52,30 @@
 		note.dx += (x / $width) * 100;
 		note.dy += (y / $height) * 100;
 	}
+
+	function addArrow(id, { anchor, x, y }) {
+		const note = annotations.find((d) => d.id === id);
+		const xVal = invertScale($xScale, x);
+		const yVal = invertScale($yScale, y);
+
+		console.log(xVal, yVal);
+
+		const arrow = {
+			source: { anchor },
+			target: {
+				[$config.x]: xVal[0],
+				[$config.y]: yVal[0]
+				// dx: xVal[1],
+				// dy: yVal[1]
+			}
+		};
+
+		console.log(arrow);
+
+		note.arrows.push(arrow);
+	}
+
+	$inspect(annotations);
 </script>
 
 <Svg>
@@ -67,7 +92,7 @@
 
 	<div class="layercake-annotations">
 		{#each annotations as d}
-			<AnnotationWrapper data={d} {ondrag} />
+			<AnnotationWrapper data={d} {ondrag} {addArrow} />
 		{/each}
 	</div>
 </Html>
@@ -76,6 +101,5 @@
 	.note-listener {
 		width: 100%;
 		height: 100%;
-		/* background-color: #00000020; */
 	}
 </style>

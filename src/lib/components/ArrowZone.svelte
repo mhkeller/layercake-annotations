@@ -1,8 +1,13 @@
 <script>
-	let { location } = $props();
+	let { id, anchor, addArrow } = $props();
 </script>
 
-<div class="arrow-zone {location}"></div>
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+	class="arrow-zone {anchor}"
+	onmouseup={(e) => addArrow(id, { anchor, x: e.clientX, y: e.clientY })}
+></div>
 
 <style>
 	.arrow-zone {
@@ -15,38 +20,38 @@
 		cursor: pointer;
 		opacity: 0;
 	}
-	.arrow-zone.northwest {
+	.arrow-zone.middle-top {
 		top: calc(var(--distance) * -1);
 		left: calc(var(--distance) * -1);
 	}
-	.arrow-zone.north {
+	.arrow-zone.right-top {
 		top: calc(var(--distance) * -1);
 		left: 50%;
 		transform: translateX(-50%);
 	}
-	.arrow-zone.northeast {
+	.arrow-zone.right-middle {
 		top: calc(var(--distance) * -1);
 		right: calc(var(--distance) * -1);
 	}
-	.arrow-zone.east {
+	.arrow-zone.right-bottom {
 		top: 50%;
 		right: calc(var(--distance) * -1);
 		transform: translateY(-50%);
 	}
-	.arrow-zone.southeast {
+	.arrow-zone.middle-bottom {
 		bottom: calc(var(--distance) * -1);
 		right: calc(var(--distance) * -1);
 	}
-	.arrow-zone.south {
+	.arrow-zone.left-bottom {
 		bottom: calc(var(--distance) * -1);
 		left: 50%;
 		transform: translateX(-50%);
 	}
-	.arrow-zone.southwest {
+	.arrow-zone.left-middle {
 		bottom: calc(var(--distance) * -1);
 		left: calc(var(--distance) * -1);
 	}
-	.arrow-zone.west {
+	.arrow-zone.left-top {
 		top: 50%;
 		left: calc(var(--distance) * -1);
 		transform: translateY(-50%);

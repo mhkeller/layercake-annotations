@@ -6,7 +6,7 @@
 	import ResizeHandles from './ResizeHandles.svelte';
 	import ArrowZone from './ArrowZone.svelte';
 
-	let { data, ondrag } = $props();
+	let { data, ondrag, addArrow } = $props();
 
 	const { xGet, yGet, percentRange } = getContext('LayerCake');
 
@@ -16,21 +16,26 @@
 	let top = $derived(`calc(${$yGet(data)}${units} + ${data.dy}%)`);
 
 	let isEditable = $state(false);
+	const arrowAnchors = [
+		'middle-top',
+		'right-top',
+		'right-middle',
+		'right-bottom',
+		'middle-bottom',
+		'left-bottom',
+		'left-middle',
+		'left-top'
+	];
 </script>
 
 <Draggable {left} {top} {ondrag} id={data.id} canDrag={!isEditable} bannedTargets={['arrow-zone']}>
-	<div class="layercake-annotation" data-id={data.id}>
+	<div class="layercake-annotation">
 		<EditableText text={data.text} bind:isEditable />
 	</div>
 	<ResizeHandles debug={false} grabbers={['east']} />
-	<ArrowZone location="north" />
-	<ArrowZone location="northeast" />
-	<ArrowZone location="east" />
-	<ArrowZone location="southeast" />
-	<ArrowZone location="south" />
-	<ArrowZone location="southwest" />
-	<ArrowZone location="west" />
-	<ArrowZone location="northwest" />
+	{#each arrowAnchors as anchor}
+		<ArrowZone id={data.id} {anchor} {addArrow} />
+	{/each}
 </Draggable>
 
 <style>
