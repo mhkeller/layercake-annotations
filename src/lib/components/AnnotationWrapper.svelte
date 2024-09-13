@@ -6,7 +6,7 @@
 	import ResizeHandles from './ResizeHandles.svelte';
 	import ArrowZone from './ArrowZone.svelte';
 
-	let { data, ondrag, addArrow } = $props();
+	let { data, ondrag, addArrow, modifyArrow } = $props();
 
 	const { xGet, yGet, percentRange } = getContext('LayerCake');
 
@@ -34,7 +34,7 @@
 	</div>
 	<ResizeHandles debug={false} grabbers={['east']} />
 	{#each arrowAnchors as anchor}
-		<ArrowZone id={data.id} {anchor} {addArrow} />
+		<ArrowZone id={data.id} {anchor} {addArrow} {modifyArrow} />
 	{/each}
 </Draggable>
 

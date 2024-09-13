@@ -55,14 +55,22 @@
 		note.dy += (y / $height) * 100;
 	}
 
-	function addArrow(id, { anchor, x, y }) {
+	function modifyArrow(id, { anchor, ...attrs }) {
+		const note = annotations.find((d) => d.id === id);
+		const arrow = note.arrows.find((d) => d.source.anchor === anchor);
+		for (const key in attrs) {
+			arrow[key] = attrs[key];
+		}
+	}
+
+	function addArrow(id, { anchor, x, y, clockwise }) {
 		const note = annotations.find((d) => d.id === id);
 
 		const xVal = invertScale($xScale, x);
 		const yVal = invertScale($yScale, y);
-		console.log(x, xVal);
 
 		const arrow = {
+			clockwise,
 			source: { anchor },
 			target: {
 				[$config.x]: xVal[0],
@@ -80,8 +88,6 @@
 			existingArrow.target = arrow.target;
 		}
 	}
-
-	$inspect(annotations);
 </script>
 
 <Svg>
@@ -98,7 +104,7 @@
 
 	<div class="layercake-annotations">
 		{#each annotations as d}
-			<AnnotationWrapper data={d} {ondrag} {addArrow} />
+			<AnnotationWrapper data={d} {ondrag} {addArrow} {modifyArrow} />
 		{/each}
 	</div>
 </Html>

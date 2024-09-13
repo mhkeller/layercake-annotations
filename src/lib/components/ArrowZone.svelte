@@ -1,6 +1,7 @@
 <script>
-	let { id, anchor, addArrow } = $props();
+	let { id, anchor, addArrow, modifyArrow } = $props();
 
+	let clockwise = $state(anchor.includes('left') ? false : true);
 	let moving = $state(false);
 	let left = $state(0);
 	let top = $state(0);
@@ -19,7 +20,7 @@
 			const x = rect.left - 18 - rect.width / 2;
 			const y = rect.top - rect.height / 2;
 
-			addArrow(id, { anchor, x, y });
+			addArrow(id, { anchor, x, y, clockwise });
 		}
 	}
 
@@ -27,8 +28,10 @@
 		moving = false;
 	}
 
-	function onclick() {
-		// TODO, togglle clockwise
+	function onclick(e) {
+		if (!e.metaKey) return;
+		clockwise = !clockwise;
+		modifyArrow(id, { anchor, clockwise });
 	}
 </script>
 
@@ -62,17 +65,15 @@
 	}
 	.arrow-zone.middle-top {
 		top: calc(var(--distance) * -1);
-		left: 50%;
-		transform: translateX(-50%);
+		left: calc(50% - var(--radius) / 2);
 	}
 	.arrow-zone.right-top {
 		top: calc(var(--distance) * -1);
 		right: calc(var(--distance) * -1);
 	}
 	.arrow-zone.right-middle {
-		top: 50%;
+		top: calc(50% - var(--radius) / 2);
 		right: calc(var(--distance) * -1);
-		transform: translateY(-50%);
 	}
 	.arrow-zone.right-bottom {
 		bottom: calc(var(--distance) * -1);
@@ -80,16 +81,14 @@
 	}
 	.arrow-zone.middle-bottom {
 		bottom: calc(var(--distance) * -1);
-		left: 50%;
-		transform: translateX(-50%);
+		left: calc(50% - var(--radius) / 2);
 	}
 	.arrow-zone.left-bottom {
 		bottom: calc(var(--distance) * -1);
 		left: calc(var(--distance) * -1);
 	}
 	.arrow-zone.left-middle {
-		top: 50%;
+		top: calc(50% - var(--radius) / 2);
 		left: calc(var(--distance) * -1);
-		transform: translateY(-50%);
 	}
 </style>
