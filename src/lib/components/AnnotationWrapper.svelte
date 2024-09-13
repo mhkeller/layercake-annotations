@@ -32,7 +32,7 @@
 	<div class="layercake-annotation">
 		<EditableText text={data.text} bind:isEditable />
 	</div>
-	<ResizeHandles debug={false} grabbers={['east']} />
+	<ResizeHandles id={data.id} {ondrag} debug={false} grabbers={['east']} />
 	{#each arrowAnchors as anchor}
 		<ArrowZone id={data.id} {anchor} {addArrow} {modifyArrow} />
 	{/each}

@@ -48,11 +48,20 @@
 	 * @param {Object} { x, y } - The x and y movement of the annotation.
 	 * @returns {void}
 	 */
-	function ondrag(id, { x, y }) {
-		const note = annotations.find((d) => d.id === id);
+	function ondrag(id, { x = 0, y = 0, refresh = false }) {
+		const i = annotations.findIndex((d) => d.id === id);
 		// TODO, could be better to redo the scale inversion with a new position
-		note.dx += (x / $width) * 100;
-		note.dy += (y / $height) * 100;
+		if (x) {
+			annotations[i].dx += (x / $width) * 100;
+		}
+		if (y) {
+			annotations[i].dy += (y / $height) * 100;
+		}
+
+		// Force an update to redraw, we do this when we resize the annotation
+		if (refresh) {
+			annotations[i] = { ...annotations[i] };
+		}
 	}
 
 	function modifyArrow(id, { anchor, ...attrs }) {

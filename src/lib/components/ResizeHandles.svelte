@@ -1,6 +1,7 @@
 <script>
 	// https://svelte.dev/repl/8b974ea483c648fba362a1e9f3dbc29f?version=4.2.18
 	let {
+		id,
 		debug = true,
 		grabbers = [
 			'north',
@@ -11,7 +12,8 @@
 			'southeast',
 			'northwest',
 			'northeast'
-		]
+		],
+		ondrag
 	} = $props();
 
 	let active = $state(null);
@@ -51,6 +53,8 @@
 
 	function onmousemove(event) {
 		if (!active) return;
+
+		ondrag(id, { refresh: true });
 
 		const element = active.parentElement;
 		const direction = [...active.classList].filter((c) => c !== 'grabber' && c !== 'selected')[0];
