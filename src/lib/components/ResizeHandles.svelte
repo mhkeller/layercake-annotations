@@ -97,6 +97,7 @@
 		box-sizing: border-box;
 		transition: opacity 250ms;
 		opacity: 0;
+		z-index: 9999;
 	}
 	.grabber.east {
 		width: 4px;

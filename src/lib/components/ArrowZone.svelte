@@ -134,15 +134,12 @@
 	/* For better hovering */
 	.arrow-zone:before {
 		content: ' ';
-		--diameter: 25px;
 		position: absolute;
-		width: var(--diameter);
-		height: var(--diameter);
+		width: 21px;
+		height: 23px;
 		top: -5px;
-		left: -5px;
+		left: -3.5px;
 		/* background: #ffcc0050; */
-		/* z-index: -1; */
-		/* cursor: default; */
 	}
 	.hovering.arrow-zone {
 		opacity: 1;
