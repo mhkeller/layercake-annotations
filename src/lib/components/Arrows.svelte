@@ -96,9 +96,10 @@
 					typeof q === 'string' && q.includes('%')
 						? parseCssValue(q, j, w, h)
 						: j
-							? $yScale(q)
-							: $xScale(q);
-				return val + (arrow.target[`d${lookups[j].position}`] || 0);
+							? $yScale(q) + (arrow.target.dy / 100) * h
+							: $xScale(q) + (arrow.target.dx / 100) * w;
+
+				return val;
 			});
 
 			/* --------------------------------------------

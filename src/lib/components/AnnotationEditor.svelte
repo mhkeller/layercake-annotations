@@ -72,10 +72,9 @@
 			source: { anchor },
 			target: {
 				[$config.x]: xVal[0],
-				[$config.y]: yVal[0]
-				// TODO, support percent dx and dy for arrow target
-				// dx: xVal[1],
-				// dy: yVal[1]
+				[$config.y]: yVal[0],
+				dx: xVal[1],
+				dy: yVal[1]
 			}
 		};
 
