@@ -28,14 +28,15 @@ export function parseCssValue(d, i, width, height) {
  *
  */
 export function getElPosition(el) {
+	const buffer = 3;
 	const annotationBbox = el.getBoundingClientRect();
 	const parentBbox = el.parentNode.parentNode.parentNode.getBoundingClientRect();
 
 	const coords = {
 		top: annotationBbox.top - parentBbox.top,
-		right: annotationBbox.right - parentBbox.left,
-		bottom: annotationBbox.bottom - parentBbox.top,
-		left: annotationBbox.left - parentBbox.left,
+		right: annotationBbox.right - parentBbox.left + buffer,
+		bottom: annotationBbox.bottom - parentBbox.top + buffer / 2,
+		left: annotationBbox.left - parentBbox.left - buffer,
 		width: annotationBbox.width,
 		height: annotationBbox.height
 	};

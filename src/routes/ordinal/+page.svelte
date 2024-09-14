@@ -20,7 +20,7 @@
 
 <div class="chart-container">
 	<LayerCake
-		padding={{ top: 0, right: 0, bottom: 20, left: 20 }}
+		padding={{ top: 0, right: 15, bottom: 20, left: 20 }}
 		x={xKey}
 		y={yKey}
 		xScale={scaleBand().paddingInner(0.02).round(true)}
@@ -47,6 +47,6 @@
   */
 	.chart-container {
 		width: 100%;
-		height: 250px;
+		height: 350px;
 	}
 </style>
