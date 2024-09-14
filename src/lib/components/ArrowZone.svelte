@@ -20,16 +20,18 @@
 	const diameterPx = 15;
 	const handleOffsetPx = 18;
 
-	let leftVal = $derived.by(() => {
-		return anchor.includes('left')
+	let left = $derived.by(() => {
+		const val = anchor.includes('left')
 			? invertScale($xScale, noteCoords.value[0] - handleOffsetPx)
 			: anchor.includes('right')
 				? invertScale($xScale, noteCoords.value[0] + noteDimensions[0] + handleOffsetPx)
 				: invertScale($xScale, noteCoords.value[0] + noteDimensions[0] / 2 - diameterPx / 2);
+
+		return `calc(${$xScale(val[0])}${units} + ${val[1]}%)`;
 	});
 
-	let topVal = $derived.by(() => {
-		return anchor.includes('top')
+	let top = $derived.by(() => {
+		const val = anchor.includes('top')
 			? invertScale($yScale, noteCoords.value[1] - handleOffsetPx)
 			: anchor.includes('bottom')
 				? invertScale(
@@ -37,9 +39,9 @@
 						noteCoords.value[1] + noteDimensions[1] + handleOffsetPx - diameterPx + 1
 					)
 				: invertScale($yScale, noteCoords.value[1] + noteDimensions[1] / 2 - diameterPx / 2);
+
+		return `calc(${$yScale(val[0])}${units} + ${val[1]}%)`;
 	});
-	let left = $derived(`calc(${$xScale(leftVal[0])}${units} + ${leftVal[1]}%)`);
-	let top = $derived(`calc(${$yScale(topVal[0])}${units} + ${topVal[1]}%)`);
 
 	function onmousemove(e) {
 		if (moving) {
