@@ -5,8 +5,8 @@
 	let moving = $state(false);
 
 	let {
-		left = 100,
-		top = 100,
+		left,
+		top,
 		ondrag,
 		canDrag = true,
 		bannedTargets = [],

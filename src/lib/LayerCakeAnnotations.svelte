@@ -1,6 +1,7 @@
 <script>
 	import { Svg, Html } from 'layercake';
 	import { getContext, setContext } from 'svelte';
+	import { debounce } from 'underscore';
 
 	import AnnotationWrapper from '$lib/components/AnnotationWrapper.svelte';
 	import ArrowheadMarker from '$lib/components/ArrowheadMarker.svelte';
@@ -110,7 +111,7 @@
 <Html>
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div {onclick} class="note-listener"></div>
+	<div onclick={debounce(onclick, 200, true)} class="note-listener"></div>
 
 	<div class="layercake-annotations">
 		{#each annotations as _, i}

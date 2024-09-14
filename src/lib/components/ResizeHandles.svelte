@@ -1,7 +1,6 @@
 <script>
 	// https://svelte.dev/repl/8b974ea483c648fba362a1e9f3dbc29f?version=4.2.18
 	let {
-		id,
 		debug = true,
 		grabbers = [
 			'north',
@@ -54,8 +53,6 @@
 	function onmousemove(event) {
 		if (!active) return;
 
-		ondrag(id, { refresh: true });
-
 		const element = active.parentElement;
 		const direction = [...active.classList].filter((c) => c !== 'grabber' && c !== 'selected')[0];
 		let delta;
@@ -81,6 +78,11 @@
 			delta = event.pageY - initialPos.y;
 			element.style.height = `${initialRect.height + delta}px`;
 		}
+
+		/**
+		 * Refresh the draggable element's position.
+		 */
+		ondrag();
 	}
 </script>
 

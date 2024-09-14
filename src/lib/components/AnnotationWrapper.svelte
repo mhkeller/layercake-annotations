@@ -5,7 +5,9 @@
 	import EditableText from './EditableText.svelte';
 	import ResizeHandles from './ResizeHandles.svelte';
 	import ArrowZone from './ArrowZone.svelte';
+
 	import invertScale from '$lib/modules/invertScale.js';
+	import filterObject from '$lib/modules/filterObject.js';
 
 	let { d = $bindable() } = $props();
 
@@ -31,17 +33,26 @@
 	// 	'left-top'
 	// ];
 
-	async function ondrag([x, y]) {
-		const xVal = invertScale($xScale, x);
-		const yVal = invertScale($yScale, y);
+	/**
+	 * @param {Array} [coords] - The x and y coordinates of the draggable element.
+	 */
+	async function ondrag([x, y] = []) {
+		const xVal = x ? invertScale($xScale, x) : [];
+		const yVal = y ? invertScale($yScale, y) : [];
 
-		console.log(x, xVal, [...d.noteCoords]);
+		const newProps = filterObject(
+			{
+				[$config.x]: xVal[0],
+				[$config.y]: yVal[0],
+				dx: xVal[1],
+				dy: yVal[1]
+			},
+			(d) => d !== undefined
+		);
+
 		d = {
 			...d,
-			[$config.x]: xVal[0],
-			[$config.y]: yVal[0],
-			dx: xVal[1],
-			dy: yVal[1]
+			...newProps
 		};
 	}
 </script>
@@ -57,7 +68,7 @@
 	<div class="layercake-annotation">
 		<EditableText text={d.text} bind:isEditable />
 	</div>
-	<!-- <ResizeHandles id={d.id} {ondrag} debug={false} grabbers={['east']} /> -->
+	<ResizeHandles {ondrag} debug={false} grabbers={['east']} />
 </Draggable>
 
 <!-- {#each arrowAnchors as anchor}
