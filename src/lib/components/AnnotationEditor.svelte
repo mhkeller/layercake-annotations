@@ -84,10 +84,13 @@
 		} else {
 			existingArrow.target = arrow.target;
 		}
+		return [xVal, yVal];
 	}
 
 	function modifyArrow({ anchor, ...attrs }) {
 		const arrow = d.arrows.find((a) => a.source.anchor === anchor);
+		if (!arrow) return;
+
 		for (const key in attrs) {
 			arrow[key] = attrs[key];
 		}
