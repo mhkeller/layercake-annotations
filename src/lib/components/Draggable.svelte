@@ -46,10 +46,10 @@
 	}
 
 	function onmouseover() {
-		hovering.value = true;
+		hovering.value = 'note';
 	}
 	function onmouseout() {
-		hovering.value = false;
+		hovering.value = '';
 	}
 </script>
 

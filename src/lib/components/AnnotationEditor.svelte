@@ -17,7 +17,7 @@
 	let units = $derived($percentRange === true ? '%' : 'px');
 
 	let noteDimensions = $state([0, 0]);
-	const hovering = createRef(false);
+	const hovering = createRef('');
 	setContext('hovering', hovering);
 
 	let left = $derived(`calc(${$xGet(d)}${units} + ${d.dx}%)`);
@@ -98,14 +98,22 @@
 		}
 	}
 
+	function deleteArrow(anchor) {
+		d.arrows = d.arrows.filter((a) => a.source.anchor !== anchor);
+	}
+
 	/**
 	 * If we press the delete key while hovering, delete the annotation.
 	 */
 	function onkeydown(e) {
-		console.log('here', e.key);
+		if (!hovering.value) return;
 
-		if (hovering.value && (e.key === 'Delete' || e.key === 'Backspace')) {
-			deleteAnnotation(d.id);
+		if (e.key === 'Delete' || e.key === 'Backspace') {
+			if (hovering.value === 'note') {
+				deleteAnnotation(d.id);
+			} else {
+				deleteArrow(hovering.value);
+			}
 		}
 	}
 </script>

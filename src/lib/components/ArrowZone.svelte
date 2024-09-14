@@ -7,12 +7,13 @@
 
 	let { d, anchor, addArrow, modifyArrow, noteDimensions } = $props();
 
+	const hovering = getContext('hovering');
+
 	/**
 	 * Constants
 	 */
 	const diameterPx = 15;
 	const handleOffsetPx = 18;
-
 	const PADDING = 3;
 	const BORDER_WIDTH = 1;
 
@@ -23,11 +24,10 @@
 	let leftDragged = $state('');
 	let topDragged = $state('');
 	let moving = $state(false);
-	let hasArrow = $state(false);
 	let units = $derived($percentRange === true ? '%' : 'px');
 	let clockwise = $state(anchor.includes('left') ? false : true);
 
-	const hovering = getContext('hovering');
+	let hasArrow = $derived(d.arrows.some((a) => a.source.anchor === anchor));
 
 	/**
 	 * Derive our initial left position
@@ -68,20 +68,17 @@
 	function onmousemove(e) {
 		if (moving) {
 			const rect = el.getBoundingClientRect();
-			// const x = rect.left - rect.width / 2 + e.movementX;
-			// const y = rect.top - rect.height + e.movementY;
 			const cssPaddingBorder = PADDING * 2 + BORDER_WIDTH * 2;
 
 			const x = rect.left - $padding.left - cssPaddingBorder + rect.width / 2 + e.movementX;
 			const y = rect.top - $padding.top - cssPaddingBorder + rect.height / 2 + e.movementY;
 
-			console.log(rect.left, rect.top);
+			// console.log(rect.left, rect.top);
 
 			const [xVal, yVal] = addArrow({ anchor, x, y, clockwise });
+
 			leftDragged = `calc(${$xScale(xVal[0])}${units} + ${xVal[1]}% - ${rect.width / 2}px)`;
 			topDragged = `calc(${$yScale(yVal[0])}${units} + ${yVal[1]}% - ${rect.height / 2}px)`;
-
-			hasArrow = true;
 		}
 	}
 
@@ -94,10 +91,10 @@
 	}
 
 	function onmouseover() {
-		hovering.value = true;
+		hovering.value = anchor;
 	}
 	function onmouseout() {
-		hovering.value = false;
+		hovering.value = '';
 	}
 </script>
 
