@@ -20,6 +20,8 @@
 	const hovering = createRef('');
 	setContext('hovering', hovering);
 
+	const isEditing = getContext('isEditing');
+
 	let left = $derived(`calc(${$xGet(d)}${units} + ${d.dx}%)`);
 	let top = $derived(`calc(${$yGet(d)}${units} + ${d.dy}%)`);
 
@@ -113,7 +115,7 @@
 	async function onkeydown(e) {
 		if (!hovering.value) return;
 
-		if (e.key === 'Delete' || e.key === 'Backspace') {
+		if (isEditing.value === false && (e.key === 'Delete' || e.key === 'Backspace')) {
 			if (hovering.value === 'note') {
 				deleteAnnotation(d.id);
 			} else {
