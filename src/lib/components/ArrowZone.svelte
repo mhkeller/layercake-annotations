@@ -39,14 +39,10 @@
 				? d.noteCoords[0] + noteDimensions[0] + handleOffsetPx / 3
 				: d.noteCoords[0] + noteDimensions[0] / 2 - diameterPx / 2;
 
-		console.log(anchor, val);
-
 		const inverted = invertScale($xScale, val);
 
 		return `calc(${$xScale(inverted[0])}${units} + ${inverted[1]}%)`;
 	});
-
-	console.log('*************');
 
 	/**
 	 * Derive our initial top position
@@ -57,8 +53,6 @@
 			: anchor.includes('bottom')
 				? d.noteCoords[1] + noteDimensions[1] + handleOffsetPx - diameterPx + 1
 				: d.noteCoords[1] + noteDimensions[1] / 2 - diameterPx / 2;
-
-		console.log(anchor, val);
 
 		const inverted = invertScale($yScale, val);
 
