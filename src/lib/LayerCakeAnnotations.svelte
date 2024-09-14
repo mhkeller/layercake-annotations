@@ -9,7 +9,7 @@
 	import invertScale from './modules/invertScale.js';
 	import createRef from './modules/createRef.svelte.js';
 
-	const { width, height, xScale, yScale, config } = getContext('LayerCake');
+	const { xScale, yScale, config } = getContext('LayerCake');
 
 	let { containerClass, annotationClass } = $props();
 
@@ -42,29 +42,6 @@
 		};
 		annotations.push(note);
 	}
-
-	/**
-	 * @param {Number} id - The id of the annotation being dragged.
-	 * @param {Object} { x, y } - The x and y movement of the annotation.
-	 * @returns {void}
-	 */
-	// function ondrag(id, { x = 0, y = 0, refresh = false }) {
-	// 	const i = annotations.findIndex((d) => d.id === id);
-
-	// 	if (x) {
-	// 		noteCoords.value[0] += x;
-	// 		// annotations[i].dx += (x / $width) * 100;
-	// 	}
-	// 	if (y) {
-	// 		noteCoords.value[1] += y;
-	// 		// annotations[i].dy += (y / $height) * 100;
-	// 	}
-
-	// 	// Force an update to redraw, we do this when we resize the annotation
-	// 	if (refresh) {
-	// 		annotations[i] = { ...annotations[i] };
-	// 	}
-	// }
 
 	// function modifyArrow(id, { anchor, ...attrs }) {
 	// 	const note = annotations.find((d) => d.id === id);

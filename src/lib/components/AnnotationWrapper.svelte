@@ -66,7 +66,7 @@
 	bind:noteDimensions
 >
 	<div class="layercake-annotation">
-		<EditableText text={d.text} bind:isEditable />
+		<EditableText bind:text={d.text} bind:isEditable />
 	</div>
 	<ResizeHandles {ondrag} debug={false} grabbers={['east']} />
 </Draggable>
