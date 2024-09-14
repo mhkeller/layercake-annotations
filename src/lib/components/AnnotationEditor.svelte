@@ -98,7 +98,13 @@
 	}
 
 	function deleteArrow(anchor) {
+		const len = d.arrows.length;
 		d.arrows = d.arrows.filter((a) => a.source.anchor !== anchor);
+
+		// If we were hovering over an empty arrow zone, delete the annotation.
+		if (len === d.arrows.length) {
+			deleteAnnotation(d.id);
+		}
 	}
 
 	/**
@@ -115,6 +121,8 @@
 			}
 		}
 	}
+
+	$inspect({ hovering: hovering.value });
 </script>
 
 <svelte:window {onkeydown} />
