@@ -3,7 +3,7 @@
 	import { getContext, setContext } from 'svelte';
 	import { debounce } from 'underscore';
 
-	import AnnotationWrapper from '$lib/components/AnnotationWrapper.svelte';
+	import AnnotationEditor from '$lib/components/AnnotationEditor.svelte';
 	import ArrowheadMarker from '$lib/components/ArrowheadMarker.svelte';
 	import Arrows from '$lib/components/Arrows.svelte';
 	import invertScale from './modules/invertScale.js';
@@ -92,7 +92,7 @@
 
 	<div class="layercake-annotations">
 		{#each annotations as _, i}
-			<AnnotationWrapper bind:d={annotations[i]} />
+			<AnnotationEditor bind:d={annotations[i]} />
 		{/each}
 	</div>
 </Html>
