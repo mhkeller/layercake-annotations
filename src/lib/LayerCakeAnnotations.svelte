@@ -5,7 +5,7 @@
 	import AnnotationWrapper from '$lib/components/AnnotationWrapper.svelte';
 	import ArrowheadMarker from '$lib/components/ArrowheadMarker.svelte';
 	import Arrows from '$lib/components/Arrows.svelte';
-	import ordinalInvert from './modules/ordinalInvert.js';
+	import invertScale from './modules/invertScale.js';
 	import createRef from './modules/createRef.svelte.js';
 
 	const { width, height, xScale, yScale, config } = getContext('LayerCake');
@@ -15,15 +15,15 @@
 	let annotations = $state([]);
 
 	let isEditing = createRef(false);
+	let noteCoords = createRef([0, 0]);
 
 	setContext('isEditing', isEditing);
-
-	function invertScale(scale, pos) {
-		return scale.invert ? [scale.invert(pos), 0] : ordinalInvert(scale, pos);
-	}
+	setContext('noteCoords', noteCoords);
 
 	function onclick(e) {
 		if (isEditing.value === true) return;
+
+		noteCoords.value = [e.offsetX, e.offsetY];
 
 		const xVal = invertScale($xScale, e.offsetX);
 		const yVal = invertScale($yScale, e.offsetY);
@@ -113,7 +113,7 @@
 
 	<div class="layercake-annotations">
 		{#each annotations as d}
-			<AnnotationWrapper data={d} {ondrag} {addArrow} {modifyArrow} />
+			<AnnotationWrapper {d} {ondrag} {addArrow} {modifyArrow} />
 		{/each}
 	</div>
 </Html>
