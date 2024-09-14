@@ -22,21 +22,22 @@
 	let top = $derived(`calc(${$yGet(d)}${units} + ${d.dy}%)`);
 
 	let isEditable = $state(false);
-	// const arrowAnchors = [
-	// 	'middle-top',
-	// 	'right-top',
-	// 	'right-middle',
-	// 	'right-bottom',
-	// 	'middle-bottom',
-	// 	'left-bottom',
-	// 	'left-middle',
-	// 	'left-top'
-	// ];
+	const arrowAnchors = [
+		'middle-top',
+		'right-top',
+		'right-middle',
+		'right-bottom',
+		'middle-bottom',
+		'left-bottom',
+		'left-middle',
+		'left-top'
+	];
 
 	/**
-	 * @param {Array} [coords] - The x and y coordinates of the draggable element.
+	 * @param {Array} [noteCoords] - The x and y coordinates of the draggable element.
 	 */
-	async function ondrag([x, y] = []) {
+	async function ondrag(noteCoords = []) {
+		const [x, y] = noteCoords;
 		const xVal = x ? invertScale($xScale, x) : [];
 		const yVal = y ? invertScale($yScale, y) : [];
 
@@ -50,11 +51,18 @@
 			(d) => d !== undefined
 		);
 
+		if (noteCoords.length) {
+			newProps.noteCoords = noteCoords;
+		}
+
 		d = {
 			...d,
 			...newProps
 		};
 	}
+
+	function addArrow() {}
+	function modifyArrow() {}
 </script>
 
 <Draggable
@@ -71,9 +79,9 @@
 	<ResizeHandles {ondrag} debug={false} grabbers={['east']} />
 </Draggable>
 
-<!-- {#each arrowAnchors as anchor}
+{#each arrowAnchors as anchor}
 	<ArrowZone {d} {anchor} {addArrow} {modifyArrow} {noteDimensions} />
-{/each} -->
+{/each}
 
 <style>
 	.layercake-annotation {

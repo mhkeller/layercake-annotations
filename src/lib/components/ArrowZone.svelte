@@ -8,8 +8,6 @@
 	let units = $derived($percentRange === true ? '%' : 'px');
 	let { d, anchor, addArrow, modifyArrow, noteDimensions } = $props();
 
-	const noteCoords = getContext('noteCoords');
-
 	let clockwise = $state(anchor.includes('left') ? false : true);
 	let moving = $state(false);
 	let el = $state();
@@ -22,23 +20,23 @@
 
 	let left = $derived.by(() => {
 		const val = anchor.includes('left')
-			? invertScale($xScale, noteCoords.value[0] - handleOffsetPx)
+			? invertScale($xScale, d.noteCoords[0] - handleOffsetPx)
 			: anchor.includes('right')
-				? invertScale($xScale, noteCoords.value[0] + noteDimensions[0] + handleOffsetPx)
-				: invertScale($xScale, noteCoords.value[0] + noteDimensions[0] / 2 - diameterPx / 2);
+				? invertScale($xScale, d.noteCoords[0] + noteDimensions[0] + handleOffsetPx)
+				: invertScale($xScale, d.noteCoords[0] + noteDimensions[0] / 2 - diameterPx / 2);
 
 		return `calc(${$xScale(val[0])}${units} + ${val[1]}%)`;
 	});
 
 	let top = $derived.by(() => {
 		const val = anchor.includes('top')
-			? invertScale($yScale, noteCoords.value[1] - handleOffsetPx)
+			? invertScale($yScale, d.noteCoords[1] - handleOffsetPx)
 			: anchor.includes('bottom')
 				? invertScale(
 						$yScale,
-						noteCoords.value[1] + noteDimensions[1] + handleOffsetPx - diameterPx + 1
+						d.noteCoords[1] + noteDimensions[1] + handleOffsetPx - diameterPx + 1
 					)
-				: invertScale($yScale, noteCoords.value[1] + noteDimensions[1] / 2 - diameterPx / 2);
+				: invertScale($yScale, d.noteCoords[1] + noteDimensions[1] / 2 - diameterPx / 2);
 
 		return `calc(${$yScale(val[0])}${units} + ${val[1]}%)`;
 	});
