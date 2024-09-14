@@ -10,7 +10,7 @@
 	import filterObject from '$lib/modules/filterObject.js';
 	import createRef from '$lib/modules/createRef.svelte.js';
 
-	let { d = $bindable() } = $props();
+	let { d = $bindable(), deleteAnnotation } = $props();
 
 	const { config, xScale, yScale, xGet, yGet, percentRange } = getContext('LayerCake');
 
@@ -97,25 +97,40 @@
 			arrow[key] = attrs[key];
 		}
 	}
+
+	/**
+	 * If we press the delete key while hovering, delete the annotation.
+	 */
+	function onkeydown(e) {
+		console.log('here', e.key);
+
+		if (hovering.value && (e.key === 'Delete' || e.key === 'Backspace')) {
+			deleteAnnotation(d.id);
+		}
+	}
 </script>
 
-<Draggable
-	{left}
-	{top}
-	{ondrag}
-	canDrag={!isEditable}
-	bannedTargets={['arrow-zone']}
-	bind:noteDimensions
->
-	<div class="layercake-annotation">
-		<EditableText bind:text={d.text} bind:isEditable />
-	</div>
-	<ResizeHandles {ondrag} debug={false} grabbers={['east']} />
-</Draggable>
+<svelte:window {onkeydown} />
 
-{#each arrowAnchors as anchor}
-	<ArrowZone {d} {anchor} {addArrow} {modifyArrow} {noteDimensions} />
-{/each}
+{#if d}
+	<Draggable
+		{left}
+		{top}
+		{ondrag}
+		canDrag={!isEditable}
+		bannedTargets={['arrow-zone']}
+		bind:noteDimensions
+	>
+		<div class="layercake-annotation">
+			<EditableText bind:text={d.text} bind:isEditable />
+		</div>
+		<ResizeHandles {ondrag} debug={false} grabbers={['east']} />
+	</Draggable>
+
+	{#each arrowAnchors as anchor}
+		<ArrowZone {d} {anchor} {addArrow} {modifyArrow} {noteDimensions} />
+	{/each}
+{/if}
 
 <style>
 	.layercake-annotation {

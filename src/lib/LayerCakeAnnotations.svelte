@@ -42,6 +42,10 @@
 		};
 		annotations.push(note);
 	}
+
+	function deleteAnnotation(id) {
+		annotations = annotations.filter((d) => d.id !== id);
+	}
 </script>
 
 <Svg>
@@ -58,7 +62,7 @@
 
 	<div class="layercake-annotations">
 		{#each annotations as _, i}
-			<AnnotationEditor bind:d={annotations[i]} />
+			<AnnotationEditor bind:d={annotations[i]} {deleteAnnotation} />
 		{/each}
 	</div>
 </Html>
