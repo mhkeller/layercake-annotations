@@ -1,5 +1,5 @@
 <script>
-	import { getContext, setContext } from 'svelte';
+	import { getContext, setContext, tick } from 'svelte';
 
 	import Draggable from './Draggable.svelte';
 	import EditableText from './EditableText.svelte';
@@ -110,11 +110,15 @@
 	/**
 	 * If we press the delete key while hovering, delete the annotation.
 	 */
-	function onkeydown(e) {
+	async function onkeydown(e) {
 		if (!hovering.value) return;
 
 		if (e.key === 'Delete' || e.key === 'Backspace') {
 			if (hovering.value === 'note') {
+				// I'm not sure why I need to set the value to an empty string and wait a tick
+				// without this, the previously created note sometimes gets highlighted, sometimes it gets deleted
+				// hovering.value = '';
+				// await tick();
 				deleteAnnotation(d.id);
 			} else {
 				deleteArrow(hovering.value);
@@ -122,7 +126,11 @@
 		}
 	}
 
-	$inspect({ hovering: hovering.value });
+	$effect(() => {
+		if (d) {
+			console.log(d.id, hovering.value);
+		}
+	});
 </script>
 
 <svelte:window {onkeydown} />
@@ -137,7 +145,7 @@
 		bind:noteDimensions
 		{containerClass}
 	>
-		<div class="layercake-annotation">
+		<div class="layercake-annotation" data-id={d.id}>
 			<EditableText bind:text={d.text} bind:isEditable />
 		</div>
 		<ResizeHandles {ondrag} debug={false} grabbers={['east']} />

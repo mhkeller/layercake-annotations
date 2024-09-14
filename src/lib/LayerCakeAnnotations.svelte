@@ -1,6 +1,6 @@
 <script>
+	import { getContext, setContext, tick } from 'svelte';
 	import { Svg, Html } from 'layercake';
-	import { getContext, setContext } from 'svelte';
 	import { debounce } from 'underscore';
 
 	import AnnotationEditor from '$lib/components/AnnotationEditor.svelte';
@@ -24,7 +24,7 @@
 
 		const noteCoords = [e.offsetX, e.offsetY];
 
-		console.log('initial coords', noteCoords);
+		// console.log('initial coords', noteCoords);
 
 		const xVal = invertScale($xScale, noteCoords[0]);
 		const yVal = invertScale($yScale, noteCoords[1]);
@@ -43,8 +43,10 @@
 		annotations.push(note);
 	}
 
-	function deleteAnnotation(id) {
+	async function deleteAnnotation(id) {
 		annotations = annotations.filter((d) => d.id !== id);
+		// Similar to the hovering, we need to wait a tick to ensure the dom has been cleared
+		await tick();
 	}
 </script>
 

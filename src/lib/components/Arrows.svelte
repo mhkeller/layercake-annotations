@@ -38,12 +38,12 @@
 	// selectors match what you have in your project
 	// otherwise it won't find anything
 	onMount(async () => {
-		await tick();
 		gatherEls();
 	});
 
-	function gatherEls() {
+	async function gatherEls() {
 		if (container) {
+			await tick();
 			annotationEls = Array.from(
 				container.closest(containerClass).querySelectorAll(annotationClass)
 			);
@@ -53,8 +53,8 @@
 	$: annotations, gatherEls();
 
 	function setPath(w, h) {
-		return (anno, i, arrow) => {
-			const el = annotationEls[i];
+		return (anno, arrow) => {
+			const el = annotationEls.find((d) => +d.dataset.id === anno.id);
 
 			/* --------------------------------------------
 			 * Parse our attachment directives to know where to start the arrowhead
@@ -71,7 +71,7 @@
 					point +
 					parseCssValue(
 						arrow.source[`d${lookups[j].position}`],
-						i,
+						j,
 						arrowSource.width,
 						arrowSource.height
 					)
@@ -119,10 +119,10 @@
 <g bind:this={container}>
 	{#if annotations.length}
 		<g class="swoops">
-			{#each annotations as anno, i}
+			{#each annotations as anno}
 				{#if anno.arrows}
 					{#each anno.arrows as arrow}
-						<path marker-end="url(#layercake-annotation-arrowhead)" d={d(anno, i, arrow)}></path>
+						<path marker-end="url(#layercake-annotation-arrowhead)" d={d(anno, arrow)}></path>
 					{/each}
 				{/if}
 			{/each}
