@@ -50,7 +50,7 @@
 			const x = rect.left - handleOffsetPx - rect.width / 2;
 			const y = rect.top - rect.height / 2;
 
-			addArrow(d.id, { anchor, x, y, clockwise });
+			addArrow({ anchor, x, y, clockwise });
 		}
 	}
 
@@ -61,7 +61,7 @@
 	function onclick(e) {
 		if (!e.metaKey) return;
 		clockwise = !clockwise;
-		modifyArrow(d.id, { anchor, clockwise });
+		modifyArrow({ anchor, clockwise });
 	}
 </script>
 

@@ -42,40 +42,6 @@
 		};
 		annotations.push(note);
 	}
-
-	// function modifyArrow(id, { anchor, ...attrs }) {
-	// 	const note = annotations.find((d) => d.id === id);
-	// 	const arrow = note.arrows.find((d) => d.source.anchor === anchor);
-	// 	for (const key in attrs) {
-	// 		arrow[key] = attrs[key];
-	// 	}
-	// }
-
-	// function addArrow(id, { anchor, x, y, clockwise }) {
-	// 	const note = annotations.find((d) => d.id === id);
-
-	// 	const xVal = invertScale($xScale, x);
-	// 	const yVal = invertScale($yScale, y);
-
-	// 	const arrow = {
-	// 		clockwise,
-	// 		source: { anchor },
-	// 		target: {
-	// 			[$config.x]: xVal[0],
-	// 			[$config.y]: yVal[0]
-	// 			// dx: xVal[1],
-	// 			// dy: yVal[1]
-	// 		}
-	// 	};
-
-	// 	const existingArrow = note.arrows.find((d) => d.source.anchor === anchor);
-
-	// 	if (!existingArrow) {
-	// 		note.arrows.push(arrow);
-	// 	} else {
-	// 		existingArrow.target = arrow.target;
-	// 	}
-	// }
 </script>
 
 <Svg>

@@ -61,8 +61,37 @@
 		};
 	}
 
-	function addArrow() {}
-	function modifyArrow() {}
+	function addArrow({ anchor, x, y, clockwise }) {
+		const xVal = invertScale($xScale, x);
+		const yVal = invertScale($yScale, y);
+
+		const arrow = {
+			clockwise,
+			source: { anchor },
+			target: {
+				[$config.x]: xVal[0],
+				[$config.y]: yVal[0]
+				// TODO, support percent dx and dy for arrow target
+				// dx: xVal[1],
+				// dy: yVal[1]
+			}
+		};
+
+		const existingArrow = d.arrows.find((a) => a.source.anchor === anchor);
+
+		if (!existingArrow) {
+			d.arrows.push(arrow);
+		} else {
+			existingArrow.target = arrow.target;
+		}
+	}
+
+	function modifyArrow({ anchor, ...attrs }) {
+		const arrow = d.arrows.find((a) => a.source.anchor === anchor);
+		for (const key in attrs) {
+			arrow[key] = attrs[key];
+		}
+	}
 </script>
 
 <Draggable
