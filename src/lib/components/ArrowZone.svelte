@@ -11,7 +11,7 @@
 	 * Constants
 	 */
 	const diameterPx = 15;
-	const handleOffsetPx = 15;
+	const handleOffsetPx = 18;
 
 	const PADDING = 3;
 	const BORDER_WIDTH = 1;
@@ -36,7 +36,7 @@
 		const val = anchor.includes('left')
 			? d.noteCoords[0] - handleOffsetPx
 			: anchor.includes('right')
-				? d.noteCoords[0] + noteDimensions[0] + handleOffsetPx / 2
+				? d.noteCoords[0] + noteDimensions[0] + handleOffsetPx / 3
 				: d.noteCoords[0] + noteDimensions[0] / 2 - diameterPx / 2;
 
 		console.log(anchor, val);
