@@ -21,8 +21,6 @@
 	 */
 	const diameterPx = 15;
 	const handleOffsetPx = 18;
-	// const PADDING = 3;
-	// const BORDER_WIDTH = 1;
 
 	/**
 	 * State variables
@@ -68,7 +66,16 @@
 
 	function onclick(e) {
 		if (!e.metaKey) return;
-		clockwise = !clockwise;
+
+		// Rotate the arrow style
+		if (clockwise === false) {
+			clockwise = true;
+		} else if (clockwise === true) {
+			clockwise = null;
+		} else {
+			clockwise = false;
+		}
+
 		modifyArrow({ anchor, clockwise });
 	}
 

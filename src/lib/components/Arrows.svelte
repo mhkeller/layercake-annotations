@@ -104,12 +104,15 @@
 
 			/* --------------------------------------------
 			 * Create arrow path
+			 * if clockwise is null, create a straight line
 			 */
-			return swoopyArrow()
-				.angle(Math.PI / 2)
-				.clockwise(clockwise)
-				.x((q) => q[0])
-				.y((q) => q[1])([sourceCoords, targetCoords]);
+			return clockwise !== null
+				? swoopyArrow()
+						.angle(Math.PI / 2)
+						.clockwise(clockwise)
+						.x((q) => q[0])
+						.y((q) => q[1])([sourceCoords, targetCoords])
+				: `M${sourceCoords.join(',')} L${targetCoords.join(',')}`;
 		};
 	}
 
