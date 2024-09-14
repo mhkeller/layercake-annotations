@@ -1,5 +1,5 @@
 <script>
-	import { getContext, tick } from 'svelte';
+	import { getContext, setContext } from 'svelte';
 
 	import Draggable from './Draggable.svelte';
 	import EditableText from './EditableText.svelte';
@@ -8,6 +8,7 @@
 
 	import invertScale from '$lib/modules/invertScale.js';
 	import filterObject from '$lib/modules/filterObject.js';
+	import createRef from '$lib/modules/createRef.svelte.js';
 
 	let { d = $bindable() } = $props();
 
@@ -16,7 +17,8 @@
 	let units = $derived($percentRange === true ? '%' : 'px');
 
 	let noteDimensions = $state([0, 0]);
-	// let noteCoords = $state([0, 0]);
+	const hovering = createRef(false);
+	setContext('hovering', hovering);
 
 	let left = $derived(`calc(${$xGet(d)}${units} + ${d.dx}%)`);
 	let top = $derived(`calc(${$yGet(d)}${units} + ${d.dy}%)`);

@@ -11,7 +11,7 @@
 	 * Constants
 	 */
 	const diameterPx = 15;
-	const handleOffsetPx = 18;
+	const handleOffsetPx = 15;
 
 	const PADDING = 3;
 	const BORDER_WIDTH = 1;
@@ -27,6 +27,8 @@
 	let units = $derived($percentRange === true ? '%' : 'px');
 	let clockwise = $state(anchor.includes('left') ? false : true);
 
+	const hovering = getContext('hovering');
+
 	/**
 	 * Derive our initial left position
 	 */
@@ -34,7 +36,7 @@
 		const val = anchor.includes('left')
 			? d.noteCoords[0] - handleOffsetPx
 			: anchor.includes('right')
-				? d.noteCoords[0] + noteDimensions[0] + handleOffsetPx
+				? d.noteCoords[0] + noteDimensions[0] + handleOffsetPx / 2
 				: d.noteCoords[0] + noteDimensions[0] / 2 - diameterPx / 2;
 
 		console.log(anchor, val);
@@ -96,14 +98,26 @@
 	function onmouseup() {
 		moving = false;
 	}
+
+	function onmouseover() {
+		hovering.value = true;
+	}
+	function onmouseout() {
+		hovering.value = false;
+	}
 </script>
 
+<!-- svelte-ignore a11y_mouse_events_have_key_events -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_mouse_events_have_key_events -->
 <div
 	bind:this={el}
 	{onmousedown}
 	{onclick}
+	{onmouseover}
+	{onmouseout}
+	class:hovering={hovering.value}
 	class="arrow-zone {anchor}"
 	style:left={hasArrow ? leftDragged : left}
 	style:top={hasArrow ? topDragged : top}
@@ -119,8 +133,24 @@
 		height: var(--diameter);
 		border-radius: 50%;
 		border: 1px dashed #333;
-		--distance: 18px;
 		cursor: pointer;
-		/* opacity: 0; */
+		opacity: 0;
+		transition: opacity 250ms;
+	}
+	/* For better hovering */
+	.arrow-zone:before {
+		content: ' ';
+		--diameter: 25px;
+		position: absolute;
+		width: var(--diameter);
+		height: var(--diameter);
+		top: -5px;
+		left: -5px;
+		/* background: #ffcc0050; */
+		/* z-index: -1; */
+		/* cursor: default; */
+	}
+	.hovering.arrow-zone {
+		opacity: 1;
 	}
 </style>

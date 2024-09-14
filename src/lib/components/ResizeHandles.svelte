@@ -95,7 +95,7 @@
 	.grabber {
 		position: absolute;
 		box-sizing: border-box;
-		transition: opacity 0.2s;
+		transition: opacity 250ms;
 		opacity: 0;
 	}
 	.grabber.east {

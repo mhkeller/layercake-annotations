@@ -105,5 +105,6 @@
 		padding: 0;
 		font-family: unset;
 		white-space: normal;
+		pointer-events: none;
 	}
 </style>

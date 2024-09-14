@@ -16,6 +16,8 @@
 
 	let el = $state();
 
+	const hovering = getContext('hovering');
+
 	const PADDING = 3;
 	const BORDER_WIDTH = 1;
 
@@ -42,9 +44,18 @@
 	function onmouseup() {
 		moving = false;
 	}
+
+	function onmouseover() {
+		hovering.value = true;
+	}
+	function onmouseout() {
+		hovering.value = false;
+	}
 </script>
 
+<!-- svelte-ignore a11y_mouse_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_mouse_events_have_key_events -->
 <div
 	bind:this={el}
 	{onmousedown}
@@ -52,6 +63,9 @@
 	style:top
 	class="draggable"
 	class:canDrag
+	class:hovering={hovering.value}
+	{onmouseover}
+	{onmouseout}
 	bind:clientWidth={noteDimensions[0]}
 	bind:clientHeight={noteDimensions[1]}
 	style:border="{BORDER_WIDTH}px solid transparent"
@@ -69,6 +83,7 @@
 		transition: border-color 250ms;
 		border-radius: 2px;
 	}
+	.draggable.hovering,
 	.draggable:hover {
 		border-color: red !important;
 	}
@@ -79,8 +94,8 @@
 		/* border: solid 5px gray; */
 	}
 
-	.draggable:hover :global(.grabber),
-	.draggable:hover :global(.arrow-zone) {
+	.draggable.hovering :global(.grabber),
+	.draggable:hover :global(.grabber) {
 		opacity: 1;
 	}
 </style>
