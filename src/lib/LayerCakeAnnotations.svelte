@@ -45,8 +45,6 @@
 
 	async function deleteAnnotation(id) {
 		annotations = annotations.filter((d) => d.id !== id);
-		// Similar to the hovering, we need to wait a tick to ensure the dom has been cleared
-		await tick();
 	}
 </script>
 
@@ -60,10 +58,10 @@
 <Html>
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div onclick={debounce(onclick, 200, true)} class="note-listener"></div>
+	<div onclick={debounce(onclick, 250, true)} class="note-listener"></div>
 
 	<div class="layercake-annotations">
-		{#each annotations as _, i}
+		{#each annotations as anno, i (anno.id)}
 			<AnnotationEditor bind:d={annotations[i]} {deleteAnnotation} {containerClass} />
 		{/each}
 	</div>

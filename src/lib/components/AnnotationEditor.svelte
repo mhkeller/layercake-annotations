@@ -115,10 +115,6 @@
 
 		if (e.key === 'Delete' || e.key === 'Backspace') {
 			if (hovering.value === 'note') {
-				// I'm not sure why I need to set the value to an empty string and wait a tick
-				// without this, the previously created note sometimes gets highlighted, sometimes it gets deleted
-				// hovering.value = '';
-				// await tick();
 				deleteAnnotation(d.id);
 			} else {
 				deleteArrow(hovering.value);
