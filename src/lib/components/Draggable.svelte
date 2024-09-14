@@ -11,6 +11,7 @@
 		canDrag = true,
 		bannedTargets = [],
 		noteDimensions = $bindable(),
+		containerClass = '.chart-container',
 		children
 	} = $props();
 
@@ -18,8 +19,8 @@
 
 	const hovering = getContext('hovering');
 
-	const PADDING = 3;
-	const BORDER_WIDTH = 1;
+	// const PADDING = 3;
+	// const BORDER_WIDTH = 1;
 
 	let isBanned = $state(false);
 
@@ -32,11 +33,11 @@
 		if (moving && canDrag && !isBanned) {
 			const { left, top } = el.getBoundingClientRect();
 
-			const cssPaddingBorder = PADDING * 2 + BORDER_WIDTH * 2;
+			const parent = el.closest(containerClass).getBoundingClientRect();
 
 			ondrag([
-				left - $padding.left - cssPaddingBorder + e.movementX,
-				top - $padding.top - cssPaddingBorder + e.movementY
+				left - parent.left - $padding.left + e.movementX,
+				top - parent.top - $padding.top - 0 + e.movementY
 			]);
 		}
 	}
@@ -68,8 +69,6 @@
 	{onmouseout}
 	bind:clientWidth={noteDimensions[0]}
 	bind:clientHeight={noteDimensions[1]}
-	style:border="{BORDER_WIDTH}px solid transparent"
-	style:padding="{PADDING}px"
 >
 	{@render children()}
 </div>
@@ -82,10 +81,12 @@
 		width: auto;
 		transition: border-color 250ms;
 		border-radius: 2px;
+		padding: 3px;
+		border: 1px solid transparent;
 	}
 	.draggable.hovering,
 	.draggable:hover {
-		border-color: red !important;
+		border-color: red;
 	}
 
 	.draggable.canDrag {

@@ -62,7 +62,7 @@
 
 	<div class="layercake-annotations">
 		{#each annotations as _, i}
-			<AnnotationEditor bind:d={annotations[i]} {deleteAnnotation} />
+			<AnnotationEditor bind:d={annotations[i]} {deleteAnnotation} {containerClass} />
 		{/each}
 	</div>
 </Html>

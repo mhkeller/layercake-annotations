@@ -10,7 +10,7 @@
 	import filterObject from '$lib/modules/filterObject.js';
 	import createRef from '$lib/modules/createRef.svelte.js';
 
-	let { d = $bindable(), deleteAnnotation } = $props();
+	let { d = $bindable(), deleteAnnotation, containerClass } = $props();
 
 	const { config, xScale, yScale, xGet, yGet, percentRange } = getContext('LayerCake');
 
@@ -127,6 +127,7 @@
 		canDrag={!isEditable}
 		bannedTargets={['arrow-zone']}
 		bind:noteDimensions
+		{containerClass}
 	>
 		<div class="layercake-annotation">
 			<EditableText bind:text={d.text} bind:isEditable />
@@ -135,7 +136,7 @@
 	</Draggable>
 
 	{#each arrowAnchors as anchor}
-		<ArrowZone {d} {anchor} {addArrow} {modifyArrow} {noteDimensions} />
+		<ArrowZone {d} {anchor} {addArrow} {modifyArrow} {noteDimensions} {containerClass} />
 	{/each}
 {/if}
 

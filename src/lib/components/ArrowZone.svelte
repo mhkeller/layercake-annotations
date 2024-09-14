@@ -5,7 +5,14 @@
 
 	const { xScale, yScale, percentRange, padding } = getContext('LayerCake');
 
-	let { d, anchor, addArrow, modifyArrow, noteDimensions } = $props();
+	let {
+		d,
+		anchor,
+		addArrow,
+		modifyArrow,
+		noteDimensions,
+		containerClass = '.chart-container'
+	} = $props();
 
 	const hovering = getContext('hovering');
 
@@ -14,8 +21,8 @@
 	 */
 	const diameterPx = 15;
 	const handleOffsetPx = 18;
-	const PADDING = 3;
-	const BORDER_WIDTH = 1;
+	// const PADDING = 3;
+	// const BORDER_WIDTH = 1;
 
 	/**
 	 * State variables
@@ -68,12 +75,10 @@
 	function onmousemove(e) {
 		if (moving) {
 			const rect = el.getBoundingClientRect();
-			const cssPaddingBorder = PADDING * 2 + BORDER_WIDTH * 2;
+			const parent = el.closest(containerClass).getBoundingClientRect();
 
-			const x = rect.left - $padding.left - cssPaddingBorder + rect.width / 2 + e.movementX;
-			const y = rect.top - $padding.top - cssPaddingBorder + rect.height / 2 + e.movementY;
-
-			// console.log(rect.left, rect.top);
+			const x = rect.left - $padding.left - parent.left + rect.width / 2 + e.movementX;
+			const y = rect.top - $padding.top - parent.top + rect.height / 2 + e.movementY;
 
 			const [xVal, yVal] = addArrow({ anchor, x, y, clockwise });
 
