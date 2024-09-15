@@ -1,5 +1,5 @@
 <script>
-	import { getContext, setContext, tick } from 'svelte';
+	import { getContext } from 'svelte';
 
 	import Draggable from './Draggable.svelte';
 	import EditableText from './EditableText.svelte';
@@ -22,6 +22,7 @@
 	 */
 	let isEditable = $state(false);
 	let noteDimensions = $state([0, 0]);
+	let width = $state();
 
 	/**
 	 * Drag config
@@ -80,6 +81,7 @@
 		{left}
 		{top}
 		{ondrag}
+		{width}
 		canDrag={!isEditable}
 		bannedTargets={['arrow-zone']}
 		bind:noteDimensions
@@ -88,7 +90,7 @@
 		<div class="layercake-annotation" data-id={d.id}>
 			<EditableText bind:text={d.text} bind:isEditable />
 		</div>
-		<ResizeHandles {ondrag} debug={false} grabbers={['east']} />
+		<ResizeHandles bind:width {ondrag} debug={false} grabbers={['east']} />
 	</Draggable>
 
 	{#each arrowAnchors as anchor}

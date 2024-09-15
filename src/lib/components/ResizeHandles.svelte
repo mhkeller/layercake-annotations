@@ -12,6 +12,7 @@
 			'northwest',
 			'northeast'
 		],
+		width = $bindable(),
 		ondrag
 	} = $props();
 
@@ -59,25 +60,25 @@
 
 		if (direction.match('east')) {
 			delta = event.pageX - initialPos.x;
-			element.style.width = `${initialRect.width + delta}px`;
+			width = `${initialRect.width + delta}px`;
 		}
 
-		if (direction.match('west')) {
-			delta = initialPos.x - event.pageX;
-			element.style.left = `${initialRect.left - delta}px`;
-			element.style.width = `${initialRect.width + delta}px`;
-		}
+		// if (direction.match('west')) {
+		// 	delta = initialPos.x - event.pageX;
+		// 	element.style.left = `${initialRect.left - delta}px`;
+		// 	element.style.width = `${initialRect.width + delta}px`;
+		// }
 
-		if (direction.match('north')) {
-			delta = initialPos.y - event.pageY;
-			element.style.top = `${initialRect.top - delta}px`;
-			element.style.height = `${initialRect.height + delta}px`;
-		}
+		// if (direction.match('north')) {
+		// 	delta = initialPos.y - event.pageY;
+		// 	element.style.top = `${initialRect.top - delta}px`;
+		// 	element.style.height = `${initialRect.height + delta}px`;
+		// }
 
-		if (direction.match('south')) {
-			delta = event.pageY - initialPos.y;
-			element.style.height = `${initialRect.height + delta}px`;
-		}
+		// if (direction.match('south')) {
+		// 	delta = event.pageY - initialPos.y;
+		// 	element.style.height = `${initialRect.height + delta}px`;
+		// }
 
 		/**
 		 * Refresh the draggable element's position.

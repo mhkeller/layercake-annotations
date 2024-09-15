@@ -1,9 +1,6 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { padding } = getContext('LayerCake');
-	let moving = $state(false);
-
 	let {
 		id,
 		left,
@@ -13,6 +10,7 @@
 		bannedTargets = [],
 		noteDimensions = $bindable(),
 		containerClass = '.chart-container',
+		width,
 		children
 	} = $props();
 
@@ -21,11 +19,15 @@
 	 */
 	let el = $state();
 	let isBanned = $state(false);
+	let thisMoving = $state(false);
 
 	const hovering = getContext('hovering');
+	const moving = getContext('moving');
+	const { padding } = getContext('LayerCake');
 
 	function onmousedown(e) {
-		moving = true;
+		moving.value = true;
+		thisMoving = true;
 		isBanned = [...e.target.classList].some((c) => bannedTargets.includes(c));
 	}
 
@@ -33,7 +35,7 @@
 	 * Broadcast the elements movements on drag
 	 */
 	function onmousemove(e) {
-		if (moving && canDrag && !isBanned) {
+		if (thisMoving && canDrag && !isBanned) {
 			const { left, top } = el.getBoundingClientRect();
 
 			const parent = el.closest(containerClass).getBoundingClientRect();
@@ -46,12 +48,15 @@
 	}
 
 	function onmouseup() {
-		moving = false;
+		moving.value = false;
+		thisMoving = false;
 	}
 	function onmouseover() {
+		if (moving.value) return;
 		hovering.value = `${id}_body`;
 	}
 	function onmouseout() {
+		if (moving.value) return;
 		hovering.value = '';
 	}
 </script>
@@ -64,6 +69,7 @@
 	{onmousedown}
 	style:left
 	style:top
+	style:width
 	class="draggable"
 	class:canDrag
 	class:hovering={hovering.value.split('_')[0] === String(id)}
@@ -86,8 +92,7 @@
 		padding: 3px;
 		border: 1px solid transparent;
 	}
-	.draggable.hovering,
-	.draggable:hover {
+	.draggable.hovering {
 		border-color: red;
 	}
 
@@ -97,8 +102,7 @@
 		/* border: solid 5px gray; */
 	}
 
-	.draggable.hovering :global(.grabber),
-	.draggable:hover :global(.grabber) {
+	.draggable.hovering :global(.grabber) {
 		opacity: 1;
 	}
 </style>

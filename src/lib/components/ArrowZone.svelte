@@ -23,11 +23,13 @@
 	let el = $state();
 	let leftDragged = $state('');
 	let topDragged = $state('');
-	let moving = $state(false);
+	let thisMoving = $state(false);
 	let units = $derived($percentRange === true ? '%' : 'px');
 	let clockwise = $state(anchor.includes('left') ? false : true);
 
 	let hasArrow = $derived(d.arrows.some((a) => a.source.anchor === anchor));
+
+	const moving = getContext('moving');
 
 	/**
 	 * Derive our initial left position
@@ -81,7 +83,7 @@
 	 * Drag the arrow zone
 	 */
 	function onmousemove(e) {
-		if (moving) {
+		if (thisMoving) {
 			const rect = el.getBoundingClientRect();
 			const parent = el.closest(containerClass).getBoundingClientRect();
 
@@ -96,15 +98,20 @@
 	}
 
 	function onmousedown() {
-		moving = true;
+		moving.value = true;
+		thisMoving = true;
 	}
 	function onmouseup() {
-		moving = false;
+		moving.value = false;
+		thisMoving = false;
 	}
 	function onmouseover() {
+		// If we drag this annotation onto a different one, don't change the hovering target
+		if (moving.value) return;
 		hovering.value = `${d.id}_${anchor}`;
 	}
 	function onmouseout() {
+		if (moving.value) return;
 		hovering.value = '';
 	}
 </script>

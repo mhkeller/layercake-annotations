@@ -22,12 +22,14 @@
 	/**
 	 * State vars
 	 */
+	let idCounter = -1;
 	let annotations = $state([]);
-	let isEditing = createRef(false);
+	const isEditing = createRef(false);
 	const hovering = createRef('');
+	const moving = createRef(false);
 	setContext('isEditing', isEditing);
 	setContext('hovering', hovering);
-	let idCounter = 0;
+	setContext('moving', moving);
 
 	/**
 	 * Add a new annotation to the chart
