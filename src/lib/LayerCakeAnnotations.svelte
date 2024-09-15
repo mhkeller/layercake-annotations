@@ -189,5 +189,6 @@
 	.note-listener {
 		width: 100%;
 		height: 100%;
+		cursor: copy;
 	}
 </style>
