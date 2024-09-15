@@ -5,6 +5,7 @@
 	let moving = $state(false);
 
 	let {
+		id,
 		left,
 		top,
 		ondrag,
@@ -15,20 +16,22 @@
 		children
 	} = $props();
 
+	/**
+	 * State vars
+	 */
 	let el = $state();
+	let isBanned = $state(false);
 
 	const hovering = getContext('hovering');
-
-	// const PADDING = 3;
-	// const BORDER_WIDTH = 1;
-
-	let isBanned = $state(false);
 
 	function onmousedown(e) {
 		moving = true;
 		isBanned = [...e.target.classList].some((c) => bannedTargets.includes(c));
 	}
 
+	/**
+	 * Broadcast the elements movements on drag
+	 */
 	function onmousemove(e) {
 		if (moving && canDrag && !isBanned) {
 			const { left, top } = el.getBoundingClientRect();
@@ -45,9 +48,8 @@
 	function onmouseup() {
 		moving = false;
 	}
-
 	function onmouseover() {
-		hovering.value = 'note';
+		hovering.value = `${id}_body`;
 	}
 	function onmouseout() {
 		hovering.value = '';
@@ -64,7 +66,7 @@
 	style:top
 	class="draggable"
 	class:canDrag
-	class:hovering={hovering.value}
+	class:hovering={hovering.value.split('_')[0] === String(id)}
 	{onmouseover}
 	{onmouseout}
 	bind:clientWidth={noteDimensions[0]}

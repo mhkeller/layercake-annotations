@@ -5,16 +5,11 @@
 
 	const { xScale, yScale, percentRange, padding } = getContext('LayerCake');
 
-	let {
-		d,
-		anchor,
-		addArrow,
-		modifyArrow,
-		noteDimensions,
-		containerClass = '.chart-container'
-	} = $props();
+	let { d, anchor, noteDimensions, containerClass = '.chart-container' } = $props();
 
 	const hovering = getContext('hovering');
+	const addArrow = getContext('addArrow');
+	const modifyArrow = getContext('modifyArrow');
 
 	/**
 	 * Constants
@@ -39,10 +34,10 @@
 	 */
 	let left = $derived.by(() => {
 		const val = anchor.includes('left')
-			? d.noteCoords[0] - handleOffsetPx
+			? d.coords[0] - handleOffsetPx
 			: anchor.includes('right')
-				? d.noteCoords[0] + noteDimensions[0] + handleOffsetPx / 3
-				: d.noteCoords[0] + noteDimensions[0] / 2 - diameterPx / 2;
+				? d.coords[0] + noteDimensions[0] + handleOffsetPx / 3
+				: d.coords[0] + noteDimensions[0] / 2 - diameterPx / 2;
 
 		const inverted = invertScale($xScale, val);
 
@@ -54,16 +49,19 @@
 	 */
 	let top = $derived.by(() => {
 		const val = anchor.includes('top')
-			? d.noteCoords[1] - handleOffsetPx
+			? d.coords[1] - handleOffsetPx
 			: anchor.includes('bottom')
-				? d.noteCoords[1] + noteDimensions[1] + handleOffsetPx - diameterPx + 1
-				: d.noteCoords[1] + noteDimensions[1] / 2 - diameterPx / 2;
+				? d.coords[1] + noteDimensions[1] + handleOffsetPx - diameterPx + 1
+				: d.coords[1] + noteDimensions[1] / 2 - diameterPx / 2;
 
 		const inverted = invertScale($yScale, val);
 
 		return `calc(${$yScale(inverted[0])}${units} + ${inverted[1]}%)`;
 	});
 
+	/**
+	 * Modify the arrows swoopiness
+	 */
 	function onclick(e) {
 		if (!e.metaKey) return;
 
@@ -76,9 +74,12 @@
 			clockwise = false;
 		}
 
-		modifyArrow({ anchor, clockwise });
+		modifyArrow(d.id, { anchor, clockwise });
 	}
 
+	/**
+	 * Drag the arrow zone
+	 */
 	function onmousemove(e) {
 		if (moving) {
 			const rect = el.getBoundingClientRect();
@@ -87,7 +88,7 @@
 			const x = rect.left - $padding.left - parent.left + rect.width / 2 + e.movementX;
 			const y = rect.top - $padding.top - parent.top + rect.height / 2 + e.movementY;
 
-			const [xVal, yVal] = addArrow({ anchor, x, y, clockwise });
+			const [xVal, yVal] = addArrow(d.id, { anchor, x, y, clockwise });
 
 			leftDragged = `calc(${$xScale(xVal[0])}${units} + ${xVal[1]}% - ${rect.width / 2}px)`;
 			topDragged = `calc(${$yScale(yVal[0])}${units} + ${yVal[1]}% - ${rect.height / 2}px)`;
@@ -97,13 +98,11 @@
 	function onmousedown() {
 		moving = true;
 	}
-
 	function onmouseup() {
 		moving = false;
 	}
-
 	function onmouseover() {
-		hovering.value = anchor;
+		hovering.value = `${d.id}_${anchor}`;
 	}
 	function onmouseout() {
 		hovering.value = '';
@@ -120,7 +119,7 @@
 	{onclick}
 	{onmouseover}
 	{onmouseout}
-	class:hovering={hovering.value}
+	class:hovering={hovering.value.split('_')[0] === String(d.id)}
 	class="arrow-zone {anchor}"
 	style:left={hasArrow ? leftDragged : left}
 	style:top={hasArrow ? topDragged : top}

@@ -8,24 +8,24 @@
 
 	import invertScale from '$lib/modules/invertScale.js';
 	import filterObject from '$lib/modules/filterObject.js';
-	import createRef from '$lib/modules/createRef.svelte.js';
 
-	let { d = $bindable(), deleteAnnotation, containerClass } = $props();
+	let { d, containerClass } = $props();
 
+	/**
+	 * Layer Cake configuration
+	 */
 	const { config, xScale, yScale, xGet, yGet, percentRange } = getContext('LayerCake');
-
 	let units = $derived($percentRange === true ? '%' : 'px');
 
-	let noteDimensions = $state([0, 0]);
-	const hovering = createRef('');
-	setContext('hovering', hovering);
-
-	const isEditing = getContext('isEditing');
-
-	let left = $derived(`calc(${$xGet(d)}${units} + ${d.dx}%)`);
-	let top = $derived(`calc(${$yGet(d)}${units} + ${d.dy}%)`);
-
+	/**
+	 * State variables
+	 */
 	let isEditable = $state(false);
+	let noteDimensions = $state([0, 0]);
+
+	/**
+	 * Drag config
+	 */
 	const arrowAnchors = [
 		'middle-top',
 		'right-top',
@@ -38,10 +38,21 @@
 	];
 
 	/**
-	 * @param {Array} [noteCoords] - The x and y coordinates of the draggable element.
+	 * Context variables
 	 */
-	async function ondrag(noteCoords = []) {
-		const [x, y] = noteCoords;
+	const modifyAnnotation = getContext('modifyAnnotation');
+
+	/**
+	 * Coordinates
+	 */
+	let left = $derived(`calc(${$xGet(d)}${units} + ${d.dx}%)`);
+	let top = $derived(`calc(${$yGet(d)}${units} + ${d.dy}%)`);
+
+	/**
+	 * @param {Array} [coords] - The x and y coordinates of the draggable element.
+	 */
+	async function ondrag(coords = []) {
+		const [x, y] = coords;
 		const xVal = x ? invertScale($xScale, x) : [];
 		const yVal = y ? invertScale($yScale, y) : [];
 
@@ -55,86 +66,17 @@
 			(d) => d !== undefined
 		);
 
-		if (noteCoords.length) {
-			newProps.noteCoords = noteCoords;
+		if (coords.length) {
+			newProps.coords = coords;
 		}
 
-		d = {
-			...d,
-			...newProps
-		};
+		modifyAnnotation(d.id, newProps);
 	}
-
-	function addArrow({ anchor, x, y, clockwise }) {
-		const xVal = invertScale($xScale, x);
-		const yVal = invertScale($yScale, y);
-
-		const arrow = {
-			clockwise,
-			source: { anchor },
-			target: {
-				[$config.x]: xVal[0],
-				[$config.y]: yVal[0],
-				dx: xVal[1],
-				dy: yVal[1]
-			}
-		};
-
-		const existingArrow = d.arrows.find((a) => a.source.anchor === anchor);
-
-		if (!existingArrow) {
-			d.arrows.push(arrow);
-		} else {
-			existingArrow.target = arrow.target;
-		}
-		return [xVal, yVal];
-	}
-
-	function modifyArrow({ anchor, ...attrs }) {
-		const arrow = d.arrows.find((a) => a.source.anchor === anchor);
-		if (!arrow) return;
-
-		for (const key in attrs) {
-			arrow[key] = attrs[key];
-		}
-	}
-
-	function deleteArrow(anchor) {
-		const len = d.arrows.length;
-		d.arrows = d.arrows.filter((a) => a.source.anchor !== anchor);
-
-		// If we were hovering over an empty arrow zone, delete the annotation.
-		if (len === d.arrows.length) {
-			deleteAnnotation(d.id);
-		}
-	}
-
-	/**
-	 * If we press the delete key while hovering, delete the annotation.
-	 */
-	async function onkeydown(e) {
-		if (!hovering.value) return;
-
-		if (isEditing.value === false && (e.key === 'Delete' || e.key === 'Backspace')) {
-			if (hovering.value === 'note') {
-				deleteAnnotation(d.id);
-			} else {
-				deleteArrow(hovering.value);
-			}
-		}
-	}
-
-	$effect(() => {
-		if (d) {
-			console.log(d.id, hovering.value);
-		}
-	});
 </script>
-
-<svelte:window {onkeydown} />
 
 {#if d}
 	<Draggable
+		id={d.id}
 		{left}
 		{top}
 		{ondrag}
@@ -150,7 +92,7 @@
 	</Draggable>
 
 	{#each arrowAnchors as anchor}
-		<ArrowZone {d} {anchor} {addArrow} {modifyArrow} {noteDimensions} {containerClass} />
+		<ArrowZone {d} {anchor} {noteDimensions} {containerClass} />
 	{/each}
 {/if}
 

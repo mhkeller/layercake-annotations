@@ -1,52 +1,157 @@
 <script>
-	import { getContext, setContext, getContext } from 'svelte';
+	import { getContext, setContext } from 'svelte';
 	import { Svg, Html } from 'layercake';
 	import { debounce } from 'underscore';
 
 	import AnnotationEditor from '$lib/components/AnnotationEditor.svelte';
 	import ArrowheadMarker from '$lib/components/ArrowheadMarker.svelte';
 	import Arrows from '$lib/components/Arrows.svelte';
-	import invertScale from './modules/invertScale.js';
-	import createRef from './modules/createRef.svelte.js';
 
-	const { xScale, yScale, config } = getContext('LayerCake');
+	import createRef from './modules/createRef.svelte.js';
+	import invertScale from './modules/invertScale.js';
+	import newAnnotation from './modules/newAnnotation.js';
 
 	let { containerClass, annotationClass } = $props();
 
-	let annotations = $state([]);
-	let isEditing = createRef(false);
-
-	setContext('isEditing', isEditing);
-
+	/**
+	 * LayerCake context
+	 */
+	const { xScale, yScale, config } = getContext('LayerCake');
 	const saveConfig = getContext('saveConfig');
 
+	/**
+	 * State vars
+	 */
+	let annotations = $state([]);
+	let isEditing = createRef(false);
+	const hovering = createRef('');
+	setContext('isEditing', isEditing);
+	setContext('hovering', hovering);
+	let idCounter = 0;
+
+	/**
+	 * Add a new annotation to the chart
+	 */
 	function onclick(e) {
 		if (isEditing.value === true) return;
 
-		const noteCoords = [e.offsetX, e.offsetY];
-
-		// console.log('initial coords', noteCoords);
-
-		const xVal = invertScale($xScale, noteCoords[0]);
-		const yVal = invertScale($yScale, noteCoords[1]);
-
-		const id = annotations.length;
-		const note = {
-			id,
-			[$config.x]: xVal[0],
-			[$config.y]: yVal[0],
-			dx: xVal[1],
-			dy: yVal[1],
-			text: 'Enter your note here...',
-			arrows: [],
-			noteCoords
-		};
-		annotations.push(note);
+		const annotation = newAnnotation(e, ++idCounter, {
+			xScale: $xScale,
+			yScale: $yScale,
+			config: $config
+		});
+		annotations.push(annotation);
 	}
 
+	/**
+	 * Delete an annotation from the chart
+	 */
 	async function deleteAnnotation(id) {
 		annotations = annotations.filter((d) => d.id !== id);
 	}
+
+	/**
+	 * Modify the annotations coordinates on drag
+	 */
+	function modifyAnnotation(id, newProps) {
+		annotations.forEach((d, i) => {
+			if (d.id === id) {
+				annotations[i] = {
+					...d,
+					...newProps
+				};
+			}
+		});
+	}
+
+	/**
+	 * Add an arrow to an annotation
+	 * or modify the target of an existing one
+	 */
+	function addArrow(id, { anchor, x, y, clockwise }) {
+		const xVal = invertScale($xScale, x);
+		const yVal = invertScale($yScale, y);
+
+		const arrow = {
+			clockwise,
+			source: { anchor },
+			target: {
+				[$config.x]: xVal[0],
+				[$config.y]: yVal[0],
+				dx: xVal[1],
+				dy: yVal[1]
+			}
+		};
+
+		const annotation = annotations.find((d) => d.id === id);
+
+		const existingArrow = annotation.arrows.find((a) => a.source.anchor === anchor);
+
+		if (!existingArrow) {
+			annotation.arrows.push(arrow);
+		} else {
+			existingArrow.target = arrow.target;
+		}
+
+		return [xVal, yVal];
+	}
+
+	/**
+	 * Modify an arrow's properties
+	 * Used for changing the swoop style
+	 */
+	function modifyArrow(id, { anchor, ...attrs }) {
+		const annotation = annotations.find((d) => d.id === id);
+
+		const arrow = annotation.arrows.find((a) => a.source.anchor === anchor);
+		if (!arrow) return;
+
+		for (const key in attrs) {
+			arrow[key] = attrs[key];
+		}
+	}
+
+	/**
+	 * Deleting an arrow from an annotation
+	 */
+	function deleteArrow(id, anchor) {
+		const annotation = annotations.find((d) => d.id === id);
+
+		const len = annotation.arrows.length;
+		annotation.arrows = annotation.arrows.filter((a) => a.source.anchor !== anchor);
+
+		// If we were hovering over an empty arrow zone, delete the annotation.
+		if (len === annotation.arrows.length) {
+			deleteAnnotation(annotation.id);
+		}
+	}
+
+	/**
+	 * If we press the delete key while hovering, delete the annotation.
+	 */
+	function onkeydown(e) {
+		// Bail if we aren't hovering if we are editing
+		if (!hovering.value || isEditing.value === true) return;
+
+		const [idStr, item] = hovering.value.split('_');
+
+		const id = +idStr;
+
+		if (e.key === 'Delete' || e.key === 'Backspace') {
+			if (item === 'body') {
+				deleteAnnotation(id);
+			} else {
+				deleteArrow(id, item);
+			}
+		}
+	}
+
+	/**
+	 * Save our modifier functions to the context
+	 */
+	setContext('modifyAnnotation', modifyAnnotation);
+	setContext('addArrow', addArrow);
+	setContext('modifyArrow', modifyArrow);
 
 	/**
 	 * Save the config if the user has provided that option
@@ -70,11 +175,13 @@
 	<div onclick={debounce(onclick, 250, true)} class="note-listener"></div>
 
 	<div class="layercake-annotations">
-		{#each annotations as anno, i (anno.id)}
-			<AnnotationEditor bind:d={annotations[i]} {deleteAnnotation} {containerClass} />
+		{#each annotations as d (d.id)}
+			<AnnotationEditor {d} {containerClass} />
 		{/each}
 	</div>
 </Html>
+
+<svelte:window {onkeydown} />
 
 <style>
 	.note-listener {
