@@ -1,5 +1,5 @@
 <script>
-	import { getContext, setContext, tick } from 'svelte';
+	import { getContext, setContext, getContext } from 'svelte';
 	import { Svg, Html } from 'layercake';
 	import { debounce } from 'underscore';
 
@@ -14,10 +14,11 @@
 	let { containerClass, annotationClass } = $props();
 
 	let annotations = $state([]);
-
 	let isEditing = createRef(false);
 
 	setContext('isEditing', isEditing);
+
+	const saveConfig = getContext('saveConfig');
 
 	function onclick(e) {
 		if (isEditing.value === true) return;
@@ -46,6 +47,14 @@
 	async function deleteAnnotation(id) {
 		annotations = annotations.filter((d) => d.id !== id);
 	}
+
+	/**
+	 * Save the config if the user has provided that option
+	 */
+	const saveConfig_debounced = debounce(saveConfig, 1_000);
+	$effect(() => {
+		if (saveConfig) saveConfig_debounced(annotations);
+	});
 </script>
 
 <Svg>
