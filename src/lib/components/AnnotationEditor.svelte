@@ -73,6 +73,26 @@
 
 		modifyAnnotation(d.id, newProps);
 	}
+
+	/**
+	 * Listen for command-click events to toggle
+	 */
+	let alignment = $state('left');
+	function onclick(e) {
+		if (e.metaKey) {
+			if (alignment === 'left') {
+				alignment = 'center';
+			} else if (alignment === 'center') {
+				alignment = 'right';
+			} else {
+				alignment = 'left';
+			}
+		}
+	}
+
+	let grabbers = $derived(
+		alignment === 'center' ? ['east', 'west'] : alignment === 'left' ? ['east'] : ['west']
+	);
 </script>
 
 {#if d}
@@ -82,15 +102,16 @@
 		{top}
 		{ondrag}
 		{width}
+		{onclick}
 		canDrag={!isEditable}
 		bannedTargets={['arrow-zone']}
 		bind:noteDimensions
 		{containerClass}
 	>
 		<div class="layercake-annotation" data-id={d.id}>
-			<EditableText bind:text={d.text} bind:isEditable />
+			<EditableText bind:text={d.text} bind:isEditable {alignment} />
 		</div>
-		<ResizeHandles bind:width {ondrag} debug={false} grabbers={['east']} />
+		<ResizeHandles bind:width {ondrag} debug={false} {grabbers} />
 	</Draggable>
 
 	{#each arrowAnchors as anchor}

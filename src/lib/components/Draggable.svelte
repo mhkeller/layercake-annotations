@@ -11,6 +11,7 @@
 		noteDimensions = $bindable(),
 		containerClass = '.chart-container',
 		width,
+		onclick,
 		children
 	} = $props();
 
@@ -66,13 +67,14 @@
 <!-- svelte-ignore a11y_mouse_events_have_key_events -->
 <div
 	bind:this={el}
-	{onmousedown}
 	style:left
 	style:top
 	style:width
 	class="draggable"
 	class:canDrag
 	class:hovering={hovering.value.split('_')[0] === String(id)}
+	{onclick}
+	{onmousedown}
 	{onmouseover}
 	{onmouseout}
 	bind:clientWidth={noteDimensions[0]}

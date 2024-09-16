@@ -3,7 +3,7 @@
 
 	const isEditing = getContext('isEditing');
 
-	let { text = $bindable(), isEditable = $bindable(false) } = $props();
+	let { text = $bindable(), isEditable = $bindable(false), alignment } = $props();
 
 	let textarea = $state(null);
 
@@ -75,10 +75,11 @@
 		ondblclick={handleDoubleClick}
 		contenteditable
 		bind:innerText={text}
+		style:text-align={alignment}
 	></div>
 {:else}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div ondblclick={handleDoubleClick}>
+	<div ondblclick={handleDoubleClick} style:text-align={alignment}>
 		<pre>{text}</pre>
 	</div>
 {/if}

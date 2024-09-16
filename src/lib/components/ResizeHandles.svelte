@@ -54,7 +54,6 @@
 	function onmousemove(event) {
 		if (!active) return;
 
-		const element = active.parentElement;
 		const direction = [...active.classList].filter((c) => c !== 'grabber' && c !== 'selected')[0];
 		let delta;
 
@@ -63,22 +62,12 @@
 			width = `${initialRect.width + delta}px`;
 		}
 
-		// if (direction.match('west')) {
-		// 	delta = initialPos.x - event.pageX;
-		// 	element.style.left = `${initialRect.left - delta}px`;
-		// 	element.style.width = `${initialRect.width + delta}px`;
-		// }
-
-		// if (direction.match('north')) {
-		// 	delta = initialPos.y - event.pageY;
-		// 	element.style.top = `${initialRect.top - delta}px`;
-		// 	element.style.height = `${initialRect.height + delta}px`;
-		// }
-
-		// if (direction.match('south')) {
-		// 	delta = event.pageY - initialPos.y;
-		// 	element.style.height = `${initialRect.height + delta}px`;
-		// }
+		if (direction.match('west')) {
+			delta = initialPos.x - event.pageX;
+			// left = `${initialRect.left - delta}px`;
+			// TODO figure out how to move the element to the left
+			width = `${initialRect.width + delta}px`;
+		}
 
 		/**
 		 * Refresh the draggable element's position.
@@ -99,15 +88,18 @@
 		transition: opacity 250ms;
 		opacity: 0;
 		z-index: 9999;
-	}
-	.grabber.east {
 		width: 4px;
 		height: 75%;
 		background: red;
-		right: -0.5px;
-		/* border-right: 2px solid red; */
 		cursor: col-resize;
 		top: 12.5%;
+	}
+	.grabber.west {
+		left: -0.5px;
+		transform: translateX(-50%);
+	}
+	.grabber.east {
+		right: -0.5px;
 		transform: translateX(50%);
 	}
 
