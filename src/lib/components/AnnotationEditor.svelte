@@ -91,7 +91,8 @@
 	}
 
 	let grabbers = $derived(
-		alignment === 'center' ? ['east', 'west'] : alignment === 'left' ? ['east'] : ['west']
+		['east']
+		// alignment === 'center' ? ['east', 'west'] : alignment === 'left' ? ['east'] : ['west']
 	);
 </script>
 
