@@ -60,19 +60,19 @@
 		if (direction.match('east')) {
 			delta = event.pageX - initialPos.x;
 			width = `${initialRect.width + delta}px`;
+			ondrag();
 		}
 
 		if (direction.match('west')) {
 			delta = initialPos.x - event.pageX;
-			// left = `${initialRect.left - delta}px`;
-			// TODO figure out how to move the element to the left
+			const left = `${initialRect.left - delta}px`;
 			width = `${initialRect.width + delta}px`;
+			ondrag([left + width]);
 		}
 
 		/**
 		 * Refresh the draggable element's position.
 		 */
-		ondrag();
 	}
 </script>
 

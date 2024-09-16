@@ -20,9 +20,10 @@
 	/**
 	 * State variables
 	 */
-	let isEditable = $state(false);
-	let noteDimensions = $state([0, 0]);
 	let width = $state();
+	let isEditable = $state(false);
+	let alignment = $state('left');
+	let noteDimensions = $state([0, 0]);
 
 	/**
 	 * Drag config
@@ -77,7 +78,6 @@
 	/**
 	 * Listen for command-click events to toggle
 	 */
-	let alignment = $state('left');
 	function onclick(e) {
 		if (e.metaKey) {
 			if (alignment === 'left') {
@@ -91,8 +91,8 @@
 	}
 
 	let grabbers = $derived(
-		['east']
-		// alignment === 'center' ? ['east', 'west'] : alignment === 'left' ? ['east'] : ['west']
+		// ['east']
+		alignment === 'center' ? ['east', 'west'] : alignment === 'left' ? ['east'] : ['west']
 	);
 </script>
 
@@ -104,6 +104,7 @@
 		{ondrag}
 		{width}
 		{onclick}
+		{alignment}
 		canDrag={!isEditable}
 		bannedTargets={['arrow-zone']}
 		bind:noteDimensions

@@ -12,6 +12,7 @@
 		containerClass = '.chart-container',
 		width,
 		onclick,
+		alignment,
 		children
 	} = $props();
 
@@ -65,9 +66,11 @@
 <!-- svelte-ignore a11y_mouse_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_mouse_events_have_key_events -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
 	bind:this={el}
-	style:left
+	style:left={alignment === 'left' || alignment === 'center' ? left : undefined}
+	style:right={alignment === 'right' ? left : undefined}
 	style:top
 	style:width
 	class="draggable"
