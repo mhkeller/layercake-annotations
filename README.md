@@ -1,8 +1,4 @@
 LayerCake Annotations
 ===
 
-## Install
-
-```sh
-npm i @mhkeller/layercake-annotations
-```
+> Experimental and work-in-progress annotation editor
