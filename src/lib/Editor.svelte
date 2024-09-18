@@ -11,7 +11,7 @@
 	import invertScale from './modules/invertScale.js';
 	import newAnnotation from './modules/newAnnotation.js';
 
-	let { containerClass, annotationClass } = $props();
+	let { annotations: annos = [], containerClass, annotationClass } = $props();
 
 	/**
 	 * LayerCake context
@@ -22,8 +22,8 @@
 	/**
 	 * State vars
 	 */
-	let idCounter = -1;
-	let annotations = $state([]);
+	let idCounter = Math.max(...annos.map((d) => d.id), -1);
+	let annotations = $state(annos);
 	const isEditing = createRef(false);
 	const hovering = createRef('');
 	const moving = createRef(false);

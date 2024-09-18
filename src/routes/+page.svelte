@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 
-	import Annotations from '$lib/index.js';
+	import { AnnotationsEditor } from '$lib/index.js';
 
 	import Line from './_components/Line.svelte';
 	import Area from './_components/Area.svelte';
@@ -17,6 +17,19 @@
 	data.forEach((d) => {
 		d[yKey] = +d[yKey];
 	});
+
+	const annotations = [
+		{
+			id: 0,
+			myX: 1989.004181184669,
+			myY: 3.6159459459459455,
+			dx: 0,
+			dy: 0,
+			text: 'Existing annotation...',
+			arrows: [],
+			coords: [388, 120]
+		}
+	];
 </script>
 
 <div class="chart-container">
@@ -34,7 +47,7 @@
 			<Area />
 		</Svg>
 
-		<Annotations />
+		<AnnotationsEditor {annotations} />
 	</LayerCake>
 </div>
 
