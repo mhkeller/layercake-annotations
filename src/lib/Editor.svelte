@@ -17,7 +17,7 @@
 	 * LayerCake context
 	 */
 	const { xScale, yScale, config } = getContext('LayerCake');
-	const saveConfig = getContext('saveConfig');
+	const saveAnnotationConfig = getContext('saveAnnotationConfig');
 
 	/**
 	 * State vars
@@ -158,9 +158,9 @@
 	/**
 	 * Save the config if the user has provided that option
 	 */
-	const saveConfig_debounced = debounce(saveConfig, 1_000);
+	const saveAnnotationConfig_debounced = debounce(saveAnnotationConfig, 1_000);
 	$effect(() => {
-		if (saveConfig) saveConfig_debounced(annotations);
+		if (saveAnnotationConfig) saveAnnotationConfig_debounced(annotations);
 	});
 </script>
 
