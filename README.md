@@ -1,4 +1,4 @@
-LayerCake Annotations
+Layer Cake Annotations
 ===
 
 > Experimental and work-in-progress annotation editor
