@@ -11,7 +11,7 @@
 	import invertScale from './modules/invertScale.js';
 	import newAnnotation from './modules/newAnnotation.js';
 
-	let { annotations: annos = [], containerClass, annotationClass } = $props();
+	let { annotations: annos = $bindable([]), containerClass, annotationClass } = $props();
 
 	/**
 	 * LayerCake context
@@ -22,7 +22,12 @@
 	/**
 	 * Save the config if the user has provided that option
 	 */
-	const saveAnnotationConfig_debounced = debounce(saveAnnotationConfig, 1_000);
+	const sacDb = debounce(saveAnnotationConfig, 1_000);
+	function saveAnnotationConfig_debounced(annos) {
+		if (saveAnnotationConfig) {
+			sacDb(annos);
+		}
+	}
 
 	/**
 	 * State vars

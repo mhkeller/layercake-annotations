@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 
-	import { AnnotationsEditor } from '$lib/index.js';
+	import { Annotations } from '$lib/index.js';
 
 	import Line from './_components/Line.svelte';
 	import Area from './_components/Area.svelte';
@@ -18,7 +18,9 @@
 		d[yKey] = +d[yKey];
 	});
 
-	const annotations = [
+	let edit = $state(true);
+
+	let annotations = $state([
 		{
 			id: 0,
 			myX: 1989.004181184669,
@@ -29,12 +31,17 @@
 			arrows: [],
 			coords: [388, 120]
 		}
-	];
+	]);
 </script>
+
+<label>
+	<input type="checkbox" bind:checked={edit} />
+	Edit annotations
+</label>
 
 <div class="chart-container">
 	<LayerCake
-		padding={{ top: 8, right: 10, bottom: 20, left: 25 }}
+		padding={{ top: 28, right: 10, bottom: 20, left: 25 }}
 		x={xKey}
 		y={yKey}
 		yDomain={[0, null]}
@@ -47,7 +54,7 @@
 			<Area />
 		</Svg>
 
-		<AnnotationsEditor {annotations} />
+		<Annotations bind:annotations {edit} />
 	</LayerCake>
 </div>
 
@@ -61,5 +68,10 @@
 	.chart-container {
 		width: 100%;
 		height: 250px;
+	}
+	label {
+		margin: 14px;
+		cursor: pointer;
+		user-select: none;
 	}
 </style>

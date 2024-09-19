@@ -7,16 +7,9 @@
 
 	const { xGet, yGet, percentRange } = getContext('LayerCake');
 
-	/** @type {Array} annotations - A list of annotation objects. */
-	export let annotations = [];
+	let { annotations = $bindable([]), getText = (d) => d.text } = $props();
 
-	/** @type {Function} [getText=d => d.text] - An accessor function to get the field to display. */
-	export let getText = (d) => d.text;
-
-	/** @type {Boolean} [percentRange=false] - If `true` will set the `top` and `left` CSS positions to percentages instead of pixels. */
-	export let pr = $percentRange;
-
-	$: units = pr === true ? '%' : 'px';
+	let units = $derived($percentRange === true ? '%' : 'px');
 </script>
 
 <div class="layercake-annotations">
@@ -35,5 +28,7 @@
 <style>
 	.layercake-annotation {
 		position: absolute;
+		padding: 3px;
+		border: 1px solid transparent;
 	}
 </style>

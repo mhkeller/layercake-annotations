@@ -2,11 +2,11 @@
 	import Editor from './Editor.svelte';
 	import Static from './Static.svelte';
 
-	let { edit, annotations } = $props();
+	let { edit, annotations = $bindable() } = $props();
 </script>
 
 {#if edit}
-	<Editor {annotations} />
+	<Editor bind:annotations />
 {:else}
 	<Static {annotations} />
 {/if}
