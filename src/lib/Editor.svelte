@@ -20,6 +20,11 @@
 	const saveAnnotationConfig = getContext('saveAnnotationConfig');
 
 	/**
+	 * Save the config if the user has provided that option
+	 */
+	const saveAnnotationConfig_debounced = debounce(saveAnnotationConfig, 1_000);
+
+	/**
 	 * State vars
 	 */
 	let idCounter = Math.max(...annos.map((d) => d.id), -1);
@@ -43,6 +48,7 @@
 			config: $config
 		});
 		annotations.push(annotation);
+		saveAnnotationConfig_debounced(annotations);
 	}
 
 	/**
@@ -50,6 +56,7 @@
 	 */
 	async function deleteAnnotation(id) {
 		annotations = annotations.filter((d) => d.id !== id);
+		saveAnnotationConfig_debounced(annotations);
 	}
 
 	/**
@@ -64,6 +71,7 @@
 				};
 			}
 		});
+		saveAnnotationConfig_debounced(annotations);
 	}
 
 	/**
@@ -95,6 +103,7 @@
 			existingArrow.target = arrow.target;
 		}
 
+		saveAnnotationConfig_debounced(annotations);
 		return [xVal, yVal];
 	}
 
@@ -111,6 +120,7 @@
 		for (const key in attrs) {
 			arrow[key] = attrs[key];
 		}
+		saveAnnotationConfig_debounced(annotations);
 	}
 
 	/**
@@ -126,6 +136,7 @@
 		if (len === annotation.arrows.length) {
 			deleteAnnotation(annotation.id);
 		}
+		saveAnnotationConfig_debounced(annotations);
 	}
 
 	/**
@@ -146,6 +157,7 @@
 				deleteArrow(id, item);
 			}
 		}
+		saveAnnotationConfig_debounced(annotations);
 	}
 
 	/**
@@ -154,14 +166,6 @@
 	setContext('modifyAnnotation', modifyAnnotation);
 	setContext('addArrow', addArrow);
 	setContext('modifyArrow', modifyArrow);
-
-	/**
-	 * Save the config if the user has provided that option
-	 */
-	const saveAnnotationConfig_debounced = debounce(saveAnnotationConfig, 1_000);
-	$effect(() => {
-		if (saveAnnotationConfig) saveAnnotationConfig_debounced(annotations);
-	});
 </script>
 
 <Svg>
