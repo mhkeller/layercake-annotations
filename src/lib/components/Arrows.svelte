@@ -3,7 +3,7 @@
   Renders SVG arrows for annotations. Source position is relative to annotation (pixel offsets),
   target position is in data space with optional percentage offsets for ordinal scales.
   During drag, uses live pixel coordinates from dragState.
--->
+ -->
 <script>
 	/** @typedef {import('../types.js').Annotation} Annotation */
 
@@ -18,6 +18,9 @@
 
 	// Get dragState ref from context (only available in Editor mode)
 	const dragStateRef = getContext('previewArrow');
+
+	// Get modifyArrow for click handling (only available in Editor mode)
+	const modifyArrow = getContext('modifyArrow');
 
 	/**
 	 * Build scales object for coordinate utilities
@@ -40,9 +43,43 @@
 		const scales = getScales();
 		const source = getArrowSource(anno, arrow, scales);
 		const target = getArrowTarget(arrow, scales);
-		const clockwise = arrow.clockwise ?? true;
+		const clockwise = arrow.clockwise !== undefined ? arrow.clockwise : true;
 
 		return createArrowPath(source, target, clockwise);
+	}
+
+	/**
+	 * Toggle clockwise on cmd+click - cycle order depends on side
+	 */
+	function handleArrowClick(e, anno, arrow) {
+		if (!e.metaKey || !modifyArrow) return;
+
+		const side = arrow.side;
+		const clockwise =
+			arrow.clockwise !== undefined ? arrow.clockwise : side === 'west' ? false : true;
+
+		let newClockwise;
+		if (side === 'east') {
+			// East: clockwise → straight → counter-clockwise → clockwise
+			if (clockwise === true) {
+				newClockwise = null;
+			} else if (clockwise === null) {
+				newClockwise = false;
+			} else {
+				newClockwise = true;
+			}
+		} else {
+			// West: counter-clockwise → straight → clockwise → counter-clockwise
+			if (clockwise === false) {
+				newClockwise = null;
+			} else if (clockwise === null) {
+				newClockwise = true;
+			} else {
+				newClockwise = false;
+			}
+		}
+
+		modifyArrow(anno.id, side, { clockwise: newClockwise });
 	}
 
 	/**
@@ -65,7 +102,7 @@
 		if (!ds || ds.annotationId == null) return '';
 		if (ds.sourceX == null || ds.targetX == null) return '';
 
-		const clockwise = ds.clockwise ?? true;
+		const clockwise = ds.clockwise !== undefined ? ds.clockwise : true;
 		return createArrowPath(
 			{ x: ds.sourceX, y: ds.sourceY },
 			{ x: ds.targetX, y: ds.targetY },
@@ -74,6 +111,8 @@
 	});
 </script>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <g class="swoops">
 	<!-- Render saved arrows (hide if this specific arrow is being dragged) -->
 	{#each annotations as anno}
@@ -82,8 +121,15 @@
 				{@const arrowKey = `${anno.id}_${arrow.side}`}
 				{@const isBeingDragged = draggingArrowKey === arrowKey}
 				{#if !isBeingDragged}
-					<path marker-end="url(#layercake-annotation-arrowhead)" d={getStaticPath(anno, arrow)}
+					{@const pathD = getStaticPath(anno, arrow)}
+					<!-- Visible arrow -->
+					<path class="arrow-visible" marker-end="url(#layercake-annotation-arrowhead)" d={pathD}
 					></path>
+					<!-- Invisible hit area for clicking (edit mode only) -->
+					{#if modifyArrow}
+						<path class="arrow-hitarea" d={pathD} onclick={(e) => handleArrowClick(e, anno, arrow)}
+						></path>
+					{/if}
 				{/if}
 			{/each}
 		{/if}
@@ -91,7 +137,8 @@
 
 	<!-- Arrow being dragged (new or existing) - rendered with live coordinates -->
 	{#if dragPath}
-		<path marker-end="url(#layercake-annotation-arrowhead)" d={dragPath}></path>
+		<path class="arrow-visible" marker-end="url(#layercake-annotation-arrowhead)" d={dragPath}
+		></path>
 	{/if}
 </g>
 
@@ -101,9 +148,17 @@
 		max-width: 200px;
 		line-height: 14px;
 	}
-	.swoops path {
+	.arrow-visible {
 		fill: none;
 		stroke: #000;
 		stroke-width: 1;
+		pointer-events: none;
+	}
+	.arrow-hitarea {
+		fill: none;
+		stroke: transparent;
+		stroke-width: 12;
+		cursor: pointer;
+		pointer-events: stroke;
 	}
 </style>

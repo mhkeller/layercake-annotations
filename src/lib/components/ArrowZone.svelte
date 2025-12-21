@@ -40,8 +40,10 @@
 	/** Get the existing arrow for this side (if any) */
 	let arrow = $derived(d.arrows?.find((a) => a.side === side));
 
-	/** Default clockwise direction based on side */
-	let clockwise = $derived(arrow?.clockwise ?? (side === 'west' ? false : true));
+	/** Default clockwise direction based on side (null = straight line, so don't use ??) */
+	let clockwise = $derived(
+		arrow?.clockwise !== undefined ? arrow.clockwise : side === 'west' ? false : true
+	);
 
 	/** Build scales object for coordinate utilities */
 	function getScales() {
@@ -118,17 +120,29 @@
 		};
 	}
 
-	/** Toggle clockwise on cmd+click */
+	/** Toggle clockwise on cmd+click - cycle order depends on side */
 	function onclick(e) {
 		if (!e.metaKey || !arrow) return;
 
 		let newClockwise;
-		if (clockwise === false) {
-			newClockwise = true;
-		} else if (clockwise === true) {
-			newClockwise = null;
+		if (side === 'east') {
+			// East: clockwise → straight → counter-clockwise → clockwise
+			if (clockwise === true) {
+				newClockwise = null;
+			} else if (clockwise === null) {
+				newClockwise = false;
+			} else {
+				newClockwise = true;
+			}
 		} else {
-			newClockwise = false;
+			// West: counter-clockwise → straight → clockwise → counter-clockwise
+			if (clockwise === false) {
+				newClockwise = null;
+			} else if (clockwise === null) {
+				newClockwise = true;
+			} else {
+				newClockwise = false;
+			}
 		}
 
 		modifyArrow(d.id, side, { clockwise: newClockwise });
