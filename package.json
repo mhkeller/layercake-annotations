@@ -10,7 +10,10 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
 		"lint": "prettier --check .",
-		"format": "prettier --write ."
+		"format": "prettier --write .",
+		"test": "playwright test",
+		"test:ui": "playwright test --ui",
+		"test:update": "playwright test --update-snapshots"
 	},
 	"exports": {
 		".": {
@@ -27,6 +30,7 @@
 		"svelte": "^5.0.0"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.57.0",
 		"@rollup/plugin-dsv": "^3.0.4",
 		"@sveltejs/adapter-auto": "^3.0.0",
 		"@sveltejs/kit": "^2.0.0",
