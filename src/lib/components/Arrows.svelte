@@ -105,8 +105,7 @@
 	let dragPath = $derived.by(() => {
 		if (!dragStateRef) return '';
 		const ds = dragStateRef.value;
-		// Use == null to allow annotationId of 0
-		if (!ds || ds.annotationId == null) return '';
+		if (!ds || ds.annotationId === null || ds.annotationId === undefined) return '';
 		if (ds.sourceX == null || ds.targetX == null) return '';
 
 		const clockwise = ds.clockwise !== undefined ? ds.clockwise : true;
