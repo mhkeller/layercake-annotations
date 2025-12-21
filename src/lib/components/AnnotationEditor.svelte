@@ -1,4 +1,6 @@
 <script>
+	/** @typedef {import('../types.js').ModifyAnnotationFn} ModifyAnnotationFn */
+
 	import { getContext } from 'svelte';
 
 	import Draggable from './Draggable.svelte';
@@ -32,6 +34,7 @@
 
 	/**
 	 * Context variables
+	 * @type {ModifyAnnotationFn}
 	 */
 	const modifyAnnotation = getContext('modifyAnnotation');
 

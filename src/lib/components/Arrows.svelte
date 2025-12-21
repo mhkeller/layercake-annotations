@@ -6,8 +6,11 @@
  -->
 <script>
 	/** @typedef {import('../types.js').Annotation} Annotation */
+	/** @typedef {import('../types.js').DragState} DragState */
+	/** @typedef {import('../types.js').ModifyArrowFn} ModifyArrowFn */
 
 	import { getContext } from 'svelte';
+
 	import { createArrowPath } from '../modules/arrowUtils.js';
 	import { getArrowSource, getArrowTarget } from '../modules/coordinates.js';
 
@@ -16,10 +19,10 @@
 
 	const { xScale, yScale, x, y, width, height } = getContext('LayerCake');
 
-	// Get dragState ref from context (only available in Editor mode)
+	/** @type {import('../types.js').Ref<DragState | null> | undefined} - Only available in Editor mode */
 	const dragStateRef = getContext('previewArrow');
 
-	// Get modifyArrow for click handling (only available in Editor mode)
+	/** @type {ModifyArrowFn | undefined} - Only available in Editor mode */
 	const modifyArrow = getContext('modifyArrow');
 
 	/**

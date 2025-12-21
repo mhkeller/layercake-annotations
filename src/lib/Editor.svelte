@@ -1,5 +1,9 @@
 <script>
 	/** @typedef {import('./types.js').Annotation} Annotation */
+	/** @typedef {import('./types.js').Arrow} Arrow */
+	/** @typedef {import('./types.js').HoverState} HoverState */
+	/** @typedef {import('./types.js').DragState} DragState */
+	/** @typedef {import('./types.js').SaveAnnotationConfigFn} SaveAnnotationConfigFn */
 
 	import { getContext, setContext } from 'svelte';
 	import { Svg, Html } from 'layercake';
@@ -19,15 +23,17 @@
 	 * LayerCake context
 	 */
 	const { xScale, yScale, config } = getContext('LayerCake');
+
+	/** @type {SaveAnnotationConfigFn | undefined} */
 	const saveAnnotationConfig = getContext('saveAnnotationConfig');
 
 	/**
 	 * Save the config if the user has provided that option
 	 */
-	const sacDb = debounce(saveAnnotationConfig, 1_000);
+	const saveConfig_debounced = debounce(saveAnnotationConfig ?? (() => {}), 1_000);
 	function saveAnnotationConfig_debounced(annos) {
 		if (saveAnnotationConfig) {
-			sacDb(annos);
+			saveConfig_debounced(annos);
 		}
 	}
 
@@ -36,15 +42,17 @@
 	 */
 	let idCounter = Math.max(...annos.map((d) => d.id), -1);
 	let annotations = $state(annos);
+
+	/** @type {import('./types.js').Ref<boolean>} */
 	const isEditing = createRef(false);
-	/**
-	 * Hovering state - null or { annotationId, type: 'body'|'arrow', side?, handle? }
-	 * @type {{ value: null | { annotationId: number, type: string, side?: string, handle?: string } }}
-	 */
+
+	/** @type {import('./types.js').Ref<HoverState | null>} */
 	const hovering = createRef(null);
+
+	/** @type {import('./types.js').Ref<boolean>} */
 	const moving = createRef(false);
 
-	// Preview arrow shown during drag (before mouseup saves it)
+	/** @type {import('./types.js').Ref<DragState | null>} - Preview arrow shown during drag */
 	const previewArrow = createRef(null);
 
 	setContext('isEditing', isEditing);

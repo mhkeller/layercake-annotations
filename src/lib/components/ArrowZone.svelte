@@ -6,6 +6,12 @@
   Updates arrow position in real-time during drag.
 -->
 <script>
+	/** @typedef {import('../types.js').HoverState} HoverState */
+	/** @typedef {import('../types.js').DragState} DragState */
+	/** @typedef {import('../types.js').SetArrowFn} SetArrowFn */
+	/** @typedef {import('../types.js').ModifyArrowFn} ModifyArrowFn */
+	/** @typedef {import('../types.js').ModifyAnnotationFn} ModifyAnnotationFn */
+
 	import { getContext } from 'svelte';
 	import invertScale from '$lib/modules/invertScale.js';
 	import {
@@ -21,11 +27,17 @@
 
 	let { d, side, noteDimensions } = $props();
 
+	/** @type {import('../types.js').Ref<HoverState | null>} */
 	const hovering = getContext('hovering');
+	/** @type {SetArrowFn} */
 	const setArrow = getContext('setArrow');
+	/** @type {ModifyArrowFn} */
 	const modifyArrow = getContext('modifyArrow');
+	/** @type {ModifyAnnotationFn} */
 	const modifyAnnotation = getContext('modifyAnnotation');
+	/** @type {import('../types.js').Ref<boolean>} */
 	const moving = getContext('moving');
+	/** @type {import('../types.js').Ref<DragState | null>} */
 	const dragState = getContext('previewArrow');
 
 	/** Handle diameter in pixels */

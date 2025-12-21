@@ -134,3 +134,30 @@ export interface Point {
 	y: number;
 }
 
+/**
+ * Reactive reference wrapper (from createRef)
+ */
+export interface Ref<T> {
+	value: T;
+}
+
+/**
+ * Function to modify annotation properties
+ */
+export type ModifyAnnotationFn = (id: number, newProps: Partial<Annotation>) => void;
+
+/**
+ * Function to create or update an arrow
+ */
+export type SetArrowFn = (id: number, arrow: Arrow) => void;
+
+/**
+ * Function to modify arrow properties
+ */
+export type ModifyArrowFn = (id: number, side: 'west' | 'east', attrs: Partial<Arrow>) => void;
+
+/**
+ * Function to save annotation config (provided by parent)
+ */
+export type SaveAnnotationConfigFn = (annotations: Annotation[]) => void;
+
