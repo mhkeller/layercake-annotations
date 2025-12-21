@@ -68,23 +68,23 @@ test.describe('LayerCake Annotations', () => {
 		await expect(page.locator('.chart-container.line')).toHaveScreenshot('hover-arrow-zones.png');
 	});
 
-	test('can modify existing west arrow by dragging', async ({ page }) => {
+	test('can modify existing east arrow by dragging', async ({ page }) => {
 		const annotation = page.locator('.chart-container.line .draggable');
 
-		// Should already have 1 arrow (west) from initial data
+		// Should already have 1 arrow (east) from initial data
 		await expect(page.locator('.chart-container.line .arrow-visible')).toHaveCount(1);
 
 		// Hover to show arrow zones
 		await annotation.hover();
 		await page.waitForTimeout(300);
 
-		// Find the west arrow target zone and drag it
-		const westTarget = page.locator('.chart-container.line .arrow-zone.west.target');
-		const box = await westTarget.boundingBox();
+		// Find the east arrow target zone and drag it
+		const eastTarget = page.locator('.chart-container.line .arrow-zone.east.target');
+		const box = await eastTarget.boundingBox();
 		if (box) {
 			await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 			await page.mouse.down();
-			await page.mouse.move(box.x - 50, box.y + 30, { steps: 10 });
+			await page.mouse.move(box.x + 50, box.y - 30, { steps: 10 });
 			await page.mouse.up();
 		}
 
@@ -96,58 +96,58 @@ test.describe('LayerCake Annotations', () => {
 		await expect(arrowPath).toHaveCount(1);
 
 		// Take screenshot with modified arrow
-		await expect(page.locator('.chart-container.line')).toHaveScreenshot('west-arrow.png');
+		await expect(page.locator('.chart-container.line')).toHaveScreenshot('east-arrow.png');
 	});
 
-	test('can create east arrow by dragging', async ({ page }) => {
+	test('can create west arrow by dragging', async ({ page }) => {
 		const annotation = page.locator('.chart-container.line .draggable');
 
-		// Should already have 1 arrow (west) from initial data
+		// Should already have 1 arrow (east) from initial data
 		await expect(page.locator('.chart-container.line .arrow-visible')).toHaveCount(1);
 
 		// Hover to show arrow zones
 		await annotation.hover();
 		await page.waitForTimeout(300);
 
-		// Find the east arrow zone (create mode since no east arrow exists)
-		const eastZone = page.locator('.chart-container.line .arrow-zone.east');
+		// Find the west arrow zone (create mode since no west arrow exists)
+		const westZone = page.locator('.chart-container.line .arrow-zone.west');
 
-		// Drag from east zone to create an arrow
-		const box = await eastZone.boundingBox();
+		// Drag from west zone to create an arrow
+		const box = await westZone.boundingBox();
 		if (box) {
 			await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 			await page.mouse.down();
-			await page.mouse.move(box.x + 100, box.y - 50, { steps: 10 });
+			await page.mouse.move(box.x - 100, box.y + 50, { steps: 10 });
 			await page.mouse.up();
 		}
 
 		// Wait for arrow to render
 		await page.waitForTimeout(100);
 
-		// Should now have 2 arrows (west + east)
+		// Should now have 2 arrows (east + west)
 		const arrowPath = page.locator('.chart-container.line .arrow-visible');
 		await expect(arrowPath).toHaveCount(2);
 
 		// Take screenshot with both arrows
-		await expect(page.locator('.chart-container.line')).toHaveScreenshot('east-arrow.png');
+		await expect(page.locator('.chart-container.line')).toHaveScreenshot('west-arrow.png');
 	});
 
 	test('can have both west and east arrows', async ({ page }) => {
 		const annotation = page.locator('.chart-container.line .draggable');
 
-		// Should already have 1 arrow (west) from initial data
+		// Should already have 1 arrow (east) from initial data
 		await expect(page.locator('.chart-container.line .arrow-visible')).toHaveCount(1);
 
-		// Create east arrow
+		// Create west arrow
 		await annotation.hover();
 		await page.waitForTimeout(300);
 
-		const eastZone = page.locator('.chart-container.line .arrow-zone.east');
-		const box = await eastZone.boundingBox();
+		const westZone = page.locator('.chart-container.line .arrow-zone.west');
+		const box = await westZone.boundingBox();
 		if (box) {
 			await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 			await page.mouse.down();
-			await page.mouse.move(box.x + 80, box.y - 30, { steps: 10 });
+			await page.mouse.move(box.x - 80, box.y + 30, { steps: 10 });
 			await page.mouse.up();
 		}
 
@@ -254,9 +254,9 @@ test.describe('LayerCake Annotations', () => {
 		await annotation.hover();
 		await page.waitForTimeout(300);
 
-		// Start dragging from east zone
-		const eastZone = page.locator('.chart-container.line .arrow-zone.east');
-		const box = await eastZone.boundingBox();
+		// Start dragging from east arrow's target zone
+		const eastTarget = page.locator('.chart-container.line .arrow-zone.east.target');
+		const box = await eastTarget.boundingBox();
 
 		if (box) {
 			const startX = box.x + box.width / 2;

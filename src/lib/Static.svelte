@@ -12,7 +12,7 @@
 </script>
 
 {#snippet defs()}
-	<ArrowheadMarker />
+		<ArrowheadMarker />
 {/snippet}
 
 <Svg {defs}>

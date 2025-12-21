@@ -89,7 +89,7 @@
 				ondrag();
 			}
 		}
-	}
+		}
 
 	/** Keyboard resize handler */
 	function onResize(delta) {

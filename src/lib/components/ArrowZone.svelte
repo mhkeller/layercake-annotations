@@ -193,13 +193,10 @@
 
 	/** On release, save the arrow */
 	function onmouseup() {
-		const scales = getScales();
+		// Only process if we were actually dragging
+		if (!draggingSource && !draggingTarget) return;
 
-		// Always save annotation width to ensure consistent rendering
-		const currentWidth = `${noteDimensions[0]}px`;
-		if (d.width !== currentWidth) {
-			modifyAnnotation(d.id, { width: currentWidth });
-		}
+		const scales = getScales();
 
 		if (draggingSource && dragX !== null && dragY !== null) {
 			// Update source position using shared coordinate utils

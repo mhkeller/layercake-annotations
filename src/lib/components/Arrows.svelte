@@ -117,11 +117,11 @@
 	});
 </script>
 
-<g class="swoops">
+		<g class="swoops">
 	<!-- Render saved arrows (hide if this specific arrow is being dragged) -->
-	{#each annotations as anno}
-		{#if anno.arrows}
-			{#each anno.arrows as arrow}
+			{#each annotations as anno}
+				{#if anno.arrows}
+					{#each anno.arrows as arrow}
 				{@const arrowKey = `${anno.id}_${arrow.side}`}
 				{@const isBeingDragged = draggingArrowKey === arrowKey}
 				{#if !isBeingDragged}
