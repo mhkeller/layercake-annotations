@@ -10,12 +10,10 @@ import invertScale from './invertScale.js';
  * @returns {Annotation}
  */
 export default function newAnnotation(e, id, { xScale, yScale, config }) {
-	/** @type {[number, number]} */
-	const coords = [e.offsetX, e.offsetY];
-	const xVal = invertScale(xScale, coords[0]);
-	const yVal = invertScale(yScale, coords[1]);
+	const xVal = invertScale(xScale, e.offsetX);
+	const yVal = invertScale(yScale, e.offsetY);
 
-	const annotation = {
+	return {
 		id,
 		[config.x]: xVal[0],
 		[config.y]: yVal[0],
@@ -23,9 +21,6 @@ export default function newAnnotation(e, id, { xScale, yScale, config }) {
 		dy: yVal[1],
 		text: 'Enter your note here...',
 		width: '168px',
-		arrows: [],
-		coords
+		arrows: []
 	};
-
-	return annotation;
 }

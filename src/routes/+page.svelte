@@ -38,14 +38,13 @@
 	let lineAnnotations = $state([
 		{
 			id: 0,
-			myX: 1989.004181184669,
-			myY: 3.6159459459459455,
+			myX: 1989,
+			myY: 3.5,
 			dx: 0,
 			dy: 0,
 			text: 'Existing annotation...',
 			width: '157px',
-			arrows: [],
-			coords: [388, 120]
+			arrows: []
 		}
 	]);
 
@@ -53,8 +52,8 @@
 		{
 			id: 0,
 			year: '1982',
-			value: 12,
-			dx: -5,
+			value: 14,
+			dx: -6,
 			dy: 0,
 			text: 'Ordinal annotation with long text that should wrap',
 			width: '145px',

@@ -44,8 +44,7 @@ src/lib/
   dy: number,              // Y offset: -100 to 100 (percentage of chart height)
   text: string,            // Annotation text
   width?: string,          // Box width (e.g., "150px")
-  arrows: Arrow[],         // Attached arrows
-  coords?: [number, number] // Original click position
+  arrows: Arrow[]          // Attached arrows
 }
 ```
 

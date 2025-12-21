@@ -58,8 +58,6 @@ export interface Annotation {
 	width?: string;
 	/** Arrows attached to this annotation */
 	arrows: Arrow[];
-	/** Original click coordinates [x, y] in pixels */
-	coords?: [number, number];
 }
 
 /**

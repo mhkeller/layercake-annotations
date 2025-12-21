@@ -45,10 +45,10 @@
 	let top = $derived(`calc(${$yGet(d)}${units} + ${d.dy}%)`);
 
 	/**
-	 * @param {Array} [coords] - The x and y coordinates of the draggable element.
+	 * @param {Array} [position] - The x and y pixel coordinates of the draggable element.
 	 */
-	async function ondrag(coords = []) {
-		const [x, y] = coords;
+	async function ondrag(position = []) {
+		const [x, y] = position;
 		const xVal = x ? invertScale($xScale, x) : [];
 		const yVal = y ? invertScale($yScale, y) : [];
 
@@ -61,10 +61,6 @@
 			},
 			(d) => d !== undefined
 		);
-
-		if (coords.length) {
-			newProps.coords = coords;
-		}
 
 		// Always save current width
 		if (width) {
