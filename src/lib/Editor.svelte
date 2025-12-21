@@ -34,7 +34,11 @@
 	let idCounter = Math.max(...annos.map((d) => d.id), -1);
 	let annotations = $state(annos);
 	const isEditing = createRef(false);
-	const hovering = createRef('');
+	/**
+	 * Hovering state - null or { annotationId, type: 'body'|'arrow', side?, handle? }
+	 * @type {{ value: null | { annotationId: number, type: string, side?: string, handle?: string } }}
+	 */
+	const hovering = createRef(null);
 	const moving = createRef(false);
 
 	// Preview arrow shown during drag (before mouseup saves it)
@@ -137,19 +141,17 @@
 	 * If we press the delete key while hovering, delete the annotation or arrow
 	 */
 	function onkeydown(e) {
-		if (!hovering.value || isEditing.value === true) return;
-
-		const [idStr, item] = hovering.value.split('_');
-		const id = +idStr;
+		const hover = hovering.value;
+		if (!hover || isEditing.value === true) return;
 
 		if (e.key === 'Delete' || e.key === 'Backspace') {
-			if (item === 'body') {
-				deleteAnnotation(id);
-			} else {
-				deleteArrow(id, item);
+			if (hover.type === 'body') {
+				deleteAnnotation(hover.annotationId);
+			} else if (hover.type === 'arrow' && hover.side) {
+				deleteArrow(hover.annotationId, hover.side);
 			}
+			saveAnnotationConfig_debounced(annotations);
 		}
-		saveAnnotationConfig_debounced(annotations);
 	}
 
 	/**

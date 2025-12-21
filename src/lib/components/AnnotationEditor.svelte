@@ -105,7 +105,7 @@
 		<div class="layercake-annotation" data-id={d.id}>
 			<EditableText bind:text={d.text} bind:isEditable {alignment} />
 		</div>
-		<ResizeHandles bind:width {ondrag} debug={false} {grabbers} {containerClass} />
+		<ResizeHandles bind:width {ondrag} {grabbers} {containerClass} />
 	</Draggable>
 
 	{#each arrowSides as side}

@@ -54,11 +54,11 @@
 	}
 	function onmouseover() {
 		if (moving.value) return;
-		hovering.value = `${id}_body`;
+		hovering.value = { annotationId: id, type: 'body' };
 	}
 	function onmouseout() {
 		if (moving.value) return;
-		hovering.value = '';
+		hovering.value = null;
 	}
 </script>
 
@@ -72,7 +72,7 @@
 	style:width
 	class="draggable"
 	class:canDrag
-	class:hovering={hovering.value.split('_')[0] === String(id)}
+	class:hovering={hovering.value?.annotationId === id}
 	{onclick}
 	{onmousedown}
 	{onmouseover}

@@ -1,23 +1,28 @@
+<!--
+  @component
+  Horizontal resize handles for annotation text boxes.
+  Supports west (left) and east (right) resizing only.
+-->
 <script>
 	import { getContext } from 'svelte';
 
-	// https://svelte.dev/repl/8b974ea483c648fba362a1e9f3dbc29f?version=4.2.18
 	let {
-		debug = true,
-		grabbers = [
-			'north',
-			'south',
-			'east',
-			'west',
-			'southwest',
-			'southeast',
-			'northwest',
-			'northeast'
-		],
+		/** Which handles to show: 'west', 'east', or both */
+		grabbers = ['west', 'east'],
+		/** Current width in pixels (bound) - number or "Npx" string */
 		width = $bindable(),
+		/** Callback when resizing */
 		ondrag,
+		/** Container selector for position calculations */
 		containerClass = '.chart-container'
 	} = $props();
+
+	/** Parse width to number */
+	function parseWidth(w) {
+		if (typeof w === 'number') return w;
+		if (typeof w === 'string') return parseInt(w) || 0;
+		return 0;
+	}
 
 	const { padding } = getContext('LayerCake');
 
@@ -31,13 +36,10 @@
 		const rect = active.parentElement.getBoundingClientRect();
 		initialRect = {
 			width: rect.width,
-			height: rect.height,
 			left: rect.left,
-			right: rect.right,
-			top: rect.top,
-			bottom: rect.bottom
+			top: rect.top
 		};
-		initialPos = { x: event.pageX, y: event.pageY };
+		initialPos = { x: event.pageX };
 		active.classList.add('selected');
 
 		window.addEventListener('mousemove', onmousemove);
@@ -59,21 +61,20 @@
 	function onmousemove(event) {
 		if (!active) return;
 
-		const direction = [...active.classList].filter((c) => c !== 'grabber' && c !== 'selected')[0];
-		let delta;
+		const isEast = active.classList.contains('east');
+		const isWest = active.classList.contains('west');
 
-		if (direction.match('east')) {
-			delta = event.pageX - initialPos.x;
-			width = `${initialRect.width + delta}px`;
-			// Refresh without position change
+		if (isEast) {
+			const delta = event.pageX - initialPos.x;
+			const newWidth = initialRect.width + delta;
+			if (newWidth < 50) return;
+			width = `${newWidth}px`;
 			ondrag();
 		}
 
-		if (direction.match('west')) {
-			delta = initialPos.x - event.pageX;
+		if (isWest) {
+			const delta = initialPos.x - event.pageX;
 			const newWidth = initialRect.width + delta;
-
-			// Don't allow width less than 50px
 			if (newWidth < 50) return;
 
 			width = `${newWidth}px`;
@@ -83,7 +84,6 @@
 			if (parent) {
 				const newLeft = event.pageX - parent.left - $padding.left;
 				const newTop = initialRect.top - parent.top - $padding.top;
-				// Pass coordinates to trigger position update
 				ondrag([newLeft, newTop]);
 			} else {
 				ondrag();
@@ -94,7 +94,7 @@
 
 {#each grabbers as grabber}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="grabber {grabber}" class:debug {onmousedown}></div>
+	<div class="grabber {grabber}" {onmousedown}></div>
 {/each}
 
 <style>
@@ -104,93 +104,21 @@
 		transition: opacity 250ms;
 		opacity: 0;
 		z-index: 9999;
-		width: 4px;
-		height: 75%;
+		width: 3px;
+		height: 70%;
+		top: 50%;
+		transform: translateY(-50%);
 		background: red;
+		border-radius: 2px;
 		cursor: col-resize;
-		top: 12.5%;
 	}
+
 	.grabber.west {
-		left: -0.5px;
-		transform: translateX(-50%);
+		left: 0;
 	}
+
 	.grabber.east {
-		right: -0.5px;
-		transform: translateX(50%);
-	}
-
-	.grabber.debug.east {
-		width: 10px;
-		height: 100%;
-		background: red;
-		right: -5px;
-		cursor: col-resize;
-		top: 0;
-	}
-
-	.grabber.debug.west {
-		width: 10px;
-		height: 100%;
-		background: blue;
-		left: -5px;
-		cursor: col-resize;
-		top: 0;
-	}
-
-	.grabber.debug.north {
-		height: 10px;
-		width: 100%;
-		background: green;
-		top: -5px;
-		cursor: row-resize;
-	}
-
-	.grabber.debug.south {
-		height: 10px;
-		width: 100%;
-		background: orange;
-		bottom: -5px;
-		cursor: row-resize;
-	}
-
-	.grabber.debug.northwest {
-		height: 20px;
-		width: 20px;
-		background: orange;
-		top: -10px;
-		left: -10px;
-		cursor: nw-resize;
-		border-radius: 100%;
-	}
-
-	.grabber.debug.northeast {
-		height: 20px;
-		width: 20px;
-		background: orange;
-		top: -10px;
-		right: -10px;
-		cursor: ne-resize;
-		border-radius: 100%;
-	}
-
-	.grabber.debug.southwest {
-		height: 20px;
-		width: 20px;
-		background: green;
-		bottom: -10px;
-		left: -10px;
-		cursor: sw-resize;
-		border-radius: 100%;
-	}
-
-	.grabber.debug.southeast {
-		height: 20px;
-		width: 20px;
-		background: green;
-		bottom: -10px;
-		right: -10px;
-		cursor: se-resize;
-		border-radius: 100%;
+		right: 0;
 	}
 
 	.grabber.selected {

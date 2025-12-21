@@ -6,7 +6,8 @@
 -->
 <script>
 	import { getContext } from 'svelte';
-	import { swoopyArrow } from '../modules/arrowUtils.js';
+	import { createArrowPath } from '../modules/arrowUtils.js';
+	import { getArrowSource, getArrowTarget } from '../modules/coordinates.js';
 
 	/** @type {Array} annotations - A list of annotation objects */
 	let { annotations = [] } = $props();
@@ -17,50 +18,29 @@
 	const dragStateRef = getContext('previewArrow');
 
 	/**
-	 * Helper to generate swoopy arrow path
+	 * Build scales object for coordinate utilities
 	 */
-	function makePath(sourceX, sourceY, targetX, targetY, clockwise) {
-		const sourceCoords = [sourceX, sourceY];
-		const targetCoords = [targetX, targetY];
-
-		// Create arrow path - straight line if clockwise is null
-		if (clockwise === null) {
-			return `M${sourceCoords.join(',')} L${targetCoords.join(',')}`;
-		}
-
-		return swoopyArrow()
-			.angle(Math.PI / 2)
-			.clockwise(clockwise)
-			.x((q) => q[0])
-			.y((q) => q[1])([sourceCoords, targetCoords]);
+	function getScales() {
+		return {
+			xScale: $xScale,
+			yScale: $yScale,
+			x: $x,
+			y: $y,
+			width: $width,
+			height: $height
+		};
 	}
 
 	/**
 	 * Compute the SVG path for a saved arrow
 	 */
 	function getStaticPath(anno, arrow) {
-		// Use saved coordinates
-		const annoOffsetX = ((anno.dx ?? 0) / 100) * $width;
-		const annoOffsetY = ((anno.dy ?? 0) / 100) * $height;
-		const annoLeftX = $xScale($x(anno)) + annoOffsetX;
-		const annoTopY = $yScale($y(anno)) + annoOffsetY;
+		const scales = getScales();
+		const source = getArrowSource(anno, arrow, scales);
+		const target = getArrowTarget(arrow, scales);
+		const clockwise = arrow.clockwise ?? true;
 
-		// For east arrows, dx is relative to annotation width
-		// Default matches typical annotation width (with padding)
-		const annoWidth = anno.width ? parseInt(anno.width) : 155;
-		let sourceX;
-		if (arrow.side === 'east') {
-			sourceX = annoLeftX + annoWidth + (arrow.source?.dx ?? 0);
-		} else {
-			sourceX = annoLeftX + (arrow.source?.dx ?? 0);
-		}
-		const sourceY = annoTopY + (arrow.source?.dy ?? 0);
-
-		const targetX = $xScale($x(arrow.target)) + ((arrow.target?.dx ?? 0) / 100) * $width;
-		const targetY = $yScale($y(arrow.target)) + ((arrow.target?.dy ?? 0) / 100) * $height;
-
-		const cw = arrow.clockwise ?? true;
-		return makePath(sourceX, sourceY, targetX, targetY, cw);
+		return createArrowPath(source, target, clockwise);
 	}
 
 	/**
@@ -81,8 +61,12 @@
 		if (!ds || ds.annotationId == null) return '';
 		if (ds.sourceX == null || ds.targetX == null) return '';
 
-		const cw = ds.clockwise ?? true;
-		return makePath(ds.sourceX, ds.sourceY, ds.targetX, ds.targetY, cw);
+		const clockwise = ds.clockwise ?? true;
+		return createArrowPath(
+			{ x: ds.sourceX, y: ds.sourceY },
+			{ x: ds.targetX, y: ds.targetY },
+			clockwise
+		);
 	});
 </script>
 

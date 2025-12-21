@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 
-	import { Annotations } from '$lib/index.js';
+	import { AnnotationsEditor, AnnotationsStatic } from '$lib/index.js';
 
 	import Line from './_components/Line.svelte';
 	import Area from './_components/Area.svelte';
@@ -54,7 +54,11 @@
 			<Area />
 		</Svg>
 
-		<Annotations bind:annotations {edit} />
+		{#if edit}
+			<AnnotationsEditor bind:annotations />
+		{:else}
+			<AnnotationsStatic {annotations} />
+		{/if}
 	</LayerCake>
 </div>
 

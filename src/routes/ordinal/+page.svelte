@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleBand } from 'd3-scale';
-	import { Annotations } from '$lib/index.js';
+	import { AnnotationsEditor, AnnotationsStatic } from '$lib/index.js';
 
 	import Column from './_components/Column.svelte';
 	import AxisX from './_components/AxisX.svelte';
@@ -52,7 +52,11 @@
 			<AxisY snapBaselineLabel />
 			<Column />
 		</Svg>
-		<Annotations bind:annotations {edit} />
+		{#if edit}
+			<AnnotationsEditor bind:annotations />
+		{:else}
+			<AnnotationsStatic {annotations} />
+		{/if}
 	</LayerCake>
 </div>
 

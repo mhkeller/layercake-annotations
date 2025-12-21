@@ -3,13 +3,19 @@
   Draggable zones for creating/editing arrows. Only supports "west" and "east" sides.
   - When no arrow exists: shows one handle at annotation edge to create arrow
   - When arrow exists: shows TWO handles - one at source, one at target
-  - East arrows: source dx is relative to RIGHT edge (negative = towards center)
-  - West arrows: source dx is relative to LEFT edge (negative = towards left)
   Updates arrow position in real-time during drag.
 -->
 <script>
 	import { getContext } from 'svelte';
 	import invertScale from '$lib/modules/invertScale.js';
+	import {
+		getAnnotationBox,
+		getArrowSource,
+		getArrowTarget,
+		calculateSourceDx,
+		calculateSourceDy,
+		HANDLE_OFFSET_PX
+	} from '$lib/modules/coordinates.js';
 
 	const { xScale, yScale, x, y, config, width, height } = getContext('LayerCake');
 
@@ -20,82 +26,68 @@
 	const modifyArrow = getContext('modifyArrow');
 	const modifyAnnotation = getContext('modifyAnnotation');
 	const moving = getContext('moving');
-	const dragState = getContext('previewArrow'); // Reusing for drag state
+	const dragState = getContext('previewArrow');
 
-	/**
-	 * Constants
-	 */
+	/** Handle diameter in pixels */
 	const diameterPx = 15;
-	const handleOffsetPx = 12;
 
-	/**
-	 * State - which handle is being dragged
-	 */
+	/** State - which handle is being dragged */
 	let draggingSource = $state(false);
 	let draggingTarget = $state(false);
 	let dragX = $state(null);
 	let dragY = $state(null);
 
-	/**
-	 * Get the existing arrow for this side (if any)
-	 */
+	/** Get the existing arrow for this side (if any) */
 	let arrow = $derived(d.arrows?.find((a) => a.side === side));
 
-	/**
-	 * Default clockwise direction based on side
-	 */
+	/** Default clockwise direction based on side */
 	let clockwise = $derived(arrow?.clockwise ?? (side === 'west' ? false : true));
 
-	/**
-	 * Annotation TEXT BOX top-left position in pixels
-	 */
-	let annoOffsetX = $derived(((d.dx ?? 0) / 100) * $width);
-	let annoOffsetY = $derived(((d.dy ?? 0) / 100) * $height);
-	let annoLeftX = $derived($xScale($x(d)) + annoOffsetX);
-	let annoTopY = $derived($yScale($y(d)) + annoOffsetY);
+	/** Build scales object for coordinate utilities */
+	function getScales() {
+		return {
+			xScale: $xScale,
+			yScale: $yScale,
+			x: $x,
+			y: $y,
+			width: $width,
+			height: $height
+		};
+	}
 
-	/**
-	 * Annotation width
-	 */
-	let annoWidth = $derived(d.width ? parseInt(d.width) : noteDimensions[0]);
+	/** Annotation box position and dimensions */
+	let annoBox = $derived(getAnnotationBox(d, getScales()));
 
-	/**
-	 * Default source position (at edge of annotation box)
-	 * West: negative offset from left edge
-	 * East: positive offset from right edge
-	 */
-	let defaultSourceDx = $derived(side === 'west' ? -handleOffsetPx : handleOffsetPx);
+	/** Default source offsets */
+	let defaultSourceDx = $derived(side === 'west' ? -HANDLE_OFFSET_PX : HANDLE_OFFSET_PX);
 	let defaultSourceDy = $derived(noteDimensions[1] / 2);
 
-	/**
-	 * Current source position in pixels
-	 * West: annoLeftX + dx (dx is typically negative)
-	 * East: annoLeftX + annoWidth + dx (dx is typically positive)
-	 */
-	let sourceX = $derived.by(() => {
-		const dx = arrow?.source?.dx ?? defaultSourceDx;
-		if (side === 'east') {
-			return annoLeftX + annoWidth + dx;
+	/** Current source position in pixels */
+	let sourcePos = $derived.by(() => {
+		if (arrow) {
+			return getArrowSource(d, arrow, getScales(), noteDimensions[1]);
 		}
-		return annoLeftX + dx;
+		// Default position when no arrow exists
+		const dx = defaultSourceDx;
+		const dy = defaultSourceDy;
+		if (side === 'east') {
+			return { x: annoBox.left + annoBox.width + dx, y: annoBox.top + dy };
+		}
+		return { x: annoBox.left + dx, y: annoBox.top + dy };
 	});
-	let sourceY = $derived(annoTopY + (arrow?.source?.dy ?? defaultSourceDy));
 
-	/**
-	 * Current target position in pixels (when arrow exists)
-	 */
+	let sourceX = $derived(sourcePos.x);
+	let sourceY = $derived(sourcePos.y);
+
+	/** Current target position in pixels (when arrow exists) */
 	let targetX = $derived.by(() => {
 		if (!arrow) return sourceX + (side === 'west' ? -50 : 50);
-		const baseX = $xScale($x(arrow.target));
-		const offsetX = ((arrow.target?.dx ?? 0) / 100) * $width;
-		return baseX + offsetX;
+		return getArrowTarget(arrow, getScales()).x;
 	});
 
 	let targetY = $derived.by(() => {
 		if (!arrow) return sourceY;
-		const baseY = $yScale($y(arrow.target));
-		const offsetY = ((arrow.target?.dy ?? 0) / 100) * $height;
-		return baseY + offsetY;
+		return getArrowTarget(arrow, getScales()).y;
 	});
 
 	/**
@@ -115,7 +107,6 @@
 			return;
 		}
 
-		// Pass pixel coordinates for the arrow being dragged
 		dragState.value = {
 			annotationId: d.id,
 			side,
@@ -123,14 +114,11 @@
 			sourceY: draggingSource ? dragY : sourceY,
 			targetX: draggingTarget ? dragX : targetX,
 			targetY: draggingTarget ? dragY : targetY,
-			clockwise,
-			annoWidth
+			clockwise
 		};
 	}
 
-	/**
-	 * Toggle clockwise on cmd+click
-	 */
+	/** Toggle clockwise on cmd+click */
 	function onclick(e) {
 		if (!e.metaKey || !arrow) return;
 
@@ -146,9 +134,7 @@
 		modifyArrow(d.id, side, { clockwise: newClockwise });
 	}
 
-	/**
-	 * Start dragging source handle
-	 */
+	/** Start dragging source handle */
 	function onSourceMousedown() {
 		moving.value = true;
 		draggingSource = true;
@@ -157,9 +143,7 @@
 		updateDragState();
 	}
 
-	/**
-	 * Start dragging target handle (or create mode)
-	 */
+	/** Start dragging target handle (or create mode) */
 	function onTargetMousedown() {
 		moving.value = true;
 		draggingTarget = true;
@@ -168,9 +152,7 @@
 		updateDragState();
 	}
 
-	/**
-	 * Track mouse during drag
-	 */
+	/** Track mouse during drag */
 	function onmousemove(e) {
 		if (!draggingSource && !draggingTarget) return;
 
@@ -179,24 +161,10 @@
 		updateDragState();
 	}
 
-	/**
-	 * Calculate source dx based on side
-	 * West: offset from left edge (annoLeftX)
-	 * East: offset from right edge (annoLeftX + annoWidth)
-	 */
-	function calculateSourceDx(pixelX) {
-		if (side === 'east') {
-			// dx is offset from right edge
-			return pixelX - (annoLeftX + annoWidth);
-		}
-		// dx is offset from left edge
-		return pixelX - annoLeftX;
-	}
-
-	/**
-	 * On release, save the arrow
-	 */
+	/** On release, save the arrow */
 	function onmouseup() {
+		const scales = getScales();
+
 		// Always save annotation width to ensure consistent rendering
 		const currentWidth = `${noteDimensions[0]}px`;
 		if (d.width !== currentWidth) {
@@ -204,9 +172,9 @@
 		}
 
 		if (draggingSource && dragX !== null && dragY !== null) {
-			// Update source position
-			const newSourceDx = calculateSourceDx(dragX);
-			const newSourceDy = dragY - annoTopY;
+			// Update source position using shared coordinate utils
+			const newSourceDx = calculateSourceDx(dragX, d, side, scales);
+			const newSourceDy = calculateSourceDy(dragY, d, scales);
 
 			if (arrow) {
 				modifyArrow(d.id, side, {
@@ -236,7 +204,7 @@
 			const [targetDataX, targetOffsetX] = invertScale($xScale, dragX);
 			const [targetDataY, targetOffsetY] = invertScale($yScale, dragY);
 
-			// Calculate source dx based on side
+			// Keep existing source or use defaults
 			const existingSourceDx = arrow?.source?.dx ?? defaultSourceDx;
 
 			setArrow(d.id, {
@@ -264,18 +232,18 @@
 		dragState.value = null;
 	}
 
-	function onmouseover(type) {
+	function onmouseover(handle) {
 		if (moving.value) return;
-		hovering.value = `${d.id}_${side}_${type}`;
+		hovering.value = { annotationId: d.id, type: 'arrow', side, handle };
 	}
 
 	function onmouseout() {
 		if (moving.value) return;
-		hovering.value = '';
+		hovering.value = null;
 	}
 
 	// Show handles when hovering over ANY part of this annotation (body, any arrow zone)
-	let isAnnotationHovered = $derived(hovering.value.startsWith(`${d.id}_`));
+	let isAnnotationHovered = $derived(hovering.value?.annotationId === d.id);
 	let isDragging = $derived(draggingSource || draggingTarget);
 </script>
 

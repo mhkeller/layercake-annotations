@@ -1,0 +1,172 @@
+# LayerCake Annotations - Internal Architecture
+
+This document describes the internal architecture of the annotation library for contributors and maintainers.
+
+## Overview
+
+LayerCake Annotations provides interactive text annotations with swoopy arrows for [LayerCake](https://layercake.graphics/) charts. It supports both linear and ordinal scales.
+
+## Component Structure
+
+```
+src/lib/
+├── Editor.svelte           # Interactive editing mode (exported as AnnotationsEditor)
+├── Static.svelte           # Read-only display mode (exported as AnnotationsStatic)
+├── components/
+│   ├── AnnotationEditor.svelte  # Individual annotation wrapper
+│   ├── ArrowZone.svelte         # Draggable arrow handles
+│   ├── Arrows.svelte            # SVG arrow rendering
+│   ├── Draggable.svelte         # Generic drag behavior
+│   ├── EditableText.svelte      # Editable text input
+│   ├── ResizeHandles.svelte     # Width resize handles
+│   ├── ArrowheadMarker.svelte   # SVG arrowhead definition
+│   └── AnnotationsData.svelte   # Static annotations renderer
+└── modules/
+    ├── coordinates.js      # Shared coordinate calculations
+    ├── arrowUtils.js       # SVG path generation
+    ├── createRef.svelte.js # Reactive state refs for context
+    ├── invertScale.js      # Scale inversion utilities
+    ├── ordinalInvert.js    # Ordinal scale inversion
+    ├── filterObject.js     # Object utilities
+    └── newAnnotation.js    # Annotation factory
+```
+
+## Data Model
+
+### Annotation Object
+
+```typescript
+{
+  id: number,              // Unique identifier
+  [xKey]: any,             // X data value (key from LayerCake config)
+  [yKey]: any,             // Y data value (key from LayerCake config)
+  dx: number,              // X offset as % of chart width
+  dy: number,              // Y offset as % of chart height
+  text: string,            // Annotation text
+  width?: string,          // Box width (e.g., "150px")
+  arrows: Arrow[],         // Attached arrows
+  coords?: [number, number] // Original click position
+}
+```
+
+### Arrow Object
+
+```typescript
+{
+  side: 'west' | 'east',   // Which side of annotation
+  clockwise: boolean|null, // Arc direction (null = straight line)
+  source: {
+    dx: number,            // Pixel offset from annotation edge
+    dy: number             // Pixel offset from annotation top
+  },
+  target: {
+    [xKey]: any,           // X data value
+    [yKey]: any,           // Y data value
+    dx?: number,           // % offset for ordinal X scale
+    dy?: number            // % offset for ordinal Y scale
+  }
+}
+```
+
+## Coordinate System
+
+The library uses multiple coordinate systems that can be confusing. Here's the breakdown:
+
+### Annotation Position
+- **Data space**: `annotation[xKey]` and `annotation[yKey]` store data values
+- **Percentage offsets**: `annotation.dx` and `annotation.dy` are percentages of chart dimensions
+- **Final pixel position**: `xScale(x(anno)) + (dx/100)*width`
+
+### Arrow Source Position
+- Stored as **pixel offsets** from annotation edge
+- **West arrows**: `source.dx` is offset from LEFT edge (negative = further left)
+- **East arrows**: `source.dx` is offset from RIGHT edge (positive = further right)
+- `source.dy` is always offset from annotation TOP
+
+### Arrow Target Position
+- Stored in **data space** with optional percentage offsets
+- For ordinal scales, `target.dx`/`target.dy` store percentage offsets within the band
+
+## State Management
+
+State is shared via Svelte context using the `createRef` pattern:
+
+```javascript
+// In Editor.svelte
+const hovering = createRef(null);
+setContext('hovering', hovering);
+
+// In child components
+const hovering = getContext('hovering');
+hovering.value = { annotationId: 0, type: 'body' };
+```
+
+### Context Values
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `hovering` | `HoverState \| null` | Currently hovered element |
+| `moving` | `boolean` | Whether dragging is in progress |
+| `isEditing` | `boolean` | Whether text is being edited |
+| `previewArrow` | `DragState \| null` | Live arrow during drag |
+| `modifyAnnotation` | `function` | Update annotation props |
+| `setArrow` | `function` | Create/update arrow |
+| `modifyArrow` | `function` | Modify arrow properties |
+
+## Key Modules
+
+### coordinates.js
+
+Centralizes all coordinate calculations to prevent drift:
+
+```javascript
+import { 
+  getAnnotationBox,    // Get annotation position/size
+  getArrowSource,      // Get arrow source in pixels
+  getArrowTarget,      // Get arrow target in pixels
+  calculateSourceDx,   // Convert pixel to stored offset
+  DEFAULT_ANNOTATION_WIDTH
+} from './modules/coordinates.js';
+```
+
+### arrowUtils.js
+
+Generates SVG arc paths:
+
+```javascript
+import { createArrowPath } from './modules/arrowUtils.js';
+
+const path = createArrowPath(
+  { x: 100, y: 50 },   // source
+  { x: 200, y: 100 },  // target
+  true,                // clockwise
+  Math.PI / 2          // angle (optional)
+);
+```
+
+## Testing
+
+Tests use Playwright for visual regression testing:
+
+```bash
+npm test                    # Run tests
+npm test -- --update-snapshots  # Update snapshots
+```
+
+Tests cover both linear scale (`/`) and ordinal scale (`/ordinal`) examples.
+
+## Common Tasks
+
+### Adding a new arrow property
+
+1. Update `Arrow` type in `types.d.ts`
+2. Update `setArrow` in `Editor.svelte` to handle the property
+3. Update `ArrowZone.svelte` to read/write the property
+4. Update `Arrows.svelte` if it affects rendering
+
+### Debugging coordinate issues
+
+1. Check that `coordinates.js` functions are being used consistently
+2. Verify the correct `scales` object is being passed
+3. For east arrows, remember `dx` is from the RIGHT edge
+
