@@ -22,6 +22,7 @@
 	 */
 	let isEditable = $state(false);
 	let noteDimensions = $state([0, 0]);
+	// svelte-ignore state_referenced_locally
 	let width = $state(d.width);
 
 	/**

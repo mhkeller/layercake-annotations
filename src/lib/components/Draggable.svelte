@@ -74,6 +74,12 @@
 	{onmousedown}
 	{onmouseover}
 	{onmouseout}
+	onfocus={onmouseover}
+	onblur={onmouseout}
+	onkeydown={(e) => e.key === 'Delete' && onclick(e)}
+	role="button"
+	tabindex="0"
+	aria-label="Annotation - drag to move, press Delete to remove"
 	bind:clientWidth={noteDimensions[0]}
 	bind:clientHeight={noteDimensions[1]}
 >

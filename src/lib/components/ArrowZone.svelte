@@ -261,17 +261,19 @@
 	let isDragging = $derived(draggingSource || draggingTarget);
 </script>
 
-<!-- svelte-ignore a11y_mouse_events_have_key_events -->
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-
 {#if arrow}
 	<!-- Source handle (when arrow exists) -->
 	<div
 		onmousedown={onSourceMousedown}
 		{onclick}
+		onkeydown={(e) => e.key === 'Enter' && onclick(e)}
+		onfocus={() => onmouseover('source')}
+		onblur={onmouseout}
 		onmouseover={() => onmouseover('source')}
 		{onmouseout}
+		role="button"
+		tabindex="0"
+		aria-label="Arrow source handle - Cmd+click to toggle curve direction"
 		class:visible={isAnnotationHovered || isDragging}
 		class:dragging={draggingSource}
 		class="arrow-zone source {side}"
@@ -283,8 +285,14 @@
 	<div
 		onmousedown={onTargetMousedown}
 		{onclick}
+		onkeydown={(e) => e.key === 'Enter' && onclick(e)}
+		onfocus={() => onmouseover('target')}
+		onblur={onmouseout}
 		onmouseover={() => onmouseover('target')}
 		{onmouseout}
+		role="button"
+		tabindex="0"
+		aria-label="Arrow target handle - drag to move arrow endpoint"
 		class:visible={isAnnotationHovered || isDragging}
 		class:dragging={draggingTarget}
 		class="arrow-zone target {side}"
@@ -295,8 +303,13 @@
 	<!-- Create handle (no arrow yet) - drag to create -->
 	<div
 		onmousedown={onTargetMousedown}
+		onfocus={() => onmouseover('create')}
+		onblur={onmouseout}
 		onmouseover={() => onmouseover('create')}
 		{onmouseout}
+		role="button"
+		tabindex="0"
+		aria-label="Drag to create arrow"
 		class:visible={isAnnotationHovered || isDragging}
 		class:dragging={draggingTarget}
 		class="arrow-zone create {side}"

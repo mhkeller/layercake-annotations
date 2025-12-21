@@ -90,11 +90,29 @@
 			}
 		}
 	}
+
+	/** Keyboard resize handler */
+	function onResize(delta) {
+		const currentWidth = parseWidth(width);
+		const newWidth = Math.max(50, currentWidth + delta);
+		width = `${newWidth}px`;
+		ondrag();
+	}
 </script>
 
 {#each grabbers as grabber}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="grabber {grabber}" {onmousedown}></div>
+	<div
+		class="grabber {grabber}"
+		{onmousedown}
+		onkeydown={(e) => {
+			if (e.key === 'ArrowLeft') { onResize(-10); e.preventDefault(); }
+			if (e.key === 'ArrowRight') { onResize(10); e.preventDefault(); }
+		}}
+		role="slider"
+		tabindex="0"
+		aria-label="Resize handle - use arrow keys to adjust width"
+		aria-valuenow={width}
+	></div>
 {/each}
 
 <style>

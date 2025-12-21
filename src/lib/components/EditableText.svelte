@@ -63,12 +63,11 @@
 </script>
 
 {#if isEditable}
-	<!-- svelte-ignore a11y_autofocus -->
-	<!-- svelte-ignore a11y_interactive_supports_focus -->
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="textarea"
 		role="textbox"
+		aria-multiline="true"
+		tabindex="0"
 		bind:this={textarea}
 		onblur={cancelEdit}
 		{onclick}
@@ -78,8 +77,14 @@
 		style:text-align={alignment}
 	></div>
 {:else}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div ondblclick={handleDoubleClick} style:text-align={alignment}>
+	<div
+		ondblclick={handleDoubleClick}
+		onkeydown={(e) => e.key === 'Enter' && handleDoubleClick()}
+		role="button"
+		tabindex="0"
+		aria-label="Double-click or press Enter to edit"
+		style:text-align={alignment}
+	>
 		<pre>{text}</pre>
 	</div>
 {/if}

@@ -111,8 +111,6 @@
 	});
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <g class="swoops">
 	<!-- Render saved arrows (hide if this specific arrow is being dragged) -->
 	{#each annotations as anno}
@@ -127,7 +125,14 @@
 					></path>
 					<!-- Invisible hit area for clicking (edit mode only) -->
 					{#if modifyArrow}
-						<path class="arrow-hitarea" d={pathD} onclick={(e) => handleArrowClick(e, anno, arrow)}
+						<path
+							class="arrow-hitarea"
+							d={pathD}
+							onclick={(e) => handleArrowClick(e, anno, arrow)}
+							onkeydown={(e) => e.key === 'Enter' && handleArrowClick(e, anno, arrow)}
+							role="button"
+							tabindex="0"
+							aria-label="Arrow - Cmd+Enter to toggle curve direction"
 						></path>
 					{/if}
 				{/if}
