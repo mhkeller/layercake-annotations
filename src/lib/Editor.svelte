@@ -32,14 +32,14 @@
 	const saveAnnotationConfig = getContext('saveAnnotationConfig');
 
 	/**
-	 * Save the config if the user has provided that option
+	 * Save the config and log it for easy copy-paste
 	 */
-	const saveConfig_debounced = debounce(saveAnnotationConfig ?? (() => {}), 1_000);
-	function saveAnnotationConfig_debounced(annos) {
+	const saveConfig_debounced = debounce((annos) => {
+		console.log('Annotations config:', JSON.stringify(annos, null, 2));
 		if (saveAnnotationConfig) {
-			saveConfig_debounced(annos);
+			saveAnnotationConfig(annos);
 		}
-	}
+	}, 1_000);
 
 	/**
 	 * State vars
@@ -76,7 +76,7 @@
 			config: $config
 		});
 		annotations.push(annotation);
-		saveAnnotationConfig_debounced(annotations);
+		saveConfig_debounced(annotations);
 	}
 
 	/**
@@ -84,7 +84,7 @@
 	 */
 	async function deleteAnnotation(id) {
 		annotations = annotations.filter((d) => d.id !== id);
-		saveAnnotationConfig_debounced(annotations);
+		saveConfig_debounced(annotations);
 	}
 
 	/**
@@ -99,7 +99,7 @@
 				};
 			}
 		});
-		saveAnnotationConfig_debounced(annotations);
+		saveConfig_debounced(annotations);
 	}
 
 	/**
@@ -118,7 +118,7 @@
 			annotation.arrows.push(arrow);
 		}
 
-		saveAnnotationConfig_debounced(annotations);
+		saveConfig_debounced(annotations);
 	}
 
 	/**
@@ -132,7 +132,7 @@
 		if (!arrow) return;
 
 		Object.assign(arrow, attrs);
-		saveAnnotationConfig_debounced(annotations);
+		saveConfig_debounced(annotations);
 	}
 
 	/**
@@ -149,7 +149,7 @@
 		if (len === annotation.arrows.length) {
 			deleteAnnotation(annotation.id);
 		}
-		saveAnnotationConfig_debounced(annotations);
+		saveConfig_debounced(annotations);
 	}
 
 	/**
@@ -165,7 +165,7 @@
 			} else if (hover.type === 'arrow' && hover.side) {
 				deleteArrow(hover.annotationId, hover.side);
 			}
-			saveAnnotationConfig_debounced(annotations);
+			saveConfig_debounced(annotations);
 		}
 	}
 
