@@ -165,10 +165,11 @@
 	setContext('modifyArrow', modifyArrow);
 </script>
 
-<Svg>
-	<svelte:fragment slot="defs">
-		<ArrowheadMarker />
-	</svelte:fragment>
+{#snippet defs()}
+	<ArrowheadMarker />
+{/snippet}
+
+<Svg {defs}>
 	<Arrows {annotations} />
 </Svg>
 
