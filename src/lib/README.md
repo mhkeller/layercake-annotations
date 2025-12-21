@@ -42,8 +42,9 @@ src/lib/
   [yKey]: any,             // Y data value (key from LayerCake config)
   dx: number,              // X offset: -100 to 100 (percentage of chart width)
   dy: number,              // Y offset: -100 to 100 (percentage of chart height)
-  text: string,            // Annotation text
+  text: string,            // Annotation text (supports line breaks)
   width?: string,          // Box width (e.g., "150px")
+  alignment?: string,      // Text alignment: 'left', 'center', or 'right'
   arrows: Arrow[]          // Attached arrows
 }
 ```
@@ -101,6 +102,18 @@ Pixels relative to annotation box edge:
 |----------|------|-----------|
 | `[xKey]`, `[yKey]` | Data values | Always (same keys as LayerCake config) |
 | `dx`, `dy` | % within band (0-100) | Only for ordinal scales |
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| Double-click | Edit annotation text |
+| Enter | Save text and exit edit mode |
+| Shift+Enter | Insert line break while editing |
+| Escape | Cancel editing |
+| Cmd+click | Cycle text alignment: left → center → right |
+| Delete/Backspace | Delete hovered annotation or arrow |
+| Cmd+click on arrow | Toggle curve direction: clockwise → straight → counter-clockwise |
 
 ## State Management
 

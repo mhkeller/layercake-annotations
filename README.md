@@ -29,6 +29,15 @@ pnpm add @mhkeller/layercake-annotations
 - Double-click text to edit
 - Hover + Delete/Backspace to remove
 
+**Editing text:**
+- Double-click to edit
+- Enter to save
+- Shift+Enter for line breaks
+- Escape to cancel
+
+**Formatting:**
+- Cmd+click annotation to cycle text alignment: left → center → right
+
 **Creating arrows:**
 - Hover over annotation to reveal handles on west/east edges
 - Drag a handle outward to create an arrow
@@ -50,8 +59,9 @@ pnpm add @mhkeller/layercake-annotations
   value: 42,                       // Y value (matches LayerCake y accessor)
   dx: 5,                           // X offset: percentage of chart width (-100 to 100)
   dy: -10,                         // Y offset: percentage of chart height (-100 to 100)
-  text: 'Peak value',              // Annotation text
+  text: 'Peak value',              // Annotation text (supports line breaks)
   width: '120px',                  // Optional: fixed width
+  alignment: 'left',               // Optional: 'left', 'center', or 'right'
   arrows: []                       // Array of arrows (see below)
 }
 ```

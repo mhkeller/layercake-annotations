@@ -71,18 +71,24 @@
 	}
 
 	/**
-	 * Listen for command-click events to toggle alignment
+	 * Text alignment - initialized from data, saved on change
+	 * Cmd+click cycles: left → center → right → left
 	 */
-	let alignment = $state('left');
+	// svelte-ignore state_referenced_locally
+	let alignment = $state(d.alignment || 'left');
+
 	function onclick(e) {
 		if (e.metaKey) {
+			let newAlignment;
 			if (alignment === 'left') {
-				alignment = 'center';
+				newAlignment = 'center';
 			} else if (alignment === 'center') {
-				alignment = 'right';
+				newAlignment = 'right';
 			} else {
-				alignment = 'left';
+				newAlignment = 'left';
 			}
+			alignment = newAlignment;
+			modifyAnnotation(d.id, { alignment: newAlignment });
 		}
 	}
 

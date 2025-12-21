@@ -40,7 +40,12 @@
 	}
 
 	function handleKeydown(e) {
-		if (e.key === 'Escape' || e.key === 'Tab' || e.key === 'Return') {
+		if (e.key === 'Escape' || e.key === 'Tab') {
+			textarea.blur();
+		}
+		// Enter without shift saves, shift+enter allows line break
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault();
 			textarea.blur();
 		}
 	}
@@ -93,7 +98,7 @@
 		aria-label="Double-click or press Enter to edit"
 		style:text-align={alignment}
 	>
-		{text}
+		<pre>{text}</pre>
 	</div>
 {/if}
 
@@ -101,6 +106,7 @@
 	.textarea[contenteditable] {
 		outline: none;
 		position: relative;
+		white-space: pre-wrap;
 	}
 	.textarea[contenteditable]:after {
 		position: absolute;
@@ -113,5 +119,11 @@
 		border-radius: 3px;
 		border: 2px solid #007bff;
 		box-shadow: 0 0 5px #007bff50;
+	}
+	pre {
+		margin: 0;
+		font-family: inherit;
+		white-space: pre-wrap;
+		word-wrap: break-word;
 	}
 </style>
