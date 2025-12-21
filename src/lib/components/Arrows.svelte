@@ -8,6 +8,10 @@
 	/** @typedef {import('../types.js').Annotation} Annotation */
 	/** @typedef {import('../types.js').DragState} DragState */
 	/** @typedef {import('../types.js').ModifyArrowFn} ModifyArrowFn */
+	/**
+	 * @template T
+	 * @typedef {import('../types.js').Ref<T>} Ref
+	 */
 
 	import { getContext } from 'svelte';
 
@@ -19,7 +23,7 @@
 
 	const { xScale, yScale, x, y, width, height } = getContext('LayerCake');
 
-	/** @type {import('../types.js').Ref<DragState | null> | undefined} - Only available in Editor mode */
+	/** @type {Ref<DragState | null> | undefined} - Only available in Editor mode */
 	const dragStateRef = getContext('previewArrow');
 
 	/** @type {ModifyArrowFn | undefined} - Only available in Editor mode */

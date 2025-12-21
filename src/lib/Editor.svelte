@@ -4,6 +4,10 @@
 	/** @typedef {import('./types.js').HoverState} HoverState */
 	/** @typedef {import('./types.js').DragState} DragState */
 	/** @typedef {import('./types.js').SaveAnnotationConfigFn} SaveAnnotationConfigFn */
+	/**
+	 * @template T
+	 * @typedef {import('./types.js').Ref<T>} Ref
+	 */
 
 	import { getContext, setContext } from 'svelte';
 	import { Svg, Html } from 'layercake';
@@ -43,16 +47,16 @@
 	let idCounter = Math.max(...annos.map((d) => d.id), -1);
 	let annotations = $state(annos);
 
-	/** @type {import('./types.js').Ref<boolean>} */
+	/** @type {Ref<boolean>} */
 	const isEditing = createRef(false);
 
-	/** @type {import('./types.js').Ref<HoverState | null>} */
+	/** @type {Ref<HoverState | null>} */
 	const hovering = createRef(null);
 
-	/** @type {import('./types.js').Ref<boolean>} */
+	/** @type {Ref<boolean>} */
 	const moving = createRef(false);
 
-	/** @type {import('./types.js').Ref<DragState | null>} - Preview arrow shown during drag */
+	/** @type {Ref<DragState | null>} - Preview arrow shown during drag */
 	const previewArrow = createRef(null);
 
 	setContext('isEditing', isEditing);

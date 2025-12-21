@@ -11,6 +11,10 @@
 	/** @typedef {import('../types.js').SetArrowFn} SetArrowFn */
 	/** @typedef {import('../types.js').ModifyArrowFn} ModifyArrowFn */
 	/** @typedef {import('../types.js').ModifyAnnotationFn} ModifyAnnotationFn */
+	/**
+	 * @template T
+	 * @typedef {import('../types.js').Ref<T>} Ref
+	 */
 
 	import { getContext } from 'svelte';
 	import invertScale from '$lib/modules/invertScale.js';
@@ -27,7 +31,7 @@
 
 	let { d, side, noteDimensions } = $props();
 
-	/** @type {import('../types.js').Ref<HoverState | null>} */
+	/** @type {Ref<HoverState | null>} */
 	const hovering = getContext('hovering');
 	/** @type {SetArrowFn} */
 	const setArrow = getContext('setArrow');
@@ -35,9 +39,9 @@
 	const modifyArrow = getContext('modifyArrow');
 	/** @type {ModifyAnnotationFn} */
 	const modifyAnnotation = getContext('modifyAnnotation');
-	/** @type {import('../types.js').Ref<boolean>} */
+	/** @type {Ref<boolean>} */
 	const moving = getContext('moving');
-	/** @type {import('../types.js').Ref<DragState | null>} */
+	/** @type {Ref<DragState | null>} */
 	const dragState = getContext('previewArrow');
 
 	/** Handle diameter in pixels */

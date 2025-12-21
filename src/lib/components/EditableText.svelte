@@ -1,7 +1,12 @@
 <script>
+	/**
+	 * @template T
+	 * @typedef {import('../types.js').Ref<T>} Ref
+	 */
+
 	import { getContext } from 'svelte';
 
-	/** @type {import('../types.js').Ref<boolean>} */
+	/** @type {Ref<boolean>} */
 	const isEditing = getContext('isEditing');
 
 	let { text = $bindable(), isEditable = $bindable(false), alignment } = $props();

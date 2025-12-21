@@ -1,5 +1,9 @@
 <script>
 	/** @typedef {import('../types.js').HoverState} HoverState */
+	/**
+	 * @template T
+	 * @typedef {import('../types.js').Ref<T>} Ref
+	 */
 
 	import { getContext } from 'svelte';
 
@@ -24,9 +28,9 @@
 	let isBanned = $state(false);
 	let thisMoving = $state(false);
 
-	/** @type {import('../types.js').Ref<HoverState | null>} */
+	/** @type {Ref<HoverState | null>} */
 	const hovering = getContext('hovering');
-	/** @type {import('../types.js').Ref<boolean>} */
+	/** @type {Ref<boolean>} */
 	const moving = getContext('moving');
 	const { padding } = getContext('LayerCake');
 

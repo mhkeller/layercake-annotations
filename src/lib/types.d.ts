@@ -160,4 +160,3 @@ export type ModifyArrowFn = (id: number, side: 'west' | 'east', attrs: Partial<A
  * Function to save annotation config (provided by parent)
  */
 export type SaveAnnotationConfigFn = (annotations: Annotation[]) => void;
-
