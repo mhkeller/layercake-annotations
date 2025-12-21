@@ -12,9 +12,6 @@ import invertScale from './invertScale.js';
 export default function newAnnotation(e, id, { xScale, yScale, config }) {
 	/** @type {[number, number]} */
 	const coords = [e.offsetX, e.offsetY];
-
-	// console.log('initial coords', coords);
-
 	const xVal = invertScale(xScale, coords[0]);
 	const yVal = invertScale(yScale, coords[1]);
 

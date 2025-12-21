@@ -344,25 +344,23 @@
 		height: var(--diameter);
 		border-radius: 50%;
 		border: 1px dashed #333;
+		background: rgba(0, 0, 0, 0.1);
 		cursor: pointer;
 		opacity: 0;
 		transition: opacity 250ms;
 		z-index: 10;
 	}
-	/* For better hovering */
+	/* Larger hit area for easier hovering */
 	.arrow-zone:before {
-		content: ' ';
+		content: '';
 		position: absolute;
 		width: 21px;
 		height: 23px;
 		top: -5px;
 		left: -3.5px;
 	}
-	.visible.arrow-zone,
-	.dragging.arrow-zone {
+	.arrow-zone.visible,
+	.arrow-zone.dragging {
 		opacity: 1;
-	}
-	.arrow-zone {
-		background: rgba(0, 0, 0, 0.1);
 	}
 </style>

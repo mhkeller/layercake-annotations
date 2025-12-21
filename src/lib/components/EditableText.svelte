@@ -69,6 +69,7 @@
 </script>
 
 {#if isEditable}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="textarea"
 		role="textbox"
@@ -84,39 +85,31 @@
 	></div>
 {:else}
 	<div
+		class="text-display"
 		ondblclick={handleDoubleClick}
 		onkeydown={(e) => e.key === 'Enter' && handleDoubleClick()}
 		role="button"
 		tabindex="0"
 		aria-label="Double-click or press Enter to edit"
 		style:text-align={alignment}
-	>
-		<pre>{text}</pre>
-	</div>
+	>{text}</div>
 {/if}
 
 <style>
 	.textarea[contenteditable] {
-		outline: none; /* Remove default outline */
+		outline: none;
 		position: relative;
 	}
 	.textarea[contenteditable]:after {
 		position: absolute;
-		content: ' ';
+		content: '';
 		top: -2px;
 		right: -4px;
 		bottom: -2px;
 		left: -4px;
 		pointer-events: none;
 		border-radius: 3px;
-		border: 2px solid #007bff; /* Add a custom border */
-		box-shadow: 0 0 5px #007bff50; /* Add a subtle shadow */
-	}
-	pre {
-		margin: 0;
-		padding: 0;
-		font-family: unset;
-		white-space: normal;
-		pointer-events: none;
+		border: 2px solid #007bff;
+		box-shadow: 0 0 5px #007bff50;
 	}
 </style>

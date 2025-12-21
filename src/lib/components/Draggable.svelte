@@ -113,7 +113,6 @@
 	.draggable.canDrag {
 		user-select: none;
 		cursor: move;
-		/* border: solid 5px gray; */
 	}
 
 	.draggable.hovering :global(.grabber) {

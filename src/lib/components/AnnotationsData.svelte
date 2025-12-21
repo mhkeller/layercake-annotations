@@ -25,9 +25,7 @@
 			style:top={`calc(${$yGet(d)}${units} + ${d.dy || 0}%)`}
 			style:width={d.width}
 		>
-			<div class="layercake-annotation">
-				<div><pre>{getText(d)}</pre></div>
-			</div>
+			<div class="layercake-annotation">{getText(d)}</div>
 		</div>
 	{/each}
 </div>
@@ -43,17 +41,8 @@
 		padding: 3px;
 		border: 1px solid transparent;
 	}
-	/* Mirrors AnnotationEditor.svelte CSS exactly */
 	.layercake-annotation {
 		width: 100%;
 		height: 100%;
-	}
-	/* Mirrors EditableText.svelte CSS exactly */
-	pre {
-		margin: 0;
-		padding: 0;
-		font-family: unset;
-		white-space: normal;
-		pointer-events: none;
 	}
 </style>
