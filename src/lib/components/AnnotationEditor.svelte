@@ -22,7 +22,7 @@
 	 */
 	let isEditable = $state(false);
 	let noteDimensions = $state([0, 0]);
-	let width = $state();
+	let width = $state(d.width);
 
 	/**
 	 * Arrow sides - simplified to just west and east
@@ -86,7 +86,7 @@
 		}
 	}
 
-	let grabbers = $derived(['west', 'east']);
+	const grabbers = ['west', 'east'];
 </script>
 
 {#if d}
