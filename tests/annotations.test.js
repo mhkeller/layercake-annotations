@@ -175,7 +175,10 @@ test.describe('LayerCake Annotations', () => {
 
 		// Drag the annotation
 		if (initialBox) {
-			await page.mouse.move(initialBox.x + initialBox.width / 2, initialBox.y + initialBox.height / 2);
+			await page.mouse.move(
+				initialBox.x + initialBox.width / 2,
+				initialBox.y + initialBox.height / 2
+			);
 			await page.mouse.down();
 			await page.mouse.move(initialBox.x + 100, initialBox.y + 50, { steps: 10 });
 			await page.mouse.up();
@@ -226,6 +229,30 @@ test.describe('LayerCake Annotations', () => {
 		await expect(page.locator('.chart-container')).toHaveScreenshot('static-mode.png');
 	});
 
+	test('annotation appearance is consistent across edit mode toggles', async ({ page }) => {
+		const chart = page.locator('.chart-container');
+		const checkbox = page.locator('input[type="checkbox"]');
+
+		// Wait for stable render
+		await page.waitForTimeout(200);
+
+		// Step 1: Initial edit mode
+		await page.mouse.move(0, 0);
+		await expect(chart).toHaveScreenshot('toggle-1-initial.png');
+
+		// Step 2: Toggle to static mode
+		await checkbox.uncheck();
+		await page.waitForTimeout(200);
+		await page.mouse.move(0, 0);
+		await expect(chart).toHaveScreenshot('toggle-2-static.png');
+
+		// Step 3: Toggle back to edit mode
+		await checkbox.check();
+		await page.waitForTimeout(200);
+		await page.mouse.move(0, 0);
+		await expect(chart).toHaveScreenshot('toggle-3-edit-again.png');
+	});
+
 	test('arrow follows mouse during drag without drift', async ({ page }) => {
 		const annotation = page.locator('.draggable').first();
 
@@ -248,7 +275,7 @@ test.describe('LayerCake Annotations', () => {
 			const steps = [
 				{ x: startX + 30, y: startY },
 				{ x: startX + 60, y: startY - 20 },
-				{ x: startX + 90, y: startY - 40 },
+				{ x: startX + 90, y: startY - 40 }
 			];
 
 			for (let i = 0; i < steps.length; i++) {
@@ -261,4 +288,3 @@ test.describe('LayerCake Annotations', () => {
 		}
 	});
 });
-
