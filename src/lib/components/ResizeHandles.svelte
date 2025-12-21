@@ -107,18 +107,19 @@
 		width: 3px;
 		height: 70%;
 		top: 50%;
-		transform: translateY(-50%);
 		background: red;
 		border-radius: 2px;
 		cursor: col-resize;
 	}
 
 	.grabber.west {
-		left: 0;
+		left: -0.5px;
+		transform: translateX(-50%) translateY(-50%);
 	}
 
 	.grabber.east {
-		right: 0;
+		right: -0.5px;
+		transform: translateX(50%) translateY(-50%);
 	}
 
 	.grabber.selected {

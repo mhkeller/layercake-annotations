@@ -137,4 +137,3 @@ export function calculateSourceDy(pixelY, anno, scales) {
 	const box = getAnnotationBox(anno, scales);
 	return pixelY - box.top;
 }
-
