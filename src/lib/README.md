@@ -40,8 +40,8 @@ src/lib/
   id: number,              // Unique identifier
   [xKey]: any,             // X data value (key from LayerCake config)
   [yKey]: any,             // Y data value (key from LayerCake config)
-  dx: number,              // X offset as % of chart width
-  dy: number,              // Y offset as % of chart height
+  dx: number,              // X offset: -100 to 100 (percentage of chart width)
+  dy: number,              // Y offset: -100 to 100 (percentage of chart height)
   text: string,            // Annotation text
   width?: string,          // Box width (e.g., "150px")
   arrows: Arrow[],         // Attached arrows
@@ -49,43 +49,59 @@ src/lib/
 }
 ```
 
+**Note**: `dx` and `dy` are percentages (not decimals). Use `dx: 10` for 10% right, `dx: -5` for 5% left.
+
 ### Arrow Object
 
 ```typescript
 {
-  side: 'west' | 'east',   // Which side of annotation
-  clockwise: boolean|null, // Arc direction (null = straight line)
+  side: 'west' | 'east',   // Which side of annotation the arrow originates from
+  clockwise: boolean|null, // true = clockwise arc, false = counter-clockwise, null = straight
   source: {
-    dx: number,            // Pixel offset from annotation edge
-    dy: number             // Pixel offset from annotation top
+    dx: number,            // Pixels from annotation edge (neg = further out)
+    dy: number             // Pixels from annotation vertical center
   },
   target: {
-    [xKey]: any,           // X data value
+    [xKey]: any,           // X data value (same accessor as LayerCake)
     [yKey]: any,           // Y data value
-    dx?: number,           // % offset for ordinal X scale
-    dy?: number            // % offset for ordinal Y scale
+    dx?: number,           // 0-100: % offset within ordinal band (X)
+    dy?: number            // 0-100: % offset within ordinal band (Y)
   }
 }
 ```
 
 ## Coordinate System
 
-The library uses multiple coordinate systems that can be confusing. Here's the breakdown:
+The library uses multiple coordinate systems:
 
 ### Annotation Position
-- **Data space**: `annotation[xKey]` and `annotation[yKey]` store data values
-- **Percentage offsets**: `annotation.dx` and `annotation.dy` are percentages of chart dimensions
-- **Final pixel position**: `xScale(x(anno)) + (dx/100)*width`
+
+```
+Final position = scale(dataValue) + (dx/100 × chartDimension)
+```
+
+| Property | Unit | Range | Example |
+|----------|------|-------|---------|
+| `[xKey]` | Data value | Depends on data | `new Date('2024-01-15')` |
+| `[yKey]` | Data value | Depends on data | `42` |
+| `dx` | % of chart width | -100 to 100 | `5` = 5% right |
+| `dy` | % of chart height | -100 to 100 | `-10` = 10% up |
 
 ### Arrow Source Position
-- Stored as **pixel offsets** from annotation edge
-- **West arrows**: `source.dx` is offset from LEFT edge (negative = further left)
-- **East arrows**: `source.dx` is offset from RIGHT edge (positive = further right)
-- `source.dy` is always offset from annotation TOP
+
+Pixels relative to annotation box edge:
+
+| Property | Unit | Meaning |
+|----------|------|---------|
+| `source.dx` | Pixels | Distance from annotation edge (west: left edge, east: right edge) |
+| `source.dy` | Pixels | Distance from annotation vertical center |
 
 ### Arrow Target Position
-- Stored in **data space** with optional percentage offsets
-- For ordinal scales, `target.dx`/`target.dy` store percentage offsets within the band
+
+| Property | Unit | When used |
+|----------|------|-----------|
+| `[xKey]`, `[yKey]` | Data values | Always (same keys as LayerCake config) |
+| `dx`, `dy` | % within band (0-100) | Only for ordinal scales |
 
 ## State Management
 
@@ -149,8 +165,8 @@ const path = createArrowPath(
 Tests use Playwright for visual regression testing:
 
 ```bash
-npm test                    # Run tests
-npm test -- --update-snapshots  # Update snapshots
+pnpm test                              # Run tests
+pnpm exec playwright test --update-snapshots  # Update snapshots
 ```
 
 Tests cover both linear scale (`/`) and ordinal scale (`/ordinal`) examples.
