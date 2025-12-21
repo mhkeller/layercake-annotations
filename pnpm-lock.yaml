@@ -11,6 +11,9 @@ importers:
       d3-array:
         specifier: ^3.2.4
         version: 3.2.4
+      d3-scale:
+        specifier: ^4.0.2
+        version: 4.0.2
       layercake:
         specifier: ^10.0.2
         version: 10.0.2(svelte@5.46.0)(typescript@5.9.3)

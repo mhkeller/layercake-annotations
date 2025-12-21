@@ -52,6 +52,7 @@
 	"type": "module",
 	"dependencies": {
 		"d3-array": "^3.2.4",
+		"d3-scale": "^4.0.2",
 		"layercake": "^10.0.2",
 		"underscore": "^1.13.7"
 	}
