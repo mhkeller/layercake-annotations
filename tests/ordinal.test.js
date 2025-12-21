@@ -75,8 +75,8 @@ test.describe('Ordinal Scale Annotations', () => {
 		// Wait for arrow to render
 		await page.waitForTimeout(100);
 
-		// Should have an arrow path
-		const arrowPath = page.locator('.swoops path');
+		// Should have an arrow path (use .arrow-visible to exclude invisible hitarea paths)
+		const arrowPath = page.locator('.arrow-visible');
 		await expect(arrowPath).toHaveCount(1);
 
 		// Take screenshot with arrow
@@ -106,8 +106,8 @@ test.describe('Ordinal Scale Annotations', () => {
 		// Wait for arrow to render
 		await page.waitForTimeout(100);
 
-		// Should have an arrow path
-		const arrowPath = page.locator('.swoops path');
+		// Should have an arrow path (use .arrow-visible to exclude invisible hitarea paths)
+		const arrowPath = page.locator('.arrow-visible');
 		await expect(arrowPath).toHaveCount(1);
 
 		// Take screenshot with arrow

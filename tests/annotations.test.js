@@ -90,8 +90,8 @@ test.describe('LayerCake Annotations', () => {
 		// Wait for arrow to render
 		await page.waitForTimeout(100);
 
-		// Should have an arrow path
-		const arrowPath = page.locator('.swoops path');
+		// Should have an arrow path (use .arrow-visible to exclude invisible hitarea paths)
+		const arrowPath = page.locator('.arrow-visible');
 		await expect(arrowPath).toHaveCount(1);
 
 		// Take screenshot with arrow
@@ -120,8 +120,8 @@ test.describe('LayerCake Annotations', () => {
 		// Wait for arrow to render
 		await page.waitForTimeout(100);
 
-		// Should have an arrow path
-		const arrowPath = page.locator('.swoops path');
+		// Should have an arrow path (use .arrow-visible to exclude invisible hitarea paths)
+		const arrowPath = page.locator('.arrow-visible');
 		await expect(arrowPath).toHaveCount(1);
 
 		// Take screenshot with arrow
@@ -159,8 +159,8 @@ test.describe('LayerCake Annotations', () => {
 
 		await page.waitForTimeout(100);
 
-		// Should have two arrow paths
-		const arrowPaths = page.locator('.swoops path');
+		// Should have two arrow paths (use .arrow-visible to exclude invisible hitarea paths)
+		const arrowPaths = page.locator('.arrow-visible');
 		await expect(arrowPaths).toHaveCount(2);
 
 		// Take screenshot with both arrows
