@@ -58,7 +58,9 @@
 		}
 	});
 
-	function handleDoubleClick() {
+	function handleDoubleClick(e) {
+		// Don't enter edit mode if Cmd is held (used for alignment cycling)
+		if (e.metaKey) return;
 		isEditable = true;
 		isEditing.value = true;
 		document.addEventListener('click', handleClickOutside);
