@@ -72,13 +72,14 @@
 			dy: 0,
 			text: 'Ordinal annotation with long text that should wrap',
 			width: '156px',
+			align: 'right',
 			arrows: [
 				{
 					side: 'east',
 					clockwise: false,
 					source: {
-						dx: -71,
-						dy: 64
+						dx: -20,
+						dy: 61
 					},
 					target: {
 						year: '1981',
@@ -91,8 +92,8 @@
 					side: 'west',
 					clockwise: null,
 					source: {
-						dx: -2,
-						dy: 61
+						dx: 24,
+						dy: 20.999999999999996
 					},
 					target: {
 						year: '1980',

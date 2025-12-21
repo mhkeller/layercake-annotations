@@ -75,7 +75,7 @@
 	 * Cmd+click cycles: left → center → right → left
 	 */
 	// svelte-ignore state_referenced_locally
-	let alignment = $state(d.alignment || 'left');
+	let alignment = $state(d.align || 'left');
 
 	function onclick(e) {
 		if (e.metaKey) {
@@ -88,7 +88,7 @@
 				newAlignment = 'left';
 			}
 			alignment = newAlignment;
-			modifyAnnotation(d.id, { alignment: newAlignment });
+			modifyAnnotation(d.id, { align: newAlignment });
 		}
 	}
 

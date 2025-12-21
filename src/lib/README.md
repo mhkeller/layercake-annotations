@@ -44,7 +44,7 @@ src/lib/
   dy: number,              // Y offset: -100 to 100 (percentage of chart height)
   text: string,            // Annotation text (supports line breaks)
   width?: string,          // Box width (e.g., "150px")
-  alignment?: string,      // Text alignment: 'left', 'center', or 'right'
+  align?: string,          // Text alignment: 'left', 'center', or 'right'
   arrows: Arrow[]          // Attached arrows
 }
 ```

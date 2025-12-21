@@ -57,7 +57,7 @@ export interface Annotation {
 	/** Width of annotation box (e.g., "150px") */
 	width?: string;
 	/** Text alignment: 'left', 'center', or 'right' */
-	alignment?: 'left' | 'center' | 'right';
+	align?: 'left' | 'center' | 'right';
 	/** Arrows attached to this annotation */
 	arrows: Arrow[];
 }

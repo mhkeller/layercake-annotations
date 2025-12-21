@@ -61,7 +61,7 @@ pnpm add @mhkeller/layercake-annotations
   dy: -10,                         // Y offset: percentage of chart height (-100 to 100)
   text: 'Peak value',              // Annotation text (supports line breaks)
   width: '120px',                  // Optional: fixed width
-  alignment: 'left',               // Optional: 'left', 'center', or 'right'
+  align: 'left',                   // Optional: 'left', 'center', or 'right'
   arrows: []                       // Array of arrows (see below)
 }
 ```
