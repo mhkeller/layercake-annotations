@@ -4,39 +4,39 @@ test.describe('LayerCake Annotations', () => {
 	test.beforeEach(async ({ page }) => {
 		await page.goto('/');
 		// Wait for the chart to render
-		await page.waitForSelector('.chart-container');
+		await page.waitForSelector('.chart-container.line');
 	});
 
 	test('initial chart renders correctly', async ({ page }) => {
 		// Take a screenshot of the initial state
-		await expect(page.locator('.chart-container')).toHaveScreenshot('initial-chart.png');
+		await expect(page.locator('.chart-container.line')).toHaveScreenshot('initial-chart.png');
 	});
 
 	test('existing annotation is visible', async ({ page }) => {
-		// The demo page has an existing annotation
-		const annotation = page.locator('.layercake-annotation');
+		// The demo page has an existing annotation (first one is in line chart)
+		const annotation = page.locator('.chart-container.line .layercake-annotation');
 		await expect(annotation).toBeVisible();
 		await expect(annotation).toContainText('Existing annotation');
 	});
 
 	test('can create a new annotation by clicking', async ({ page }) => {
 		// Click on the chart area to create a new annotation
-		const chart = page.locator('.note-listener');
+		const chart = page.locator('.chart-container.line .note-listener');
 		await chart.click({ position: { x: 200, y: 100 } });
 
 		// Wait for the new annotation
 		await page.waitForTimeout(300); // debounce delay
 
-		// Should now have 2 annotations
-		const annotations = page.locator('.layercake-annotation');
+		// Should now have 2 annotations in the line chart
+		const annotations = page.locator('.chart-container.line .layercake-annotation');
 		await expect(annotations).toHaveCount(2);
 
 		// Take screenshot with new annotation
-		await expect(page.locator('.chart-container')).toHaveScreenshot('new-annotation.png');
+		await expect(page.locator('.chart-container.line')).toHaveScreenshot('new-annotation.png');
 	});
 
 	test('annotation text is editable', async ({ page }) => {
-		const annotation = page.locator('.layercake-annotation').first();
+		const annotation = page.locator('.chart-container.line .layercake-annotation');
 
 		// Double-click to edit
 		await annotation.dblclick();
@@ -46,13 +46,13 @@ test.describe('LayerCake Annotations', () => {
 		await page.keyboard.type('Updated text');
 
 		// Click outside to finish editing
-		await page.locator('.chart-container').click({ position: { x: 10, y: 10 } });
+		await page.locator('.chart-container.line').click({ position: { x: 10, y: 10 } });
 
 		await expect(annotation).toContainText('Updated text');
 	});
 
 	test('arrow zones appear on hover', async ({ page }) => {
-		const annotation = page.locator('.draggable').first();
+		const annotation = page.locator('.chart-container.line .draggable');
 
 		// Hover over the annotation
 		await annotation.hover();
@@ -60,23 +60,23 @@ test.describe('LayerCake Annotations', () => {
 		// Wait for transition
 		await page.waitForTimeout(300);
 
-		// Arrow zones should be visible
-		const arrowZones = page.locator('.arrow-zone');
+		// Arrow zones should be visible (2 per annotation, we have 2 charts with 1 annotation each)
+		const arrowZones = page.locator('.chart-container.line .arrow-zone');
 		await expect(arrowZones).toHaveCount(2); // west and east
 
 		// Take screenshot with arrow zones visible
-		await expect(page.locator('.chart-container')).toHaveScreenshot('hover-arrow-zones.png');
+		await expect(page.locator('.chart-container.line')).toHaveScreenshot('hover-arrow-zones.png');
 	});
 
 	test('can create west arrow by dragging', async ({ page }) => {
-		const annotation = page.locator('.draggable').first();
+		const annotation = page.locator('.chart-container.line .draggable');
 
 		// Hover to show arrow zones
 		await annotation.hover();
 		await page.waitForTimeout(300);
 
 		// Find the west arrow zone
-		const westZone = page.locator('.arrow-zone.west');
+		const westZone = page.locator('.chart-container.line .arrow-zone.west');
 
 		// Drag from west zone to create an arrow
 		const box = await westZone.boundingBox();
@@ -90,23 +90,23 @@ test.describe('LayerCake Annotations', () => {
 		// Wait for arrow to render
 		await page.waitForTimeout(100);
 
-		// Should have an arrow path (use .arrow-visible to exclude invisible hitarea paths)
-		const arrowPath = page.locator('.arrow-visible');
+		// Should have an arrow path in line chart
+		const arrowPath = page.locator('.chart-container.line .arrow-visible');
 		await expect(arrowPath).toHaveCount(1);
 
 		// Take screenshot with arrow
-		await expect(page.locator('.chart-container')).toHaveScreenshot('west-arrow.png');
+		await expect(page.locator('.chart-container.line')).toHaveScreenshot('west-arrow.png');
 	});
 
 	test('can create east arrow by dragging', async ({ page }) => {
-		const annotation = page.locator('.draggable').first();
+		const annotation = page.locator('.chart-container.line .draggable');
 
 		// Hover to show arrow zones
 		await annotation.hover();
 		await page.waitForTimeout(300);
 
 		// Find the east arrow zone
-		const eastZone = page.locator('.arrow-zone.east');
+		const eastZone = page.locator('.chart-container.line .arrow-zone.east');
 
 		// Drag from east zone to create an arrow
 		const box = await eastZone.boundingBox();
@@ -120,22 +120,22 @@ test.describe('LayerCake Annotations', () => {
 		// Wait for arrow to render
 		await page.waitForTimeout(100);
 
-		// Should have an arrow path (use .arrow-visible to exclude invisible hitarea paths)
-		const arrowPath = page.locator('.arrow-visible');
+		// Should have an arrow path in line chart
+		const arrowPath = page.locator('.chart-container.line .arrow-visible');
 		await expect(arrowPath).toHaveCount(1);
 
 		// Take screenshot with arrow
-		await expect(page.locator('.chart-container')).toHaveScreenshot('east-arrow.png');
+		await expect(page.locator('.chart-container.line')).toHaveScreenshot('east-arrow.png');
 	});
 
 	test('can create both west and east arrows', async ({ page }) => {
-		const annotation = page.locator('.draggable').first();
+		const annotation = page.locator('.chart-container.line .draggable');
 
 		// Create west arrow
 		await annotation.hover();
 		await page.waitForTimeout(300);
 
-		const westZone = page.locator('.arrow-zone.west');
+		const westZone = page.locator('.chart-container.line .arrow-zone.west');
 		let box = await westZone.boundingBox();
 		if (box) {
 			await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -148,7 +148,7 @@ test.describe('LayerCake Annotations', () => {
 		await annotation.hover();
 		await page.waitForTimeout(300);
 
-		const eastZone = page.locator('.arrow-zone.east');
+		const eastZone = page.locator('.chart-container.line .arrow-zone.east');
 		box = await eastZone.boundingBox();
 		if (box) {
 			await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -159,16 +159,16 @@ test.describe('LayerCake Annotations', () => {
 
 		await page.waitForTimeout(100);
 
-		// Should have two arrow paths (use .arrow-visible to exclude invisible hitarea paths)
-		const arrowPaths = page.locator('.arrow-visible');
+		// Should have two arrow paths in line chart
+		const arrowPaths = page.locator('.chart-container.line .arrow-visible');
 		await expect(arrowPaths).toHaveCount(2);
 
 		// Take screenshot with both arrows
-		await expect(page.locator('.chart-container')).toHaveScreenshot('both-arrows.png');
+		await expect(page.locator('.chart-container.line')).toHaveScreenshot('both-arrows.png');
 	});
 
 	test('can drag annotation to new position', async ({ page }) => {
-		const annotation = page.locator('.draggable').first();
+		const annotation = page.locator('.chart-container.line .draggable');
 
 		// Get initial position
 		const initialBox = await annotation.boundingBox();
@@ -192,27 +192,27 @@ test.describe('LayerCake Annotations', () => {
 		expect(newBox?.y).not.toBe(initialBox?.y);
 
 		// Take screenshot after drag
-		await expect(page.locator('.chart-container')).toHaveScreenshot('dragged-annotation.png');
+		await expect(page.locator('.chart-container.line')).toHaveScreenshot('dragged-annotation.png');
 	});
 
 	test('can delete annotation with backspace', async ({ page }) => {
-		// First verify we have one annotation
-		let annotations = page.locator('.layercake-annotation');
+		// First verify we have one annotation in line chart
+		let annotations = page.locator('.chart-container.line .layercake-annotation');
 		await expect(annotations).toHaveCount(1);
 
 		// Hover over annotation to set hovering state
-		const annotation = page.locator('.draggable').first();
+		const annotation = page.locator('.chart-container.line .draggable');
 		await annotation.hover();
 
 		// Press backspace to delete
 		await page.keyboard.press('Backspace');
 
-		// Annotation should be deleted
-		annotations = page.locator('.layercake-annotation');
+		// Annotation should be deleted from line chart
+		annotations = page.locator('.chart-container.line .layercake-annotation');
 		await expect(annotations).toHaveCount(0);
 
 		// Take screenshot with no annotations
-		await expect(page.locator('.chart-container')).toHaveScreenshot('deleted-annotation.png');
+		await expect(page.locator('.chart-container.line')).toHaveScreenshot('deleted-annotation.png');
 	});
 
 	test('can toggle edit mode', async ({ page }) => {
@@ -222,15 +222,15 @@ test.describe('LayerCake Annotations', () => {
 
 		// In static mode, should not have draggable class behaviors
 		// but annotation should still be visible
-		const annotation = page.locator('.layercake-annotation');
+		const annotation = page.locator('.chart-container.line .layercake-annotation');
 		await expect(annotation).toBeVisible();
 
 		// Take screenshot in static mode
-		await expect(page.locator('.chart-container')).toHaveScreenshot('static-mode.png');
+		await expect(page.locator('.chart-container.line')).toHaveScreenshot('static-mode.png');
 	});
 
 	test('annotation appearance is consistent across edit mode toggles', async ({ page }) => {
-		const chart = page.locator('.chart-container');
+		const chart = page.locator('.chart-container.line');
 		const checkbox = page.locator('input[type="checkbox"]');
 
 		// Wait for stable render
@@ -254,14 +254,14 @@ test.describe('LayerCake Annotations', () => {
 	});
 
 	test('arrow follows mouse during drag without drift', async ({ page }) => {
-		const annotation = page.locator('.draggable').first();
+		const annotation = page.locator('.chart-container.line .draggable');
 
 		// Hover to show arrow zones
 		await annotation.hover();
 		await page.waitForTimeout(300);
 
 		// Start dragging from east zone
-		const eastZone = page.locator('.arrow-zone.east');
+		const eastZone = page.locator('.chart-container.line .arrow-zone.east');
 		const box = await eastZone.boundingBox();
 
 		if (box) {
@@ -281,7 +281,7 @@ test.describe('LayerCake Annotations', () => {
 			for (let i = 0; i < steps.length; i++) {
 				await page.mouse.move(steps[i].x, steps[i].y);
 				await page.waitForTimeout(50);
-				await expect(page.locator('.chart-container')).toHaveScreenshot(`drag-step-${i}.png`);
+				await expect(page.locator('.chart-container.line')).toHaveScreenshot(`drag-step-${i}.png`);
 			}
 
 			await page.mouse.up();

@@ -92,7 +92,9 @@
 		tabindex="0"
 		aria-label="Double-click or press Enter to edit"
 		style:text-align={alignment}
-	>{text}</div>
+	>
+		{text}
+	</div>
 {/if}
 
 <style>

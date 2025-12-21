@@ -345,7 +345,7 @@
 		border-radius: 50%;
 		border: 1px dashed #333;
 		background: rgba(0, 0, 0, 0.1);
-		cursor: pointer;
+		cursor: grab;
 		opacity: 0;
 		transition: opacity 250ms;
 		z-index: 10;
@@ -362,5 +362,8 @@
 	.arrow-zone.visible,
 	.arrow-zone.dragging {
 		opacity: 1;
+	}
+	.arrow-zone.dragging {
+		cursor: grabbing;
 	}
 </style>

@@ -23,8 +23,8 @@
 		{
 			id: 0,
 			year: '1982',
-			value: 8,
-			dx: 0,
+			value: 12,
+			dx: -5,
 			dy: 0,
 			text: 'Ordinal annotation',
 			width: '157px',

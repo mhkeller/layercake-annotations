@@ -1,26 +1,41 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
+	import { scaleBand } from 'd3-scale';
 
 	import { Annotations } from '$lib/index.js';
 
+	// Line chart components
 	import Line from './_components/Line.svelte';
 	import Area from './_components/Area.svelte';
 	import AxisX from './_components/AxisX.svelte';
 	import AxisY from './_components/AxisY.svelte';
 
-	// This example loads csv data as json using @rollup/plugin-dsv
-	import data from './_data/points.csv';
+	// Column chart components
+	import Column from './ordinal/_components/Column.svelte';
+	import OrdinalAxisX from './ordinal/_components/AxisX.svelte';
+	import OrdinalAxisY from './ordinal/_components/AxisY.svelte';
 
-	const xKey = 'myX';
-	const yKey = 'myY';
+	// Data
+	import lineData from './_data/points.csv';
+	import columnData from './ordinal/_data/groups.csv';
 
-	data.forEach((d) => {
-		d[yKey] = +d[yKey];
+	// Line chart config
+	const lineXKey = 'myX';
+	const lineYKey = 'myY';
+	lineData.forEach((d) => {
+		d[lineYKey] = +d[lineYKey];
+	});
+
+	// Column chart config
+	const colXKey = 'year';
+	const colYKey = 'value';
+	columnData.forEach((d) => {
+		d[colYKey] = +d[colYKey];
 	});
 
 	let editable = $state(true);
 
-	let annotations = $state([
+	let lineAnnotations = $state([
 		{
 			id: 0,
 			myX: 1989.004181184669,
@@ -33,6 +48,19 @@
 			coords: [388, 120]
 		}
 	]);
+
+	let columnAnnotations = $state([
+		{
+			id: 0,
+			year: '1982',
+			value: 8,
+			dx: 0,
+			dy: 0,
+			text: 'Ordinal annotation',
+			width: '157px',
+			arrows: []
+		}
+	]);
 </script>
 
 <label>
@@ -40,13 +68,14 @@
 	Edit annotations
 </label>
 
-<div class="chart-container">
+<h3>Line Chart (continuous scales)</h3>
+<div class="chart-container line">
 	<LayerCake
 		padding={{ top: 28, right: 10, bottom: 20, left: 25 }}
-		x={xKey}
-		y={yKey}
+		x={lineXKey}
+		y={lineYKey}
 		yDomain={[0, null]}
-		{data}
+		data={lineData}
 	>
 		<Svg>
 			<AxisX />
@@ -55,24 +84,46 @@
 			<Area />
 		</Svg>
 
-		<Annotations bind:annotations {editable} />
+		<Annotations bind:annotations={lineAnnotations} {editable} />
+	</LayerCake>
+</div>
+
+<h3>Column Chart (ordinal scale)</h3>
+<div class="chart-container ordinal">
+	<LayerCake
+		padding={{ top: 0, right: 15, bottom: 20, left: 20 }}
+		x={colXKey}
+		y={colYKey}
+		xScale={scaleBand().paddingInner(0.02).round(true)}
+		xDomain={['1979', '1980', '1981', '1982', '1983']}
+		yDomain={[0, null]}
+		data={columnData}
+	>
+		<Svg>
+			<OrdinalAxisX gridlines={false} />
+			<OrdinalAxisY snapBaselineLabel />
+			<Column />
+		</Svg>
+		<Annotations bind:annotations={columnAnnotations} {editable} />
 	</LayerCake>
 </div>
 
 <style>
-	/*
-    The wrapper div needs to have an explicit width and height in CSS.
-    It can also be a flexbox child or CSS grid element.
-    The point being it needs dimensions since the <LayerCake> element will
-    expand to fill it.
-  */
 	.chart-container {
 		width: 100%;
-		height: 250px;
+		height: 220px;
+	}
+	.chart-container.ordinal {
+		height: 280px;
 	}
 	label {
 		margin: 14px;
 		cursor: pointer;
 		user-select: none;
+	}
+	h3 {
+		margin: 20px 14px 5px;
+		font-size: 14px;
+		color: #666;
 	}
 </style>
