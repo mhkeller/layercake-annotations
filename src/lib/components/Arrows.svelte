@@ -5,16 +5,18 @@
   During drag, uses live pixel coordinates from dragState.
 -->
 <script>
+	/** @typedef {import('../types.js').Annotation} Annotation */
+
 	import { getContext } from 'svelte';
 	import { createArrowPath } from '../modules/arrowUtils.js';
 	import { getArrowSource, getArrowTarget } from '../modules/coordinates.js';
 
-	/** @type {Array} annotations - A list of annotation objects */
+	/** @type {{ annotations?: Annotation[] }} */
 	let { annotations = [] } = $props();
 
 	const { xScale, yScale, x, y, width, height } = getContext('LayerCake');
 
-	// Get dragState ref from context
+	// Get dragState ref from context (only available in Editor mode)
 	const dragStateRef = getContext('previewArrow');
 
 	/**
@@ -47,6 +49,7 @@
 	 * Check if a specific arrow is currently being dragged
 	 */
 	let draggingArrowKey = $derived.by(() => {
+		if (!dragStateRef) return null;
 		const ds = dragStateRef.value;
 		if (!ds) return null;
 		return `${ds.annotationId}_${ds.side}`;
@@ -56,6 +59,7 @@
 	 * Reactive drag path - renders arrow being dragged (new or existing)
 	 */
 	let dragPath = $derived.by(() => {
+		if (!dragStateRef) return '';
 		const ds = dragStateRef.value;
 		// Use == null to allow annotationId of 0
 		if (!ds || ds.annotationId == null) return '';
@@ -78,7 +82,8 @@
 				{@const arrowKey = `${anno.id}_${arrow.side}`}
 				{@const isBeingDragged = draggingArrowKey === arrowKey}
 				{#if !isBeingDragged}
-					<path marker-end="url(#layercake-annotation-arrowhead)" d={getStaticPath(anno, arrow)}></path>
+					<path marker-end="url(#layercake-annotation-arrowhead)" d={getStaticPath(anno, arrow)}
+					></path>
 				{/if}
 			{/each}
 		{/if}

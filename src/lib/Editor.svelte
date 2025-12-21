@@ -1,4 +1,6 @@
 <script>
+	/** @typedef {import('./types.js').Annotation} Annotation */
+
 	import { getContext, setContext } from 'svelte';
 	import { Svg, Html } from 'layercake';
 	import { debounce } from 'underscore';
@@ -10,7 +12,8 @@
 	import createRef from './modules/createRef.svelte.js';
 	import newAnnotation from './modules/newAnnotation.js';
 
-	let { annotations: annos = $bindable([]), containerClass, annotationClass } = $props();
+	/** @type {{ annotations?: Annotation[], containerClass?: string }} */
+	let { annotations: annos = $bindable([]), containerClass } = $props();
 
 	/**
 	 * LayerCake context
