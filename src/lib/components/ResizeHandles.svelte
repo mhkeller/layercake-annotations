@@ -1,4 +1,6 @@
 <script>
+	import { getContext } from 'svelte';
+
 	// https://svelte.dev/repl/8b974ea483c648fba362a1e9f3dbc29f?version=4.2.18
 	let {
 		debug = true,
@@ -13,8 +15,11 @@
 			'northeast'
 		],
 		width = $bindable(),
-		ondrag
+		ondrag,
+		containerClass = '.chart-container'
 	} = $props();
+
+	const { padding } = getContext('LayerCake');
 
 	let active = $state(null);
 	let initialRect = $state(null);
@@ -60,19 +65,30 @@
 		if (direction.match('east')) {
 			delta = event.pageX - initialPos.x;
 			width = `${initialRect.width + delta}px`;
+			// Refresh without position change
+			ondrag();
 		}
 
 		if (direction.match('west')) {
 			delta = initialPos.x - event.pageX;
-			// left = `${initialRect.left - delta}px`;
-			// TODO figure out how to move the element to the left
-			width = `${initialRect.width + delta}px`;
-		}
+			const newWidth = initialRect.width + delta;
 
-		/**
-		 * Refresh the draggable element's position.
-		 */
-		ondrag();
+			// Don't allow width less than 50px
+			if (newWidth < 50) return;
+
+			width = `${newWidth}px`;
+
+			// Calculate new position - the left edge moves with the mouse
+			const parent = active.parentElement.closest(containerClass)?.getBoundingClientRect();
+			if (parent) {
+				const newLeft = event.pageX - parent.left - $padding.left;
+				const newTop = initialRect.top - parent.top - $padding.top;
+				// Pass coordinates to trigger position update
+				ondrag([newLeft, newTop]);
+			} else {
+				ondrag();
+			}
+		}
 	}
 </script>
 

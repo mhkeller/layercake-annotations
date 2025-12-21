@@ -1,135 +1,107 @@
 <!--
   @component
-  Adds SVG swoopy arrows based on a config object. It attaches arrows to divs, which are created by another component such as [Annotations.html.svelte](https://layercake.graphics/components/Annotations.html.svelte).
- -->
+  Renders SVG arrows for annotations. Source position is relative to annotation (pixel offsets),
+  target position is in data space with optional percentage offsets for ordinal scales.
+  During drag, uses live pixel coordinates from dragState.
+-->
 <script>
-	import { getContext, onMount, tick } from 'svelte';
-	import { swoopyArrow, getElPosition, parseCssValue } from '../modules/arrowUtils.js';
+	import { getContext } from 'svelte';
+	import { swoopyArrow } from '../modules/arrowUtils.js';
 
-	/** @type {Array} annotations - A list of annotation objects. See the [Column](https://layercake.graphics/example/Column) chart example for the schema and options. */
-	export let annotations = [];
+	/** @type {Array} annotations - A list of annotation objects */
+	let { annotations = [] } = $props();
 
-	/** @type {String} [containerClass='.chart-container'] - The class name / CSS selector of the parent element of the `<LayerCake>` component. This is used to crawl the DOM for the text annotations. */
-	export let containerClass = '.chart-container';
+	const { xScale, yScale, x, y, width, height } = getContext('LayerCake');
 
-	/** @type {String} [annotationClass='.layercake-annotation'] - The class name of the text annotation divs. */
-	export let annotationClass = '.layercake-annotation';
+	// Get dragState ref from context
+	const dragStateRef = getContext('previewArrow');
 
-	let container;
-
-	const { width, height, xScale, yScale, x, y } = getContext('LayerCake');
-
-	/* --------------------------------------------
-	 * Some lookups to convert between x, y / width, height terminology
-	 * and CSS names
+	/**
+	 * Helper to generate swoopy arrow path
 	 */
-	const lookups = [
-		{ dimension: 'width', css: 'left', position: 'x' },
-		{ dimension: 'height', css: 'top', position: 'y' }
-	];
+	function makePath(sourceX, sourceY, targetX, targetY, clockwise) {
+		const sourceCoords = [sourceX, sourceY];
+		const targetCoords = [targetX, targetY];
 
-	let d = () => '';
-	let annotationEls;
+		// Create arrow path - straight line if clockwise is null
+		if (clockwise === null) {
+			return `M${sourceCoords.join(',')} L${targetCoords.join(',')}`;
+		}
 
-	// This searches the DOM for the HTML annotations
-	// in the Annotations.svelte componenent and then
-	// attaches arrows to those divs
-	// Make sure the `.chart-container` and `.layercake-annotation`
-	// selectors match what you have in your project
-	// otherwise it won't find anything
-	onMount(async () => {
-		gatherEls();
+		return swoopyArrow()
+			.angle(Math.PI / 2)
+			.clockwise(clockwise)
+			.x((q) => q[0])
+			.y((q) => q[1])([sourceCoords, targetCoords]);
+	}
+
+	/**
+	 * Compute the SVG path for a saved arrow
+	 */
+	function getStaticPath(anno, arrow) {
+		// Use saved coordinates
+		const annoOffsetX = ((anno.dx ?? 0) / 100) * $width;
+		const annoOffsetY = ((anno.dy ?? 0) / 100) * $height;
+		const annoLeftX = $xScale($x(anno)) + annoOffsetX;
+		const annoTopY = $yScale($y(anno)) + annoOffsetY;
+
+		// For east arrows, dx is relative to annotation width
+		const annoWidth = anno.width ? parseInt(anno.width) : 150;
+		let sourceX;
+		if (arrow.side === 'east') {
+			sourceX = annoLeftX + annoWidth + (arrow.source?.dx ?? 0);
+		} else {
+			sourceX = annoLeftX + (arrow.source?.dx ?? 0);
+		}
+		const sourceY = annoTopY + (arrow.source?.dy ?? 0);
+
+		const targetX = $xScale($x(arrow.target)) + ((arrow.target?.dx ?? 0) / 100) * $width;
+		const targetY = $yScale($y(arrow.target)) + ((arrow.target?.dy ?? 0) / 100) * $height;
+
+		const cw = arrow.clockwise ?? true;
+		return makePath(sourceX, sourceY, targetX, targetY, cw);
+	}
+
+	/**
+	 * Check if a specific arrow is currently being dragged
+	 */
+	let draggingArrowKey = $derived.by(() => {
+		const ds = dragStateRef.value;
+		if (!ds) return null;
+		return `${ds.annotationId}_${ds.side}`;
 	});
 
-	async function gatherEls() {
-		if (container) {
-			await tick();
-			annotationEls = Array.from(
-				container.closest(containerClass).querySelectorAll(annotationClass)
-			);
-		}
-	}
+	/**
+	 * Reactive drag path - renders arrow being dragged (new or existing)
+	 */
+	let dragPath = $derived.by(() => {
+		const ds = dragStateRef.value;
+		// Use == null to allow annotationId of 0
+		if (!ds || ds.annotationId == null) return '';
+		if (ds.sourceX == null || ds.targetX == null) return '';
 
-	$: annotations, gatherEls();
-
-	function setPath(w, h) {
-		return (anno, arrow) => {
-			const el = annotationEls.find((d) => +d.dataset.id === anno.id);
-
-			/* --------------------------------------------
-			 * Parse our attachment directives to know where to start the arrowhead
-			 * measuring a bounding box based on our annotation el
-			 */
-			const arrowSource = getElPosition(el);
-
-			const sourceCoords = arrow.source.anchor.split('-').map((q, j) => {
-				const point =
-					q === 'middle'
-						? arrowSource[lookups[j].css] + arrowSource[lookups[j].dimension] / 2
-						: arrowSource[q];
-				return (
-					point +
-					parseCssValue(
-						arrow.source[`d${lookups[j].position}`],
-						j,
-						arrowSource.width,
-						arrowSource.height
-					)
-				);
-			});
-
-			/* --------------------------------------------
-			 * Default to clockwise
-			 */
-			const clockwise = typeof arrow.clockwise === 'undefined' ? true : arrow.clockwise;
-
-			/* --------------------------------------------
-			 * Parse where we're drawing to
-			 * If we're passing in a percentage as a string then we need to convert it to pixel values
-			 * Otherwise pass it to our xGet and yGet functions
-			 */
-			const targetCoords = [
-				arrow.target.x || $x(arrow.target),
-				arrow.target.y || $y(arrow.target)
-			].map((q, j) => {
-				const val =
-					typeof q === 'string' && q.includes('%')
-						? parseCssValue(q, j, w, h)
-						: j
-							? $yScale(q) + (arrow.target.dy / 100) * h
-							: $xScale(q) + (arrow.target.dx / 100) * w;
-
-				return val;
-			});
-
-			/* --------------------------------------------
-			 * Create arrow path
-			 * if clockwise is null, create a straight line
-			 */
-			return clockwise !== null
-				? swoopyArrow()
-						.angle(Math.PI / 2)
-						.clockwise(clockwise)
-						.x((q) => q[0])
-						.y((q) => q[1])([sourceCoords, targetCoords])
-				: `M${sourceCoords.join(',')} L${targetCoords.join(',')}`;
-		};
-	}
-
-	$: if (annotationEls && annotationEls.length) d = setPath($width, $height);
+		const cw = ds.clockwise ?? true;
+		return makePath(ds.sourceX, ds.sourceY, ds.targetX, ds.targetY, cw);
+	});
 </script>
 
-<g bind:this={container}>
-	{#if annotations.length}
-		<g class="swoops">
-			{#each annotations as anno}
-				{#if anno.arrows}
-					{#each anno.arrows as arrow}
-						<path marker-end="url(#layercake-annotation-arrowhead)" d={d(anno, arrow)}></path>
-					{/each}
+<g class="swoops">
+	<!-- Render saved arrows (hide if this specific arrow is being dragged) -->
+	{#each annotations as anno}
+		{#if anno.arrows}
+			{#each anno.arrows as arrow}
+				{@const arrowKey = `${anno.id}_${arrow.side}`}
+				{@const isBeingDragged = draggingArrowKey === arrowKey}
+				{#if !isBeingDragged}
+					<path marker-end="url(#layercake-annotation-arrowhead)" d={getStaticPath(anno, arrow)}></path>
 				{/if}
 			{/each}
-		</g>
+		{/if}
+	{/each}
+
+	<!-- Arrow being dragged (new or existing) - rendered with live coordinates -->
+	{#if dragPath}
+		<path marker-end="url(#layercake-annotation-arrowhead)" d={dragPath}></path>
 	{/if}
 </g>
 

@@ -25,18 +25,9 @@
 	let width = $state();
 
 	/**
-	 * Drag config
+	 * Arrow sides - simplified to just west and east
 	 */
-	const arrowAnchors = [
-		'middle-top',
-		'right-top',
-		'right-middle',
-		'right-bottom',
-		'middle-bottom',
-		'left-bottom',
-		'left-middle',
-		'left-top'
-	];
+	const arrowSides = ['west', 'east'];
 
 	/**
 	 * Context variables
@@ -71,11 +62,16 @@
 			newProps.coords = coords;
 		}
 
+		// Always save current width
+		if (width) {
+			newProps.width = width;
+		}
+
 		modifyAnnotation(d.id, newProps);
 	}
 
 	/**
-	 * Listen for command-click events to toggle
+	 * Listen for command-click events to toggle alignment
 	 */
 	let alignment = $state('left');
 	function onclick(e) {
@@ -90,10 +86,7 @@
 		}
 	}
 
-	let grabbers = $derived(
-		['east']
-		// alignment === 'center' ? ['east', 'west'] : alignment === 'left' ? ['east'] : ['west']
-	);
+	let grabbers = $derived(['west', 'east']);
 </script>
 
 {#if d}
@@ -112,11 +105,11 @@
 		<div class="layercake-annotation" data-id={d.id}>
 			<EditableText bind:text={d.text} bind:isEditable {alignment} />
 		</div>
-		<ResizeHandles bind:width {ondrag} debug={false} {grabbers} />
+		<ResizeHandles bind:width {ondrag} debug={false} {grabbers} {containerClass} />
 	</Draggable>
 
-	{#each arrowAnchors as anchor}
-		<ArrowZone {d} {anchor} {noteDimensions} {containerClass} />
+	{#each arrowSides as side}
+		<ArrowZone {d} {side} {noteDimensions} />
 	{/each}
 {/if}
 

@@ -1,53 +1,8 @@
-// Helper functions for creating swoopy arrows
-
-/* --------------------------------------------
- * parseCssValue
- *
- * Parse various inputs and return then as a number
- * Can be a number, which will return the input value
- * A percentage, which will take the percent of the appropriate dimentions
- * A pixel value, which will parse as a number
- *
- */
-export function parseCssValue(d, i, width, height) {
-	if (!d) return 0;
-	if (typeof d === 'number') {
-		return d;
-	}
-	if (d.indexOf('%') > -1) {
-		return (+d.replace('%', '') / 100) * (i ? height : width);
-	}
-	return +d.replace('px', '');
-}
-
-/* --------------------------------------------
- * getElPosition
- *
- * Constract a bounding box relative in our coordinate space
- * that we can attach arrow starting points to
- *
- */
-export function getElPosition(el) {
-	const buffer = 3;
-	const annotationBbox = el.getBoundingClientRect();
-	const parentBbox = el.parentNode.parentNode.parentNode.getBoundingClientRect();
-
-	const coords = {
-		top: annotationBbox.top - parentBbox.top,
-		right: annotationBbox.right - parentBbox.left,
-		bottom: annotationBbox.bottom - parentBbox.top + buffer / 2,
-		left: annotationBbox.left - parentBbox.left - buffer,
-		width: annotationBbox.width,
-		height: annotationBbox.height
-	};
-	return coords;
-}
-
-/* --------------------------------------------
+/**
  * swoopyArrow
  *
+ * Creates curved SVG arc paths between two points.
  * Adapted from bizweekgraphics/swoopyarrows
- *
  */
 export function swoopyArrow() {
 	let angle = Math.PI;
@@ -74,17 +29,10 @@ export function swoopyArrow() {
 		const r = hypotenuse(d, h / 2);
 
 		/*
-    SECOND, compose the corresponding SVG arc.
-      read up: http://www.w3.org/TR/SVG/paths.html#PathDataEllipticalArcCommands
-      example: <path d = "M 200,50 a 50,50 0 0,1 100,0"/>
-                          M 200,50                          Moves pen to (200,50);
-                                   a                        draws elliptical arc;
-                                     50,50                  following a degenerate ellipse, r1 == r2 == 50;
-                                                            i.e. a circle of radius 50;
-                                           0                with no x-axis-rotation (irrelevant for circles);
-                                             0,1            with large-axis-flag=0 and sweep-flag=1 (clockwise);
-                                                 100,0      to a point +100 in x and +0 in y, i.e. (300,50).
-    */
+		SVG arc command:
+		M x,y - Move to start point
+		a rx,ry rotation large-arc-flag,sweep-flag dx,dy - Draw arc
+		*/
 		const path =
 			'M ' +
 			data[0][0] +

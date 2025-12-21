@@ -8,7 +8,6 @@
 	import Arrows from '$lib/components/Arrows.svelte';
 
 	import createRef from './modules/createRef.svelte.js';
-	import invertScale from './modules/invertScale.js';
 	import newAnnotation from './modules/newAnnotation.js';
 
 	let { annotations: annos = $bindable([]), containerClass, annotationClass } = $props();
@@ -37,9 +36,14 @@
 	const isEditing = createRef(false);
 	const hovering = createRef('');
 	const moving = createRef(false);
+
+	// Preview arrow shown during drag (before mouseup saves it)
+	const previewArrow = createRef(null);
+
 	setContext('isEditing', isEditing);
 	setContext('hovering', hovering);
 	setContext('moving', moving);
+	setContext('previewArrow', previewArrow);
 
 	/**
 	 * Add a new annotation to the chart
@@ -65,7 +69,7 @@
 	}
 
 	/**
-	 * Modify the annotations coordinates on drag
+	 * Modify the annotation's coordinates on drag
 	 */
 	function modifyAnnotation(id, newProps) {
 		annotations.forEach((d, i) => {
@@ -80,64 +84,49 @@
 	}
 
 	/**
-	 * Add an arrow to an annotation
-	 * or modify the target of an existing one
+	 * Set or update an arrow on an annotation
+	 * Arrow structure: { side, clockwise, source: { dx, dy }, target: { [xKey], [yKey] } }
 	 */
-	function addArrow(id, { anchor, x, y, clockwise }) {
-		const xVal = invertScale($xScale, x);
-		const yVal = invertScale($yScale, y);
-
-		const arrow = {
-			clockwise,
-			source: { anchor },
-			target: {
-				[$config.x]: xVal[0],
-				[$config.y]: yVal[0],
-				dx: xVal[1],
-				dy: yVal[1]
-			}
-		};
-
+	function setArrow(id, arrow) {
 		const annotation = annotations.find((d) => d.id === id);
+		if (!annotation) return;
 
-		const existingArrow = annotation.arrows.find((a) => a.source.anchor === anchor);
+		const existingIndex = annotation.arrows.findIndex((a) => a.side === arrow.side);
 
-		if (!existingArrow) {
-			annotation.arrows.push(arrow);
+		if (existingIndex >= 0) {
+			annotation.arrows[existingIndex] = arrow;
 		} else {
-			existingArrow.target = arrow.target;
+			annotation.arrows.push(arrow);
 		}
 
 		saveAnnotationConfig_debounced(annotations);
-		return [xVal, yVal];
 	}
 
 	/**
-	 * Modify an arrow's properties
-	 * Used for changing the swoop style
+	 * Modify an arrow's properties (e.g., clockwise)
 	 */
-	function modifyArrow(id, { anchor, ...attrs }) {
+	function modifyArrow(id, side, attrs) {
 		const annotation = annotations.find((d) => d.id === id);
+		if (!annotation) return;
 
-		const arrow = annotation.arrows.find((a) => a.source.anchor === anchor);
+		const arrow = annotation.arrows.find((a) => a.side === side);
 		if (!arrow) return;
 
-		for (const key in attrs) {
-			arrow[key] = attrs[key];
-		}
+		Object.assign(arrow, attrs);
 		saveAnnotationConfig_debounced(annotations);
 	}
 
 	/**
-	 * Deleting an arrow from an annotation
+	 * Delete an arrow from an annotation
 	 */
-	function deleteArrow(id, anchor) {
+	function deleteArrow(id, side) {
 		const annotation = annotations.find((d) => d.id === id);
+		if (!annotation) return;
 
 		const len = annotation.arrows.length;
-		annotation.arrows = annotation.arrows.filter((a) => a.source.anchor !== anchor);
+		annotation.arrows = annotation.arrows.filter((a) => a.side !== side);
 
-		// If we were hovering over an empty arrow zone, delete the annotation.
+		// If we were hovering over an empty arrow zone, delete the annotation
 		if (len === annotation.arrows.length) {
 			deleteAnnotation(annotation.id);
 		}
@@ -145,14 +134,12 @@
 	}
 
 	/**
-	 * If we press the delete key while hovering, delete the annotation.
+	 * If we press the delete key while hovering, delete the annotation or arrow
 	 */
 	function onkeydown(e) {
-		// Bail if we aren't hovering if we are editing
 		if (!hovering.value || isEditing.value === true) return;
 
 		const [idStr, item] = hovering.value.split('_');
-
 		const id = +idStr;
 
 		if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -169,7 +156,7 @@
 	 * Save our modifier functions to the context
 	 */
 	setContext('modifyAnnotation', modifyAnnotation);
-	setContext('addArrow', addArrow);
+	setContext('setArrow', setArrow);
 	setContext('modifyArrow', modifyArrow);
 </script>
 
@@ -177,7 +164,7 @@
 	<svelte:fragment slot="defs">
 		<ArrowheadMarker />
 	</svelte:fragment>
-	<Arrows {annotations} {containerClass} {annotationClass} />
+	<Arrows {annotations} />
 </Svg>
 
 <Html>

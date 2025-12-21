@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleBand } from 'd3-scale';
-	import { AnnotationsEditor } from '$lib/index.js';
+	import { Annotations } from '$lib/index.js';
 
 	import Column from './_components/Column.svelte';
 	import AxisX from './_components/AxisX.svelte';
@@ -16,7 +16,26 @@
 	data.forEach((d) => {
 		d[yKey] = +d[yKey];
 	});
+
+	let edit = $state(true);
+
+	let annotations = $state([
+		{
+			id: 0,
+			year: '1982',
+			value: 8,
+			dx: 0,
+			dy: 0,
+			text: 'Ordinal annotation',
+			arrows: []
+		}
+	]);
 </script>
+
+<label>
+	<input type="checkbox" bind:checked={edit} />
+	Edit annotations
+</label>
 
 <div class="chart-container">
 	<LayerCake
@@ -30,11 +49,10 @@
 	>
 		<Svg>
 			<AxisX gridlines={false} />
-
 			<AxisY snapBaselineLabel />
 			<Column />
 		</Svg>
-		<AnnotationsEditor />
+		<Annotations bind:annotations {edit} />
 	</LayerCake>
 </div>
 
@@ -48,5 +66,10 @@
 	.chart-container {
 		width: 100%;
 		height: 350px;
+	}
+	label {
+		margin: 14px;
+		cursor: pointer;
+		user-select: none;
 	}
 </style>
