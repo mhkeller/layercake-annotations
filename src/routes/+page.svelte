@@ -28,7 +28,7 @@
 			dx: 0,
 			dy: 0,
 			text: 'Existing annotation...',
-			width: '155px',
+			width: '157px',
 			arrows: [],
 			coords: [388, 120]
 		}

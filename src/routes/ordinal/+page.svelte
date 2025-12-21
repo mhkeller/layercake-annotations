@@ -27,7 +27,7 @@
 			dx: 0,
 			dy: 0,
 			text: 'Ordinal annotation',
-			width: '155px',
+			width: '157px',
 			arrows: []
 		}
 	]);

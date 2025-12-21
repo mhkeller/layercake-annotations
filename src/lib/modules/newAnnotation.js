@@ -25,7 +25,7 @@ export default function newAnnotation(e, id, { xScale, yScale, config }) {
 		dx: xVal[1],
 		dy: yVal[1],
 		text: 'Enter your note here...',
-		width: '155px',
+		width: '168px',
 		arrows: [],
 		coords
 	};
