@@ -46,7 +46,8 @@
 		const annoTopY = $yScale($y(anno)) + annoOffsetY;
 
 		// For east arrows, dx is relative to annotation width
-		const annoWidth = anno.width ? parseInt(anno.width) : 150;
+		// Default matches typical annotation width (with padding)
+		const annoWidth = anno.width ? parseInt(anno.width) : 155;
 		let sourceX;
 		if (arrow.side === 'east') {
 			sourceX = annoLeftX + annoWidth + (arrow.source?.dx ?? 0);

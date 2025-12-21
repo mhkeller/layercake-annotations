@@ -18,6 +18,7 @@
 	const hovering = getContext('hovering');
 	const setArrow = getContext('setArrow');
 	const modifyArrow = getContext('modifyArrow');
+	const modifyAnnotation = getContext('modifyAnnotation');
 	const moving = getContext('moving');
 	const dragState = getContext('previewArrow'); // Reusing for drag state
 
@@ -196,6 +197,12 @@
 	 * On release, save the arrow
 	 */
 	function onmouseup() {
+		// Always save annotation width to ensure consistent rendering
+		const currentWidth = `${noteDimensions[0]}px`;
+		if (d.width !== currentWidth) {
+			modifyAnnotation(d.id, { width: currentWidth });
+		}
+
 		if (draggingSource && dragX !== null && dragY !== null) {
 			// Update source position
 			const newSourceDx = calculateSourceDx(dragX);
