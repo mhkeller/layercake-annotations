@@ -43,13 +43,13 @@
 			dx: 0,
 			dy: 0,
 			text: 'Existing annotation...',
-			width: '155px',
+			width: '157px',
 			arrows: [
 				{
 					side: 'east',
 					clockwise: true,
 					source: {
-						dx: 12,
+						dx: 0,
 						dy: 12.5
 					},
 					target: {
@@ -66,18 +66,40 @@
 	let columnAnnotations = $state([
 		{
 			id: 0,
-			year: '1982',
-			value: 14,
-			dx: -6,
+			year: '1980',
+			value: 14.081579107987253,
+			dx: 16.85977688910817,
 			dy: 0,
 			text: 'Ordinal annotation with long text that should wrap',
-			width: '145px',
+			width: '143px',
 			arrows: [
 				{
 					side: 'east',
 					clockwise: true,
-					source: { dx: 12, dy: 20 },
-					target: { year: '1983', value: 10, dx: 50, dy: 0 }
+					source: {
+						dx: -6,
+						dy: 8
+					},
+					target: {
+						year: '1982',
+						value: 9.210526315789474,
+						dx: 2.6096033402922756,
+						dy: 0
+					}
+				},
+				{
+					side: 'west',
+					clockwise: false,
+					source: {
+						dx: 0,
+						dy: 34
+					},
+					target: {
+						year: '1980',
+						value: 4.292105423776727,
+						dx: 10.179192337959943,
+						dy: 0
+					}
 				}
 			]
 		}
