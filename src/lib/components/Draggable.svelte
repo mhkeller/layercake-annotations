@@ -88,7 +88,8 @@
 <style>
 	.draggable {
 		position: absolute;
-		width: auto;
+		display: inline-block;
+		box-sizing: border-box;
 		transition: border-color 250ms;
 		border-radius: 2px;
 		padding: 3px;

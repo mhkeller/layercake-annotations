@@ -66,7 +66,7 @@
 
 		if (isEast) {
 			const delta = event.pageX - initialPos.x;
-			const newWidth = initialRect.width + delta;
+			const newWidth = Math.round(initialRect.width + delta);
 			if (newWidth < 50) return;
 			width = `${newWidth}px`;
 			ondrag();
@@ -74,7 +74,7 @@
 
 		if (isWest) {
 			const delta = initialPos.x - event.pageX;
-			const newWidth = initialRect.width + delta;
+			const newWidth = Math.round(initialRect.width + delta);
 			if (newWidth < 50) return;
 
 			width = `${newWidth}px`;

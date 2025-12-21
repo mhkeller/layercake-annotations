@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 
-	import { AnnotationsEditor, AnnotationsStatic } from '$lib/index.js';
+	import { Annotations } from '$lib/index.js';
 
 	import Line from './_components/Line.svelte';
 	import Area from './_components/Area.svelte';
@@ -18,7 +18,7 @@
 		d[yKey] = +d[yKey];
 	});
 
-	let edit = $state(true);
+	let editable = $state(true);
 
 	let annotations = $state([
 		{
@@ -28,6 +28,7 @@
 			dx: 0,
 			dy: 0,
 			text: 'Existing annotation...',
+			width: '155px',
 			arrows: [],
 			coords: [388, 120]
 		}
@@ -35,7 +36,7 @@
 </script>
 
 <label>
-	<input type="checkbox" bind:checked={edit} />
+	<input type="checkbox" bind:checked={editable} />
 	Edit annotations
 </label>
 
@@ -54,11 +55,7 @@
 			<Area />
 		</Svg>
 
-		{#if edit}
-			<AnnotationsEditor bind:annotations />
-		{:else}
-			<AnnotationsStatic {annotations} />
-		{/if}
+		<Annotations bind:annotations {editable} />
 	</LayerCake>
 </div>
 

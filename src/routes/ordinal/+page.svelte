@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleBand } from 'd3-scale';
-	import { AnnotationsEditor, AnnotationsStatic } from '$lib/index.js';
+	import { Annotations } from '$lib/index.js';
 
 	import Column from './_components/Column.svelte';
 	import AxisX from './_components/AxisX.svelte';
@@ -17,7 +17,7 @@
 		d[yKey] = +d[yKey];
 	});
 
-	let edit = $state(true);
+	let editable = $state(true);
 
 	let annotations = $state([
 		{
@@ -27,13 +27,14 @@
 			dx: 0,
 			dy: 0,
 			text: 'Ordinal annotation',
+			width: '155px',
 			arrows: []
 		}
 	]);
 </script>
 
 <label>
-	<input type="checkbox" bind:checked={edit} />
+	<input type="checkbox" bind:checked={editable} />
 	Edit annotations
 </label>
 
@@ -52,11 +53,7 @@
 			<AxisY snapBaselineLabel />
 			<Column />
 		</Svg>
-		{#if edit}
-			<AnnotationsEditor bind:annotations />
-		{:else}
-			<AnnotationsStatic {annotations} />
-		{/if}
+		<Annotations bind:annotations {editable} />
 	</LayerCake>
 </div>
 
