@@ -50,6 +50,14 @@ pnpm add @mhkeller/layercake-annotations
 | `annotations` | `Annotation[]` | `[]` | Array of annotation objects (bindable) |
 | `editable` | `boolean` | `true` | Enable editing. Set `false` for read-only display |
 
+**Note:** The `annotations` prop uses Svelte 5's `$bindable` for two-way binding. For edits to persist, the parent component must store annotations in a `$state` variable:
+
+```svelte
+let annotations = $state([]);             // ✓ edits persist
+let annotations = [];                     // ✗ edits won't persist
+import annotations from 'annotations.js'  // ✗ edits won't persist
+```
+
 ## Annotation Data Structure
 
 ```js
