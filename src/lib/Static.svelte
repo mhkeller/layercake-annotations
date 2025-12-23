@@ -12,13 +12,13 @@
 </script>
 
 {#snippet defs()}
-		<ArrowheadMarker />
+	<ArrowheadMarker />
 {/snippet}
 
-<Svg {defs}>
+<Svg {defs} pointerEvents={false}>
 	<Arrows {annotations} />
 </Svg>
 
-<Html>
+<Html pointerEvents={false}>
 	<AnnotationsData {annotations} />
 </Html>
