@@ -9,7 +9,7 @@
 	/** @type {Ref<boolean>} */
 	const isEditing = getContext('isEditing');
 
-	let { text = $bindable(), isEditable = $bindable(false), alignment } = $props();
+	let { text = $bindable(), isEditable = $bindable(false), alignment, onSave } = $props();
 
 	let textarea = $state(null);
 
@@ -21,11 +21,14 @@
 		selection.addRange(range);
 	}
 
-	function cancelEdit() {
+	function endEdit() {
 		isEditable = false;
 		text = text.trim();
 		window.removeEventListener('keydown', handleKeydown);
 		document.removeEventListener('click', handleClickOutside);
+
+		// Save the text change
+		onSave?.(text);
 
 		// Wait for the click event to propagate before setting isEditing to false
 		setTimeout(() => {
@@ -83,7 +86,7 @@
 		aria-multiline="true"
 		tabindex="0"
 		bind:this={textarea}
-		onblur={cancelEdit}
+		onblur={endEdit}
 		{onclick}
 		ondblclick={handleDoubleClick}
 		contenteditable
