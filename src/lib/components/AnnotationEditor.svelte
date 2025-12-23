@@ -109,7 +109,12 @@
 		{containerClass}
 	>
 		<div class="layercake-annotation" data-id={d.id}>
-			<EditableText bind:text={d.text} bind:isEditable {alignment} />
+			<EditableText
+				bind:text={d.text}
+				bind:isEditable
+				{alignment}
+				onSave={(newText) => modifyAnnotation(d.id, { text: newText })}
+			/>
 		</div>
 		<ResizeHandles bind:width {ondrag} {grabbers} {containerClass} />
 	</Draggable>
