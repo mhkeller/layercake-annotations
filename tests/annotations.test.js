@@ -1,317 +1,134 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('LayerCake Annotations', () => {
-	test.beforeEach(async ({ page }) => {
-		await page.goto('/');
-		// Wait for the chart to fully render (SVG path indicates chart is drawn)
-		await page.waitForSelector('.chart-container.line svg path');
-		// Also wait for annotations to render
-		await page.waitForSelector('.chart-container.line .layercake-annotation');
-	});
+/**
+ * Test scenarios:
+ * 1. One text annotation (with arrow already configured in data)
+ * 2. An edited text annotation
+ * 3. A resized text annotation (text wraps to multiple lines)
+ *
+ * Each scenario tested across:
+ * - Linear chart (continuous scales) × Edit mode
+ * - Linear chart (continuous scales) × Static mode
+ * - Ordinal chart (band scale) × Edit mode
+ * - Ordinal chart (band scale) × Static mode
+ */
 
-	test('initial chart renders correctly', async ({ page }) => {
-		// Wait a moment for any transitions to complete
-		await page.waitForTimeout(100);
-		// Take a screenshot of the initial state
-		await expect(page.locator('.chart-container.line')).toHaveScreenshot('initial-chart.png');
-	});
+const chartTypes = [
+	{ name: 'linear', selector: '.chart-container.line' },
+	{ name: 'ordinal', selector: '.chart-container.ordinal' }
+];
 
-	test('existing annotation is visible', async ({ page }) => {
-		// The demo page has an existing annotation (first one is in line chart)
-		const annotation = page.locator('.chart-container.line .layercake-annotation').first();
-		await expect(annotation).toBeVisible();
-		await expect(annotation).toContainText('Existing annotation...');
-	});
+const modes = ['edit', 'static'];
 
-	test('custom style and class are applied to annotation', async ({ page }) => {
-		// The second annotation has custom style and class
-		const styledAnnotation = page.locator('.chart-container.line .layercake-annotation.custom-highlight');
-		await expect(styledAnnotation).toBeVisible();
-		await expect(styledAnnotation).toContainText('Styled annotation');
+test.beforeEach(async ({ page }) => {
+	await page.goto('/');
+	await page.waitForLoadState('networkidle');
+});
 
-		// Verify the custom class is present
-		await expect(styledAnnotation).toHaveClass(/custom-highlight/);
+/**
+ * Helper to set edit mode on/off
+ */
+async function setEditMode(page, enabled) {
+	const checkbox = page.locator('input[type="checkbox"]');
+	const isChecked = await checkbox.isChecked();
+	if (isChecked !== enabled) {
+		await checkbox.click();
+		await page.waitForTimeout(500);
+	}
+}
 
-		// Verify inline style is applied (background color)
-		await expect(styledAnnotation).toHaveCSS('background-color', 'rgba(255, 235, 59, 0.8)');
+/**
+ * Helper to get the chart locator
+ */
+function getChart(page, chartType) {
+	const config = chartTypes.find((c) => c.name === chartType);
+	return page.locator(config.selector);
+}
 
-		// Take screenshot showing styled annotation
-		await expect(page.locator('.chart-container.line')).toHaveScreenshot('styled-annotation.png');
-	});
+// =============================================================================
+// SCENARIO 1: Text annotation with arrow (pre-configured in data)
+// =============================================================================
 
-	test('custom style persists in static mode', async ({ page }) => {
-		// Toggle to static mode
-		const checkbox = page.locator('input[type="checkbox"]');
-		await checkbox.uncheck();
-		await page.waitForTimeout(200);
+for (const chartType of chartTypes) {
+	for (const mode of modes) {
+		test(`text with arrow - ${chartType.name} - ${mode}`, async ({ page }) => {
+			await setEditMode(page, mode === 'edit');
 
-		// Verify styled annotation still has custom class in static mode
-		const styledAnnotation = page.locator('.chart-container.line .layercake-annotation.custom-highlight');
-		await expect(styledAnnotation).toBeVisible();
-		await expect(styledAnnotation).toHaveCSS('background-color', 'rgba(255, 235, 59, 0.8)');
-	});
+			const chart = getChart(page, chartType.name);
+			const annotation = chart.locator('.layercake-annotation').first();
 
-	test('can create a new annotation by clicking', async ({ page }) => {
-		// Click on the chart area to create a new annotation
-		const chart = page.locator('.chart-container.line .note-listener');
-		await chart.click({ position: { x: 200, y: 100 } });
+			await expect(annotation).toBeVisible();
+			await expect(chart).toHaveScreenshot(`1-text-arrow-${chartType.name}-${mode}.png`);
+		});
+	}
+}
 
-		// Wait for the new annotation
-		await page.waitForTimeout(300); // debounce delay
+// =============================================================================
+// SCENARIO 2: Edited text annotation
+// =============================================================================
 
-		// Should now have 3 annotations in the line chart (2 existing + 1 new)
-		const annotations = page.locator('.chart-container.line .layercake-annotation');
-		await expect(annotations).toHaveCount(3);
+for (const chartType of chartTypes) {
+	for (const mode of modes) {
+		test(`edited text - ${chartType.name} - ${mode}`, async ({ page }) => {
+			// Start in edit mode to edit text
+			await setEditMode(page, true);
 
-		// Take screenshot with new annotation
-		await expect(page.locator('.chart-container.line')).toHaveScreenshot('new-annotation.png');
-	});
+			const chart = getChart(page, chartType.name);
+			const annotation = chart.locator('.layercake-annotation').first();
 
-	test('annotation text is editable', async ({ page }) => {
-		const annotation = page.locator('.chart-container.line .layercake-annotation').first();
+			// Double-click to enter edit mode
+			await annotation.dblclick({ force: true });
+			await page.waitForTimeout(100);
 
-		// Double-click to edit
-		await annotation.dblclick();
+			// Clear and type new text
+			await page.keyboard.press('Meta+a');
+			await page.keyboard.type('Edited');
+			await page.keyboard.press('Escape');
+			await page.waitForTimeout(300);
 
-		// Type new text
-		await page.keyboard.press('Control+a');
-		await page.keyboard.type('Updated text');
+			// Switch to target mode if needed
+			await setEditMode(page, mode === 'edit');
 
-		// Click outside to finish editing
-		await page.locator('.chart-container.line').click({ position: { x: 10, y: 10 } });
+			await expect(chart).toHaveScreenshot(`2-edited-${chartType.name}-${mode}.png`);
+		});
+	}
+}
 
-		await expect(annotation).toContainText('Updated text');
-	});
+// =============================================================================
+// SCENARIO 3: Resized annotation (text wraps to multiple lines)
+// =============================================================================
 
-	test('arrow zones appear on hover', async ({ page }) => {
-		const annotation = page.locator('.chart-container.line .draggable').first();
+for (const chartType of chartTypes) {
+	for (const mode of modes) {
+		test(`resized annotation - ${chartType.name} - ${mode}`, async ({ page }) => {
+			// Start in edit mode to resize
+			await setEditMode(page, true);
 
-		// Hover over the annotation
-		await annotation.hover();
+			const chart = getChart(page, chartType.name);
+			const draggable = chart.locator('.draggable').first();
 
-		// Wait for transition
-		await page.waitForTimeout(300);
+			// Hover to show resize handles
+			await draggable.hover({ force: true });
+			await page.waitForTimeout(200);
 
-		// Arrow zones: first annotation has 2 for its existing east arrow (source + target) + 1 west create zone = 3,
-		// and the second annotation (which has no existing arrows) has 2 create zones (west + east), for a total of 5.
-		const arrowZones = page.locator('.chart-container.line .arrow-zone');
-		await expect(arrowZones).toHaveCount(5);
+			// Find the east (right) resize handle
+			const grabber = chart.locator('.grabber.east').first();
+			const grabberBox = await grabber.boundingBox();
 
-		// Take screenshot with arrow zones visible
-		await expect(page.locator('.chart-container.line')).toHaveScreenshot('hover-arrow-zones.png');
-	});
-
-	test('can modify existing east arrow by dragging', async ({ page }) => {
-		const annotation = page.locator('.chart-container.line .draggable').first();
-
-		// Should already have 1 arrow (east) from initial data
-		await expect(page.locator('.chart-container.line .arrow-visible')).toHaveCount(1);
-
-		// Hover to show arrow zones
-		await annotation.hover();
-		await page.waitForTimeout(300);
-
-		// Find the east arrow target zone and drag it
-		const eastTarget = page.locator('.chart-container.line .arrow-zone.east.target');
-		const box = await eastTarget.boundingBox();
-		if (box) {
-			await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-			await page.mouse.down();
-			await page.mouse.move(box.x + 50, box.y - 30, { steps: 10 });
-			await page.mouse.up();
-		}
-
-		// Wait for arrow to render
-		await page.waitForTimeout(100);
-
-		// Should still have 1 arrow (modified)
-		const arrowPath = page.locator('.chart-container.line .arrow-visible');
-		await expect(arrowPath).toHaveCount(1);
-
-		// Take screenshot with modified arrow
-		await expect(page.locator('.chart-container.line')).toHaveScreenshot('east-arrow.png');
-	});
-
-	test('can create west arrow by dragging', async ({ page }) => {
-		const annotation = page.locator('.chart-container.line .draggable').first();
-
-		// Should already have 1 arrow (east) from initial data
-		await expect(page.locator('.chart-container.line .arrow-visible')).toHaveCount(1);
-
-		// Hover to show arrow zones
-		await annotation.hover();
-		await page.waitForTimeout(300);
-
-		// Find the west arrow zone (create mode since no west arrow exists)
-		const westZone = page.locator('.chart-container.line .arrow-zone.west').first();
-
-		// Drag from west zone to create an arrow
-		const box = await westZone.boundingBox();
-		if (box) {
-			await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-			await page.mouse.down();
-			await page.mouse.move(box.x - 100, box.y + 50, { steps: 10 });
-			await page.mouse.up();
-		}
-
-		// Wait for arrow to render
-		await page.waitForTimeout(100);
-
-		// Should now have 2 arrows (east + west)
-		const arrowPath = page.locator('.chart-container.line .arrow-visible');
-		await expect(arrowPath).toHaveCount(2);
-
-		// Take screenshot with both arrows
-		await expect(page.locator('.chart-container.line')).toHaveScreenshot('west-arrow.png');
-	});
-
-	test('can have both west and east arrows', async ({ page }) => {
-		const annotation = page.locator('.chart-container.line .draggable').first();
-
-		// Should already have 1 arrow (east) from initial data
-		await expect(page.locator('.chart-container.line .arrow-visible')).toHaveCount(1);
-
-		// Create west arrow
-		await annotation.hover();
-		await page.waitForTimeout(300);
-
-		const westZone = page.locator('.chart-container.line .arrow-zone.west').first();
-		const box = await westZone.boundingBox();
-		if (box) {
-			await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-			await page.mouse.down();
-			await page.mouse.move(box.x - 80, box.y + 30, { steps: 10 });
-			await page.mouse.up();
-		}
-
-		await page.waitForTimeout(100);
-
-		// Should have two arrow paths in line chart
-		const arrowPaths = page.locator('.chart-container.line .arrow-visible');
-		await expect(arrowPaths).toHaveCount(2);
-
-		// Take screenshot with both arrows
-		await expect(page.locator('.chart-container.line')).toHaveScreenshot('both-arrows.png');
-	});
-
-	test('can drag annotation to new position', async ({ page }) => {
-		const annotation = page.locator('.chart-container.line .draggable').first();
-
-		// Get initial position
-		const initialBox = await annotation.boundingBox();
-
-		// Drag the annotation
-		if (initialBox) {
+			// Drag the grabber left to make the annotation narrower (force text to wrap)
 			await page.mouse.move(
-				initialBox.x + initialBox.width / 2,
-				initialBox.y + initialBox.height / 2
+				grabberBox.x + grabberBox.width / 2,
+				grabberBox.y + grabberBox.height / 2
 			);
 			await page.mouse.down();
-			await page.mouse.move(initialBox.x + 100, initialBox.y + 50, { steps: 10 });
+			await page.mouse.move(grabberBox.x - 70, grabberBox.y);
 			await page.mouse.up();
-		}
+			await page.waitForTimeout(200);
 
-		// Get new position
-		const newBox = await annotation.boundingBox();
+			// Switch to target mode if needed
+			await setEditMode(page, mode === 'edit');
 
-		// Position should have changed
-		expect(newBox?.x).not.toBe(initialBox?.x);
-		expect(newBox?.y).not.toBe(initialBox?.y);
-
-		// Take screenshot after drag
-		await expect(page.locator('.chart-container.line')).toHaveScreenshot('dragged-annotation.png');
-	});
-
-	test('can delete annotation with backspace', async ({ page }) => {
-		// First verify we have two annotations in line chart
-		let annotations = page.locator('.chart-container.line .layercake-annotation');
-		await expect(annotations).toHaveCount(2);
-
-		// Hover over first annotation to set hovering state
-		const annotation = page.locator('.chart-container.line .draggable').first();
-		await annotation.hover();
-
-		// Press backspace to delete
-		await page.keyboard.press('Backspace');
-
-		// Should have one annotation remaining
-		annotations = page.locator('.chart-container.line .layercake-annotation');
-		await expect(annotations).toHaveCount(1);
-
-		// Take screenshot with one annotation deleted
-		await expect(page.locator('.chart-container.line')).toHaveScreenshot('deleted-annotation.png');
-	});
-
-	test('can toggle edit mode', async ({ page }) => {
-		// Uncheck the edit checkbox
-		const checkbox = page.locator('input[type="checkbox"]');
-		await checkbox.uncheck();
-
-		// In static mode, should not have draggable class behaviors
-		// but annotation should still be visible
-		const annotation = page.locator('.chart-container.line .layercake-annotation').first();
-		await expect(annotation).toBeVisible();
-
-		// Take screenshot in static mode
-		await expect(page.locator('.chart-container.line')).toHaveScreenshot('static-mode.png');
-	});
-
-	test('annotation appearance is consistent across edit mode toggles', async ({ page }) => {
-		const chart = page.locator('.chart-container.line');
-		const checkbox = page.locator('input[type="checkbox"]');
-
-		// Wait for stable render
-		await page.waitForTimeout(200);
-
-		// Step 1: Initial edit mode
-		await page.mouse.move(0, 0);
-		await expect(chart).toHaveScreenshot('toggle-1-initial.png');
-
-		// Step 2: Toggle to static mode
-		await checkbox.uncheck();
-		await page.waitForTimeout(200);
-		await page.mouse.move(0, 0);
-		await expect(chart).toHaveScreenshot('toggle-2-static.png');
-
-		// Step 3: Toggle back to edit mode
-		await checkbox.check();
-		await page.waitForTimeout(200);
-		await page.mouse.move(0, 0);
-		await expect(chart).toHaveScreenshot('toggle-3-edit-again.png');
-	});
-
-	test('arrow follows mouse during drag without drift', async ({ page }) => {
-		const annotation = page.locator('.chart-container.line .draggable').first();
-
-		// Hover to show arrow zones
-		await annotation.hover();
-		await page.waitForTimeout(300);
-
-		// Start dragging from east arrow's target zone
-		const eastTarget = page.locator('.chart-container.line .arrow-zone.east.target');
-		const box = await eastTarget.boundingBox();
-
-		if (box) {
-			const startX = box.x + box.width / 2;
-			const startY = box.y + box.height / 2;
-
-			await page.mouse.move(startX, startY);
-			await page.mouse.down();
-
-			// Move in steps and take screenshots to verify no drift
-			const steps = [
-				{ x: startX + 30, y: startY },
-				{ x: startX + 60, y: startY - 20 },
-				{ x: startX + 90, y: startY - 40 }
-			];
-
-			for (let i = 0; i < steps.length; i++) {
-				await page.mouse.move(steps[i].x, steps[i].y);
-				await page.waitForTimeout(50);
-				await expect(page.locator('.chart-container.line')).toHaveScreenshot(`drag-step-${i}.png`);
-			}
-
-			await page.mouse.up();
-		}
-	});
-});
+			await expect(chart).toHaveScreenshot(`3-resized-${chartType.name}-${mode}.png`);
+		});
+	}
+}

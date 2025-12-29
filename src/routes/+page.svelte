@@ -38,81 +38,38 @@
 	let lineAnnotations = $state([
 		{
 			id: 0,
-			myX: 1990,
-			myY: 4,
+			myX: 1995,
+			myY: 5,
 			dx: 0,
-			dy: 5,
-			text: 'Existing annotation...',
-			width: '140px',
+			dy: 0,
+			text: 'Annotation text',
+			width: '100px',
 			arrows: [
 				{
 					side: 'east',
 					clockwise: true,
-					source: {
-						dx: 3,
-						dy: 10
-					},
-					target: {
-						myX: 2002,
-						myY: 6,
-						dx: 0,
-						dy: 0
-					}
+					source: { dx: 0, dy: 10 },
+					target: { myX: 2010, myY: 4.5, dx: 0, dy: 0 }
 				}
 			]
-		},
-		{
-			id: 1,
-			myX: 2010,
-			myY: 4,
-			dx: 0,
-			dy: 5,
-			text: 'Styled annotation',
-			width: '120px',
-			style: 'background: rgba(255, 235, 59, 0.8); padding: 4px; border-radius: 4px;',
-			class: 'custom-highlight',
-			arrows: []
 		}
 	]);
 
 	let columnAnnotations = $state([
 		{
 			id: 0,
-			year: '1980',
-			value: 18.186842265881992,
-			dx: 17.277313423554933,
+			year: '1981',
+			value: 8,
+			dx: 0,
 			dy: 0,
-			text: 'Ordinal annotation with long text that should wrap',
-			width: '156px',
-			align: 'right',
+			text: 'Annotation text',
+			width: '100px',
 			arrows: [
 				{
 					side: 'east',
-					clockwise: false,
-					source: {
-						dx: -20,
-						dy: 61
-					},
-					target: {
-						year: '1981',
-						value: 6.605263157894736,
-						dx: 19.102296450939455,
-						dy: 0
-					}
-				},
-				{
-					side: 'west',
-					clockwise: null,
-					source: {
-						dx: 24,
-						dy: 20.999999999999996
-					},
-					target: {
-						year: '1980',
-						value: 3.976315950092517,
-						dx: 13.832637014369128,
-						dy: 0
-					}
+					clockwise: true,
+					source: { dx: 0, dy: 10 },
+					target: { year: '1982', value: 8.5, dx: 0, dy: 0 }
 				}
 			]
 		}
