@@ -58,6 +58,10 @@ export interface Annotation {
 	width?: string;
 	/** Text alignment: 'left', 'center', or 'right' */
 	align?: 'left' | 'center' | 'right';
+	/** Custom inline CSS styles (e.g., "background: yellow; padding: 8px;") */
+	style?: string;
+	/** Custom CSS class name(s) to add to the annotation element */
+	class?: string;
 	/** Arrows attached to this annotation */
 	arrows: Arrow[];
 }

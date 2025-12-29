@@ -25,7 +25,7 @@
 			style:top={`calc(${$yGet(d)}${units} + ${d.dy || 0}%)`}
 			style:width={d.width}
 		>
-			<div class="layercake-annotation" style:text-align={d.align || 'left'}>
+			<div class="layercake-annotation {d.class || ''}" style={d.style} style:text-align={d.align || 'left'}>
 				<pre>{getText(d)}</pre>
 			</div>
 		</div>

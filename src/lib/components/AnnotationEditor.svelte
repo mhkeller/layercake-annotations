@@ -108,7 +108,7 @@
 		bind:noteDimensions
 		{containerClass}
 	>
-		<div class="layercake-annotation" data-id={d.id}>
+		<div class="layercake-annotation {d.class || ''}" style={d.style} data-id={d.id}>
 			<EditableText
 				bind:text={d.text}
 				bind:isEditable
