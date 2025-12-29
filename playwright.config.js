@@ -48,7 +48,7 @@ export default defineConfig({
 
 	// Snapshot options - omit platform from path so macOS and Linux use same snapshots
 	snapshotPathTemplate: '{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}{ext}',
-	
+
 	expect: {
 		toHaveScreenshot: {
 			maxDiffPixels: 100,
