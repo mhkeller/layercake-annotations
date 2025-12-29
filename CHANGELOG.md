@@ -7,6 +7,7 @@ Changelog
 
 - Fix outline appearing on note-listener when deleting annotation
 - Fix improver annotation state after deleting annotation.
+  - [PR#21](https://github.com/mhkeller/layercake-annotations/pull/21)
 
 # 0.2.0
 
