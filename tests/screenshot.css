@@ -1,0 +1,15 @@
+/* Blur text to avoid font anti-aliasing differences between platforms */
+* {
+	text-rendering: geometricPrecision !important;
+	-webkit-font-smoothing: none !important;
+	-moz-osx-font-smoothing: unset !important;
+}
+
+/* Blur all text slightly to mask font rendering differences */
+.layercake-annotation,
+.layercake-annotations,
+.axis text,
+text {
+	filter: blur(0.5px);
+}
+

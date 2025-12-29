@@ -32,7 +32,7 @@ jobs:
 
       - name: Run tests
         run: pnpm test
-      
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
