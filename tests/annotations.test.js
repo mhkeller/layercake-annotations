@@ -159,7 +159,7 @@ for (const mode of modes) {
 		// Add custom style to the new annotation via JavaScript
 		await page.evaluate(() => {
 			const annotations = document.querySelectorAll('.chart-container.line .layercake-annotation');
-			const newAnnotation = annotations[annotations.length - 1];
+			const newAnnotation = /** @type {HTMLElement} */ (annotations[annotations.length - 1]);
 			if (newAnnotation) {
 				newAnnotation.style.background = 'yellow';
 				newAnnotation.style.padding = '4px';
