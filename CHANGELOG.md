@@ -3,7 +3,7 @@ Changelog
 
 # 0.2.1
 
-> 2025-12-18
+> 2025-12-28
 
 - Fix outline appearing on note-listener when deleting annotation
 - Fix improver annotation state after deleting annotation.
