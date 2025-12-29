@@ -88,8 +88,8 @@ test.describe('LayerCake Annotations', () => {
 		// Wait for transition
 		await page.waitForTimeout(300);
 
-		// Arrow zones for first annotation: 2 for existing east arrow (source + target) + 1 for west (create) = 3
-		// Plus 2 from second annotation (west + east create zones)
+		// Arrow zones: first annotation has 2 for its existing east arrow (source + target) + 1 west create zone = 3,
+		// and the second annotation (which has no existing arrows) has 2 create zones (west + east), for a total of 5.
 		const arrowZones = page.locator('.chart-container.line .arrow-zone');
 		await expect(arrowZones).toHaveCount(5);
 
