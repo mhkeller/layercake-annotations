@@ -58,6 +58,14 @@ for (const chartType of chartTypes) {
 			const annotation = chart.locator('.layercake-annotation').first();
 
 			await expect(annotation).toBeVisible();
+
+			// Hover to show the edit state UI (red border) in edit mode
+			if (mode === 'edit') {
+				const draggable = chart.locator('.draggable').first();
+				await draggable.hover({ force: true });
+				await page.waitForTimeout(100);
+			}
+
 			await expect(chart).toHaveScreenshot(`1-text-arrow-${chartType.name}-${mode}.png`);
 		});
 	}
