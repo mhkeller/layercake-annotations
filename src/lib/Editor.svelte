@@ -45,7 +45,6 @@
 	 * State vars
 	 */
 	let idCounter = Math.max(...annos.map((d) => d.id), -1);
-	let annotations = $state(annos);
 
 	/** @type {Ref<boolean>} */
 	const isEditing = createRef(false);
@@ -75,31 +74,32 @@
 			yScale: $yScale,
 			config: $config
 		});
-		annotations.push(annotation);
-		saveConfig_debounced(annotations);
+		annos.push(annotation);
+		saveConfig_debounced(annos);
 	}
 
 	/**
 	 * Delete an annotation from the chart
 	 */
 	async function deleteAnnotation(id) {
-		annotations = annotations.filter((d) => d.id !== id);
-		saveConfig_debounced(annotations);
+		// Reassign annos (the bindable prop) so deletion propagates to parent
+		annos = annos.filter((d) => d.id !== id);
+		saveConfig_debounced(annos);
 	}
 
 	/**
 	 * Modify the annotation's coordinates on drag
 	 */
 	function modifyAnnotation(id, newProps) {
-		annotations.forEach((d, i) => {
+		annos.forEach((d, i) => {
 			if (d.id === id) {
-				annotations[i] = {
+				annos[i] = {
 					...d,
 					...newProps
 				};
 			}
 		});
-		saveConfig_debounced(annotations);
+		saveConfig_debounced(annos);
 	}
 
 	/**
@@ -107,7 +107,7 @@
 	 * Arrow structure: { side, clockwise, source: { dx, dy }, target: { [xKey], [yKey] } }
 	 */
 	function setArrow(id, arrow) {
-		const annotation = annotations.find((d) => d.id === id);
+		const annotation = annos.find((d) => d.id === id);
 		if (!annotation) return;
 
 		const existingIndex = annotation.arrows.findIndex((a) => a.side === arrow.side);
@@ -118,28 +118,28 @@
 			annotation.arrows.push(arrow);
 		}
 
-		saveConfig_debounced(annotations);
+		saveConfig_debounced(annos);
 	}
 
 	/**
 	 * Modify an arrow's properties (e.g., clockwise)
 	 */
 	function modifyArrow(id, side, attrs) {
-		const annotation = annotations.find((d) => d.id === id);
+		const annotation = annos.find((d) => d.id === id);
 		if (!annotation) return;
 
 		const arrow = annotation.arrows.find((a) => a.side === side);
 		if (!arrow) return;
 
 		Object.assign(arrow, attrs);
-		saveConfig_debounced(annotations);
+		saveConfig_debounced(annos);
 	}
 
 	/**
 	 * Delete an arrow from an annotation
 	 */
 	function deleteArrow(id, side) {
-		const annotation = annotations.find((d) => d.id === id);
+		const annotation = annos.find((d) => d.id === id);
 		if (!annotation) return;
 
 		const len = annotation.arrows.length;
@@ -149,7 +149,7 @@
 		if (len === annotation.arrows.length) {
 			deleteAnnotation(annotation.id);
 		}
-		saveConfig_debounced(annotations);
+		saveConfig_debounced(annos);
 	}
 
 	/**
@@ -165,7 +165,7 @@
 			} else if (hover.type === 'arrow' && hover.side) {
 				deleteArrow(hover.annotationId, hover.side);
 			}
-			saveConfig_debounced(annotations);
+			saveConfig_debounced(annos);
 		}
 	}
 
@@ -182,7 +182,7 @@
 {/snippet}
 
 <Svg {defs}>
-	<Arrows {annotations} />
+	<Arrows annotations={annos} />
 </Svg>
 
 <Html>
@@ -196,7 +196,7 @@
 	></div>
 
 	<div class="layercake-annotations">
-		{#each annotations as d (d.id)}
+		{#each annos as d (d.id)}
 			<AnnotationEditor {d} {containerClass} />
 		{/each}
 	</div>
@@ -209,5 +209,6 @@
 		width: 100%;
 		height: 100%;
 		cursor: copy;
+		outline: none;
 	}
 </style>
