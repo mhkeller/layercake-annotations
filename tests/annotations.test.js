@@ -132,3 +132,41 @@ for (const chartType of chartTypes) {
 		});
 	}
 }
+
+// =============================================================================
+// SCENARIO 4: Custom inline style on annotation
+// =============================================================================
+
+for (const mode of modes) {
+	test(`custom style - ${mode}`, async ({ page }) => {
+		// Start in edit mode to add a new annotation
+		await setEditMode(page, true);
+
+		const chart = getChart(page, 'linear');
+
+		// Click to add a new annotation
+		await chart.click({ position: { x: 600, y: 100 } });
+		await page.waitForTimeout(300);
+
+		// Add custom style to the new annotation via JavaScript
+		await page.evaluate(() => {
+			const annotations = document.querySelectorAll('.chart-container.line .layercake-annotation');
+			const newAnnotation = annotations[annotations.length - 1];
+			if (newAnnotation) {
+				newAnnotation.style.background = 'yellow';
+				newAnnotation.style.padding = '4px';
+				newAnnotation.style.borderRadius = '4px';
+			}
+		});
+		await page.waitForTimeout(100);
+
+		// Verify the style was applied
+		const styledAnnotation = chart.locator('.layercake-annotation').last();
+		await expect(styledAnnotation).toBeVisible();
+
+		// Switch to target mode if needed
+		await setEditMode(page, mode === 'edit');
+
+		await expect(chart).toHaveScreenshot(`4-custom-style-${mode}.png`);
+	});
+}
