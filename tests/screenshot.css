@@ -5,11 +5,11 @@
 	-moz-osx-font-smoothing: unset !important;
 }
 
-/* Blur all text slightly to mask font rendering differences */
+/* Blur all text to mask font rendering differences */
 .layercake-annotation,
 .layercake-annotations,
 .axis text,
 text {
-	filter: blur(0.5px);
+	filter: blur(1.5px);
 }
 
