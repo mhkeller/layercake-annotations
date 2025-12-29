@@ -38,23 +38,23 @@
 	let lineAnnotations = $state([
 		{
 			id: 0,
-			myX: 1992.5917718365695,
-			myY: 9.709902603253216,
+			myX: 1990,
+			myY: 4,
 			dx: 0,
-			dy: 0,
+			dy: 5,
 			text: 'Existing annotation...',
-			width: '157px',
+			width: '140px',
 			arrows: [
 				{
 					side: 'east',
 					clockwise: true,
 					source: {
 						dx: 3,
-						dy: 12.5
+						dy: 10
 					},
 					target: {
-						myX: 2005.8777843626654,
-						myY: 6.203201922981106,
+						myX: 2002,
+						myY: 6,
 						dx: 0,
 						dy: 0
 					}
@@ -64,9 +64,9 @@
 		{
 			id: 1,
 			myX: 2010,
-			myY: 4.5,
+			myY: 4,
 			dx: 0,
-			dy: 0,
+			dy: 5,
 			text: 'Styled annotation',
 			width: '120px',
 			style: 'background: rgba(255, 235, 59, 0.8); padding: 4px; border-radius: 4px;',

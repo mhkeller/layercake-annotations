@@ -3,11 +3,15 @@ import { test, expect } from '@playwright/test';
 test.describe('LayerCake Annotations', () => {
 	test.beforeEach(async ({ page }) => {
 		await page.goto('/');
-		// Wait for the chart to render
-		await page.waitForSelector('.chart-container.line');
+		// Wait for the chart to fully render (SVG path indicates chart is drawn)
+		await page.waitForSelector('.chart-container.line svg path');
+		// Also wait for annotations to render
+		await page.waitForSelector('.chart-container.line .layercake-annotation');
 	});
 
 	test('initial chart renders correctly', async ({ page }) => {
+		// Wait a moment for any transitions to complete
+		await page.waitForTimeout(100);
 		// Take a screenshot of the initial state
 		await expect(page.locator('.chart-container.line')).toHaveScreenshot('initial-chart.png');
 	});
