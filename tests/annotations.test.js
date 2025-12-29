@@ -14,9 +14,37 @@ test.describe('LayerCake Annotations', () => {
 
 	test('existing annotation is visible', async ({ page }) => {
 		// The demo page has an existing annotation (first one is in line chart)
-		const annotation = page.locator('.chart-container.line .layercake-annotation');
+		const annotation = page.locator('.chart-container.line .layercake-annotation').first();
 		await expect(annotation).toBeVisible();
-		await expect(annotation).toContainText('Existing annotation');
+		await expect(annotation).toContainText('Existing annotation...');
+	});
+
+	test('custom style and class are applied to annotation', async ({ page }) => {
+		// The second annotation has custom style and class
+		const styledAnnotation = page.locator('.chart-container.line .layercake-annotation.custom-highlight');
+		await expect(styledAnnotation).toBeVisible();
+		await expect(styledAnnotation).toContainText('Styled annotation');
+
+		// Verify the custom class is present
+		await expect(styledAnnotation).toHaveClass(/custom-highlight/);
+
+		// Verify inline style is applied (background color)
+		await expect(styledAnnotation).toHaveCSS('background-color', 'rgba(255, 235, 59, 0.8)');
+
+		// Take screenshot showing styled annotation
+		await expect(page.locator('.chart-container.line')).toHaveScreenshot('styled-annotation.png');
+	});
+
+	test('custom style persists in static mode', async ({ page }) => {
+		// Toggle to static mode
+		const checkbox = page.locator('input[type="checkbox"]');
+		await checkbox.uncheck();
+		await page.waitForTimeout(200);
+
+		// Verify styled annotation still has custom class in static mode
+		const styledAnnotation = page.locator('.chart-container.line .layercake-annotation.custom-highlight');
+		await expect(styledAnnotation).toBeVisible();
+		await expect(styledAnnotation).toHaveCSS('background-color', 'rgba(255, 235, 59, 0.8)');
 	});
 
 	test('can create a new annotation by clicking', async ({ page }) => {
@@ -27,9 +55,9 @@ test.describe('LayerCake Annotations', () => {
 		// Wait for the new annotation
 		await page.waitForTimeout(300); // debounce delay
 
-		// Should now have 2 annotations in the line chart
+		// Should now have 3 annotations in the line chart (2 existing + 1 new)
 		const annotations = page.locator('.chart-container.line .layercake-annotation');
-		await expect(annotations).toHaveCount(2);
+		await expect(annotations).toHaveCount(3);
 
 		// Take screenshot with new annotation
 		await expect(page.locator('.chart-container.line')).toHaveScreenshot('new-annotation.png');
@@ -190,22 +218,22 @@ test.describe('LayerCake Annotations', () => {
 	});
 
 	test('can delete annotation with backspace', async ({ page }) => {
-		// First verify we have one annotation in line chart
+		// First verify we have two annotations in line chart
 		let annotations = page.locator('.chart-container.line .layercake-annotation');
-		await expect(annotations).toHaveCount(1);
+		await expect(annotations).toHaveCount(2);
 
-		// Hover over annotation to set hovering state
-		const annotation = page.locator('.chart-container.line .draggable');
+		// Hover over first annotation to set hovering state
+		const annotation = page.locator('.chart-container.line .draggable').first();
 		await annotation.hover();
 
 		// Press backspace to delete
 		await page.keyboard.press('Backspace');
 
-		// Annotation should be deleted from line chart
+		// Should have one annotation remaining
 		annotations = page.locator('.chart-container.line .layercake-annotation');
-		await expect(annotations).toHaveCount(0);
+		await expect(annotations).toHaveCount(1);
 
-		// Take screenshot with no annotations
+		// Take screenshot with one annotation deleted
 		await expect(page.locator('.chart-container.line')).toHaveScreenshot('deleted-annotation.png');
 	});
 

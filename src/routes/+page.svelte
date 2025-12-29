@@ -60,6 +60,18 @@
 					}
 				}
 			]
+		},
+		{
+			id: 1,
+			myX: 2010,
+			myY: 4.5,
+			dx: 0,
+			dy: 0,
+			text: 'Styled annotation',
+			width: '120px',
+			style: 'background: rgba(255, 235, 59, 0.8); padding: 4px; border-radius: 4px;',
+			class: 'custom-highlight',
+			arrows: []
 		}
 	]);
 
