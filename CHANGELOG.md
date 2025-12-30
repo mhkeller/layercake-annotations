@@ -1,6 +1,13 @@
 Changelog
 ===
 
+# 0.3.2
+
+> 2025-12-30
+
+- Fix arrowheads not appearing when multiple charts are on the same page
+  - [PR#25](https://github.com/mhkeller/layercake-annotations/pull/25)
+
 # 0.3.1
 
 > 2025-12-29
