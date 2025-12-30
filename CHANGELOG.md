@@ -1,6 +1,13 @@
 Changelog
 ===
 
+# 0.3.1
+
+> 2025-12-29
+
+- Fix arrow zone hover not working (regression from 0.3.0)
+  - [PR#24](https://github.com/mhkeller/layercake-annotations/pull/24)
+
 # 0.3.0
 
 > 2025-12-29
