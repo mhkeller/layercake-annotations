@@ -222,7 +222,8 @@
 		z-index: 1;
 		pointer-events: none;
 	}
-	.layercake-annotations :global(.draggable) {
+	.layercake-annotations :global(.draggable),
+	.layercake-annotations :global(.arrow-zone) {
 		pointer-events: auto;
 	}
 </style>
