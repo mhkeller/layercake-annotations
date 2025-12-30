@@ -130,10 +130,5 @@
 		font-family: inherit;
 		white-space: pre-wrap;
 		word-wrap: break-word;
-		color: #333;
-	}
-	.text-display,
-	.textarea {
-		color: #333;
 	}
 </style>
