@@ -1,12 +1,23 @@
 Changelog
 ===
 
+# 0.3.0
+
+> 2025-12-29
+
+- Fix edit mode visibility bug where annotations were invisible
+- Add support for custom `style` attribute on annotations
+- Remove hardcoded text color - library is now unopinionated about styling
+- Restructure and simplify Playwright tests
+  - [PR#22](https://github.com/mhkeller/layercake-annotations/pull/22)
+  - [PR#23](https://github.com/mhkeller/layercake-annotations/pull/23)
+
 # 0.2.1
 
 > 2025-12-28
 
 - Fix outline appearing on note-listener when deleting annotation
-- Fix improver annotation state after deleting annotation.
+- Fix improved annotation state after deleting annotation.
   - [PR#21](https://github.com/mhkeller/layercake-annotations/pull/21)
 
 # 0.2.0
