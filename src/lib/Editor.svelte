@@ -20,6 +20,8 @@
 	import createRef from './modules/createRef.svelte.js';
 	import newAnnotation from './modules/newAnnotation.js';
 
+	const markerId = $props.id();
+
 	/** @type {{ annotations?: Annotation[], containerClass?: string }} */
 	let { annotations: annos = $bindable([]), containerClass } = $props();
 
@@ -178,11 +180,11 @@
 </script>
 
 {#snippet defs()}
-	<ArrowheadMarker />
+	<ArrowheadMarker {markerId} />
 {/snippet}
 
 <Svg {defs}>
-	<Arrows annotations={annos} />
+	<Arrows annotations={annos} {markerId} />
 </Svg>
 
 <Html>
