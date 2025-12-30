@@ -70,6 +70,8 @@ import annotations from 'annotations.js'  // ✗ edits won't persist
   text: 'Peak value',              // Annotation text (supports line breaks)
   width: '120px',                  // Optional: fixed width
   align: 'left',                   // Optional: 'left', 'center', or 'right'
+  style: 'background: yellow;',    // Optional: inline CSS styles
+  class: 'highlight',              // Optional: CSS class name(s)
   arrows: []                       // Array of arrows (see below)
 }
 ```

@@ -206,9 +206,23 @@
 
 <style>
 	.note-listener {
+		position: absolute;
+		top: 0;
+		left: 0;
 		width: 100%;
 		height: 100%;
 		cursor: copy;
 		outline: none;
+		z-index: 0;
+	}
+	.layercake-annotations {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		z-index: 1;
+		pointer-events: none;
+	}
+	.layercake-annotations :global(.draggable) {
+		pointer-events: auto;
 	}
 </style>

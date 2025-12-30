@@ -19,8 +19,8 @@ export default function newAnnotation(e, id, { xScale, yScale, config }) {
 		[config.y]: yVal[0],
 		dx: xVal[1],
 		dy: yVal[1],
-		text: 'Enter your note here...',
-		width: '168px',
+		text: 'New note...',
+		width: '91px',
 		arrows: []
 	};
 }

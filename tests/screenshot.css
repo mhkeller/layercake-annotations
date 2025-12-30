@@ -5,7 +5,7 @@
 	-moz-osx-font-smoothing: unset !important;
 }
 
-/* Blur all text to mask font rendering differences */
+/* Blur text to mask font rendering differences across platforms */
 .layercake-annotation,
 .layercake-annotations,
 .axis text,
