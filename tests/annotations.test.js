@@ -30,6 +30,7 @@ test.beforeEach(async ({ page }) => {
  */
 async function setEditMode(page, enabled) {
 	const checkbox = page.locator('input[type="checkbox"]');
+	await checkbox.scrollIntoViewIfNeeded();
 	const isChecked = await checkbox.isChecked();
 	if (isChecked !== enabled) {
 		await checkbox.click();

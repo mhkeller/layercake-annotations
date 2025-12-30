@@ -9,14 +9,16 @@
 
 	/** @type {{ annotations?: Annotation[] }} */
 	let { annotations = [] } = $props();
+
+	const markerId = $props.id();
 </script>
 
 {#snippet defs()}
-	<ArrowheadMarker />
+	<ArrowheadMarker {markerId} />
 {/snippet}
 
 <Svg {defs} pointerEvents={false}>
-	<Arrows {annotations} />
+	<Arrows {annotations} {markerId} />
 </Svg>
 
 <Html pointerEvents={false}>

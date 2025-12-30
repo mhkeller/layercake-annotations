@@ -18,8 +18,8 @@
 	import { createArrowPath } from '../modules/arrowUtils.js';
 	import { getArrowSource, getArrowTarget } from '../modules/coordinates.js';
 
-	/** @type {{ annotations?: Annotation[] }} */
-	let { annotations = [] } = $props();
+	/** @type {{ annotations?: Annotation[], markerId: string }} */
+	let { annotations = [], markerId } = $props();
 
 	const { xScale, yScale, x, y, width, height } = getContext('LayerCake');
 
@@ -127,7 +127,7 @@
 				{#if !isBeingDragged}
 					{@const pathD = getStaticPath(anno, arrow)}
 					<!-- Visible arrow -->
-					<path class="arrow-visible" marker-end="url(#layercake-annotation-arrowhead)" d={pathD}
+					<path class="arrow-visible" marker-end="url(#{markerId})" d={pathD}
 					></path>
 					<!-- Invisible hit area for clicking (edit mode only) -->
 					{#if modifyArrow}
@@ -148,7 +148,7 @@
 
 	<!-- Arrow being dragged (new or existing) - rendered with live coordinates -->
 	{#if dragPath}
-		<path class="arrow-visible" marker-end="url(#layercake-annotation-arrowhead)" d={dragPath}
+		<path class="arrow-visible" marker-end="url(#{markerId})" d={dragPath}
 		></path>
 	{/if}
 </g>
