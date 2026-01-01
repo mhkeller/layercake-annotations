@@ -52,9 +52,10 @@
 		const xVal = x ? invertScale($xScale, x) : [];
 		const yVal = y ? invertScale($yScale, y) : [];
 
-		// Build data object only if we have new values
+		// Build data object, preserving existing values and overlaying new ones
 		const newData = filterObject(
 			{
+				...d.data,
 				[$config.x]: xVal[0],
 				[$config.y]: yVal[0]
 			},
