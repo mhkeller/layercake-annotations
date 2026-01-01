@@ -38,8 +38,10 @@ src/lib/
 ```typescript
 {
   id: number,              // Unique identifier
-  [xKey]: any,             // X data value (key from LayerCake config)
-  [yKey]: any,             // Y data value (key from LayerCake config)
+  data: {                  // User data values (nested to avoid key collisions)
+    [xKey]: any,           // X data value (key from LayerCake config)
+    [yKey]: any            // Y data value (key from LayerCake config)
+  },
   dx: number,              // X offset: -100 to 100 (percentage of chart width)
   dy: number,              // Y offset: -100 to 100 (percentage of chart height)
   text: string,            // Annotation text (supports line breaks)
@@ -62,8 +64,10 @@ src/lib/
     dy: number             // Pixels from annotation vertical center
   },
   target: {
-    [xKey]: any,           // X data value (same accessor as LayerCake)
-    [yKey]: any,           // Y data value
+    data: {                // User data values (nested to avoid key collisions)
+      [xKey]: any,         // X data value (same accessor as LayerCake)
+      [yKey]: any          // Y data value
+    },
     dx?: number,           // 0-100: % offset within ordinal band (X)
     dy?: number            // 0-100: % offset within ordinal band (Y)
   }
@@ -77,13 +81,13 @@ The library uses multiple coordinate systems:
 ### Annotation Position
 
 ```
-Final position = scale(dataValue) + (dx/100 × chartDimension)
+Final position = scale(data[key]) + (dx/100 × chartDimension)
 ```
 
 | Property | Unit | Range | Example |
 |----------|------|-------|---------|
-| `[xKey]` | Data value | Depends on data | `new Date('2024-01-15')` |
-| `[yKey]` | Data value | Depends on data | `42` |
+| `data.[xKey]` | Data value | Depends on data | `new Date('2024-01-15')` |
+| `data.[yKey]` | Data value | Depends on data | `42` |
 | `dx` | % of chart width | -100 to 100 | `5` = 5% right |
 | `dy` | % of chart height | -100 to 100 | `-10` = 10% up |
 
@@ -100,7 +104,7 @@ Pixels relative to annotation box edge:
 
 | Property | Unit | When used |
 |----------|------|-----------|
-| `[xKey]`, `[yKey]` | Data values | Always (same keys as LayerCake config) |
+| `data.[xKey]`, `data.[yKey]` | Data values | Always (same keys as LayerCake config) |
 | `dx`, `dy` | % within band (0-100) | Only for ordinal scales |
 
 ## Keyboard Shortcuts

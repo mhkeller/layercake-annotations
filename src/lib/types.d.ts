@@ -16,9 +16,8 @@ export interface ArrowSource {
  * Arrow target position (data space coordinates)
  */
 export interface ArrowTarget {
-	/** X data value (key varies based on LayerCake config) */
-	[xKey: string]: unknown;
-	/** Y data value (key varies based on LayerCake config) */
+	/** User data values (x/y keys match LayerCake config) */
+	data: Record<string, unknown>;
 	/** Percentage offset for ordinal X scales (0-100) */
 	dx?: number;
 	/** Percentage offset for ordinal Y scales (0-100) */
@@ -45,9 +44,8 @@ export interface Arrow {
 export interface Annotation {
 	/** Unique identifier */
 	id: number;
-	/** X data value (key varies based on LayerCake config, e.g., 'date' or 'x') */
-	[xKey: string]: unknown;
-	/** Y data value (key varies based on LayerCake config, e.g., 'value' or 'y') */
+	/** User data values (x/y keys match LayerCake config) */
+	data: Record<string, unknown>;
 	/** Percentage offset from data point in X direction */
 	dx: number;
 	/** Percentage offset from data point in Y direction */

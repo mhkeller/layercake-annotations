@@ -21,8 +21,8 @@
 		<div
 			class="static-wrapper"
 			data-id={i}
-			style:left={`calc(${$xGet(d)}${units} + ${d.dx || 0}%)`}
-			style:top={`calc(${$yGet(d)}${units} + ${d.dy || 0}%)`}
+			style:left={`calc(${$xGet(d.data)}${units} + ${d.dx || 0}%)`}
+			style:top={`calc(${$yGet(d.data)}${units} + ${d.dy || 0}%)`}
 			style:width={d.width}
 		>
 			<div class="layercake-annotation {d.class || ''}" style={d.style} style:text-align={d.align || 'left'}>
