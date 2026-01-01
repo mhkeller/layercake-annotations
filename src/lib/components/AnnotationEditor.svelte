@@ -58,7 +58,7 @@
 				[$config.x]: xVal[0],
 				[$config.y]: yVal[0]
 			},
-			(val) => val !== undefined
+			(d) => d !== undefined
 		);
 
 		/** @type {Record<string, unknown>} */
@@ -69,7 +69,7 @@
 				dx: xVal[1],
 				dy: yVal[1]
 			},
-			(val) => val !== undefined
+			(d) => d !== undefined
 		);
 
 		// Always save current width
