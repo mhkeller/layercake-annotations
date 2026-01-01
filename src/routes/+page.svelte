@@ -38,8 +38,7 @@
 	let lineAnnotations = $state([
 		{
 			id: 0,
-			myX: 1995,
-			myY: 5,
+			data: { myX: 1995, myY: 5 },
 			dx: 0,
 			dy: 0,
 			text: 'Annotation text',
@@ -49,7 +48,7 @@
 					side: 'east',
 					clockwise: true,
 					source: { dx: 0, dy: 10 },
-					target: { myX: 2010, myY: 4.5, dx: 0, dy: 0 }
+					target: { data: { myX: 2010, myY: 4.5 }, dx: 0, dy: 0 }
 				}
 			]
 		}
@@ -58,8 +57,7 @@
 	let columnAnnotations = $state([
 		{
 			id: 0,
-			year: '1981',
-			value: 8,
+			data: { year: '1981', value: 8 },
 			dx: 0,
 			dy: 0,
 			text: 'Annotation text',
@@ -69,7 +67,7 @@
 					side: 'east',
 					clockwise: true,
 					source: { dx: 0, dy: 10 },
-					target: { year: '1982', value: 8.5, dx: 0, dy: 0 }
+					target: { data: { year: '1982', value: 8.5 }, dx: 0, dy: 0 }
 				}
 			]
 		}

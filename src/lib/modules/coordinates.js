@@ -37,9 +37,9 @@ export function getAnnotationBox(anno, scales) {
 	const offsetX = ((anno.dx ?? 0) / 100) * width;
 	const offsetY = ((anno.dy ?? 0) / 100) * height;
 
-	// Calculate top-left position
-	const left = xScale(x(anno)) + offsetX;
-	const top = yScale(y(anno)) + offsetY;
+	// Calculate top-left position (data values are nested in anno.data)
+	const left = xScale(x(anno.data)) + offsetX;
+	const top = yScale(y(anno.data)) + offsetY;
 
 	// Get width (stored as "150px" string or use default)
 	const annoWidth = anno.width ? parseInt(anno.width) : DEFAULT_ANNOTATION_WIDTH;
@@ -90,9 +90,9 @@ export function getArrowSource(anno, arrow, scales, annoHeight = 0) {
 export function getArrowTarget(arrow, scales) {
 	const { xScale, yScale, x, y, width, height } = scales;
 
-	// Target is in data space
-	const baseX = xScale(x(arrow.target));
-	const baseY = yScale(y(arrow.target));
+	// Target is in data space (data values are nested in arrow.target.data)
+	const baseX = xScale(x(arrow.target.data));
+	const baseY = yScale(y(arrow.target.data));
 
 	// Add percentage offsets (used for ordinal scales)
 	const offsetX = ((arrow.target?.dx ?? 0) / 100) * width;

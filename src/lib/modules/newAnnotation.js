@@ -15,8 +15,10 @@ export default function newAnnotation(e, id, { xScale, yScale, config }) {
 
 	return {
 		id,
-		[config.x]: xVal[0],
-		[config.y]: yVal[0],
+		data: {
+			[config.x]: xVal[0],
+			[config.y]: yVal[0]
+		},
 		dx: xVal[1],
 		dy: yVal[1],
 		text: 'New note...',

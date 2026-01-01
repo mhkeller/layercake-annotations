@@ -41,8 +41,8 @@
 	/**
 	 * Coordinates
 	 */
-	let left = $derived(`calc(${$xGet(d)}${units} + ${d.dx}%)`);
-	let top = $derived(`calc(${$yGet(d)}${units} + ${d.dy}%)`);
+	let left = $derived(`calc(${$xGet(d.data)}${units} + ${d.dx}%)`);
+	let top = $derived(`calc(${$yGet(d.data)}${units} + ${d.dy}%)`);
 
 	/**
 	 * @param {Array} [position] - The x and y pixel coordinates of the draggable element.
@@ -52,10 +52,21 @@
 		const xVal = x ? invertScale($xScale, x) : [];
 		const yVal = y ? invertScale($yScale, y) : [];
 
+		// Build data object, preserving existing values and overlaying new ones
+		const newData = filterObject(
+			{
+				...d.data,
+				[$config.x]: xVal[0],
+				[$config.y]: yVal[0]
+			},
+			(d) => d !== undefined
+		);
+
+		/** @type {Record<string, unknown>} */
 		const newProps = filterObject(
 			{
-				[$config.x]: xVal[0],
-				[$config.y]: yVal[0],
+				// Only include data if it has values (avoid overwriting with empty object)
+				data: Object.keys(newData).length > 0 ? newData : undefined,
 				dx: xVal[1],
 				dy: yVal[1]
 			},

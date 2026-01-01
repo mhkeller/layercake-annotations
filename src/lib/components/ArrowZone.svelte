@@ -217,8 +217,10 @@
 					clockwise,
 					source: { dx: newSourceDx, dy: newSourceDy },
 					target: {
-						[$config.x]: targetDataX,
-						[$config.y]: targetDataY,
+						data: {
+							[$config.x]: targetDataX,
+							[$config.y]: targetDataY
+						},
 						dx: targetOffsetX,
 						dy: targetOffsetY
 					}
@@ -242,8 +244,10 @@
 					dy: arrow?.source?.dy ?? defaultSourceDy
 				},
 				target: {
-					[$config.x]: targetDataX,
-					[$config.y]: targetDataY,
+					data: {
+						[$config.x]: targetDataX,
+						[$config.y]: targetDataY
+					},
 					dx: targetOffsetX,
 					dy: targetOffsetY
 				}
