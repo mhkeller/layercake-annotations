@@ -63,8 +63,10 @@ import annotations from 'annotations.js'  // ✗ edits won't persist
 ```js
 {
   id: 0,                           // Unique identifier
-  date: new Date('2024-03-15'),    // X value (matches LayerCake x accessor)
-  value: 42,                       // Y value (matches LayerCake y accessor)
+  data: {
+    date: new Date('2024-03-15'),  // X value (matches LayerCake x accessor)
+    value: 42                      // Y value (matches LayerCake y accessor)
+  },
   dx: 5,                           // X offset: percentage of chart width (-100 to 100)
   dy: -10,                         // Y offset: percentage of chart height (-100 to 100)
   text: 'Peak value',              // Annotation text (supports line breaks)
@@ -97,9 +99,11 @@ The `dx` and `dy` values are **percentages of the chart dimensions** (not decima
     dx: 12,                        // Pixels from annotation edge (horizontal)
     dy: 15                         // Pixels from annotation center (vertical)
   },
-  target: { 
-    date: new Date('2024-03-15'),  // X data value (matches LayerCake x accessor)
-    value: 42,                     // Y data value
+  target: {
+    data: {
+      date: new Date('2024-03-15'),  // X data value (matches LayerCake x accessor)
+      value: 42                      // Y data value
+    },
     dx: 0,                         // % offset for ordinal X scales (0-100)
     dy: 0                          // % offset for ordinal Y scales (0-100)
   }
@@ -118,8 +122,10 @@ The `dx` and `dy` values are **percentages of the chart dimensions** (not decima
   let annotations = $state([
     {
       id: 0,
-      date: new Date('2024-06-01'),
-      value: 150,
+      data: {
+        date: new Date('2024-06-01'),
+        value: 150
+      },
       dx: 2,
       dy: -8,
       text: 'Summer peak',
@@ -128,7 +134,11 @@ The `dx` and `dy` values are **percentages of the chart dimensions** (not decima
         side: 'west',
         clockwise: false,
         source: { dx: -12, dy: 0 },
-        target: { date: new Date('2024-06-01'), value: 150, dx: 0, dy: 0 }
+        target: {
+          data: { date: new Date('2024-06-01'), value: 150 },
+          dx: 0,
+          dy: 0
+        }
       }]
     }
   ]);
@@ -192,3 +202,40 @@ src/lib/
 │   └── arrowUtils.js         # SVG arc path generation
 └── types.d.ts                # TypeScript definitions
 ```
+
+## Internals
+
+For contributors working on this library.
+
+### State Management
+
+State is shared via Svelte context using the `createRef` pattern:
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `hovering` | `HoverState \| null` | Currently hovered element |
+| `moving` | `boolean` | Whether dragging is in progress |
+| `isEditing` | `boolean` | Whether text is being edited |
+| `previewArrow` | `DragState \| null` | Live arrow during drag |
+| `modifyAnnotation` | `function` | Update annotation props |
+| `setArrow` | `function` | Create/update arrow |
+| `modifyArrow` | `function` | Modify arrow properties |
+
+### Key Modules
+
+- **coordinates.js** - Centralizes position calculations (`getAnnotationBox`, `getArrowSource`, `getArrowTarget`)
+- **arrowUtils.js** - Generates SVG arc paths
+- **invertScale.js** - Converts pixel coordinates back to data values
+
+### Adding a New Arrow Property
+
+1. Update `Arrow` type in `types.d.ts`
+2. Update `setArrow` in `Editor.svelte`
+3. Update `ArrowZone.svelte` to read/write the property
+4. Update `Arrows.svelte` if it affects rendering
+
+### Debugging Coordinate Issues
+
+1. Check that `coordinates.js` functions are used consistently
+2. Verify the correct `scales` object is being passed
+3. For east arrows, remember `dx` is from the RIGHT edge

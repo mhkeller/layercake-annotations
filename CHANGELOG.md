@@ -1,6 +1,26 @@
 Changelog
 ===
 
+# 0.4.0
+
+> 2026-01-01
+
+**BREAKING CHANGE**: User data fields are now nested under a `data` property.
+
+Before:
+```js
+{ id: 0, myX: 1995, myY: 5, dx: 0, ... }
+```
+
+After:
+```js
+{ id: 0, data: { myX: 1995, myY: 5 }, dx: 0, ... }
+```
+
+Arrow targets similarly updated. This prevents collisions when user data has fields named `id`, `dx`, `text`, etc.
+
+- [PR#26](https://github.com/mhkeller/layercake-annotations/pull/26)
+
 # 0.3.2
 
 > 2025-12-30
