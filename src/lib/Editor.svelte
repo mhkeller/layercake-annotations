@@ -9,14 +9,15 @@
 	 * @typedef {import('./types.js').Ref<T>} Ref
 	 */
 
-	import { getContext, setContext } from 'svelte';
+	import { getContext, setContext, onDestroy } from 'svelte';
 	import { Svg, Html } from 'layercake';
-	import { debounce } from 'underscore';
 
 	import AnnotationEditor from '$lib/components/AnnotationEditor.svelte';
 	import ArrowheadMarker from '$lib/components/ArrowheadMarker.svelte';
 	import Arrows from '$lib/components/Arrows.svelte';
 
+	import debounce from './modules/debounce.js';
+	import debounceLeading from './modules/debounceLeading.js';
 	import createRef from './modules/createRef.svelte.js';
 	import newAnnotation from './modules/newAnnotation.js';
 
@@ -79,6 +80,16 @@
 		annos.push(annotation);
 		saveConfig_debounced(annos);
 	}
+
+	// One click makes one annotation. A double click on empty chart space sends two
+	// click events a few dozen milliseconds apart, so ignore the second.
+	const onclick_debounced = debounceLeading(onclick, 250);
+
+	// Annotations.svelte swaps this component out when `editable` goes false, so
+	// let a save that's already waiting land instead of losing it.
+	onDestroy(() => {
+		saveConfig_debounced.flush();
+	});
 
 	/**
 	 * Delete an annotation from the chart
@@ -189,7 +200,7 @@
 
 <Html>
 	<div
-		onclick={debounce(onclick, 250, true)}
+		onclick={onclick_debounced}
 		onkeydown={(e) => e.key === 'Enter' && onclick(e)}
 		role="button"
 		tabindex="0"
