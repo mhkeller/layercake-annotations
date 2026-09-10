@@ -24,6 +24,7 @@
 			style:left={`calc(${$xGet(d.data)}${units} + ${d.dx || 0}%)`}
 			style:top={`calc(${$yGet(d.data)}${units} + ${d.dy || 0}%)`}
 			style:width={d.width}
+			style:transform={d.anchorX || d.anchorY ? `translate(-${d.anchorX || 0}%, -${d.anchorY || 0}%)` : undefined}
 		>
 			<div class="layercake-annotation {d.class || ''}" style={d.style} style:text-align={d.align || 'left'}>
 				<pre>{getText(d)}</pre>

@@ -38,6 +38,12 @@ pnpm add @mhkeller/layercake-annotations
 **Formatting:**
 - Cmd+click annotation to cycle text alignment: left → center → right
 
+**Moving the anchor point:**
+- Hover an annotation to show its anchor as a small diamond
+- Drag the diamond to put the anchor anywhere in the box
+- Option+click the annotation to jump between nine presets, clockwise from top-left
+- Arrow keys nudge it 5% at a time once the diamond has focus
+
 **Creating arrows:**
 - Hover over annotation to reveal handles on west/east edges
 - Drag a handle outward to create an arrow
@@ -72,6 +78,8 @@ import annotations from 'annotations.js'  // ✗ edits won't persist
   text: 'Peak value',              // Annotation text (supports line breaks)
   width: '120px',                  // Optional: fixed width
   align: 'left',                   // Optional: 'left', 'center', or 'right'
+  anchorX: 0,                      // Optional: anchor X position (0-100% of width)
+  anchorY: 0,                      // Optional: anchor Y position (0-100% of height)
   style: 'background: yellow;',    // Optional: inline CSS styles
   class: 'highlight',              // Optional: CSS class name(s)
   arrows: []                       // Array of arrows (see below)
@@ -89,13 +97,26 @@ The `dx` and `dy` values are **percentages of the chart dimensions** (not decima
 | `dx: -5` | Shifted left by 5% of chart width |
 | `dy: -15` | Shifted up by 15% of chart height |
 
+### Anchor point
+
+The `anchorX` and `anchorY` properties define where the data point "pins" to the annotation box. In edit mode, hovering an annotation shows the anchor as a small diamond. Drag it to put the anchor anywhere in the box, Option+click the annotation to jump between the presets below, or nudge it with the arrow keys. The annotation stays where it is while the anchor moves — `dx` and `dy` are adjusted to make up the difference.
+
+| anchorX | anchorY | Result |
+|---------|---------|--------|
+| `0` | `0` | Top-left anchored (default) |
+| `50` | `50` | Center anchored |
+| `100` | `0` | Top-right anchored |
+| `50` | `100` | Bottom-center anchored |
+
+Dragging reaches any value in between. The Option+click cycle visits these nine.
+
 ### Arrow structure
 
 ```js
 {
   side: 'east',                    // 'west' or 'east' - which side of annotation
   clockwise: true,                 // true = clockwise curve, false = counter-clockwise, null = straight
-  source: { 
+  source: {
     dx: 12,                        // Pixels from annotation edge (horizontal)
     dy: 15                         // Pixels from annotation center (vertical)
   },
@@ -142,7 +163,7 @@ The `dx` and `dy` values are **percentages of the chart dimensions** (not decima
       }]
     }
   ]);
-  
+
   let editable = $state(true);
 </script>
 
@@ -189,6 +210,7 @@ src/lib/
 ├── Editor.svelte             # Edit mode: state management, context providers
 ├── Static.svelte             # Read-only: renders annotations + arrows
 ├── components/
+│   ├── AnchorHandle          # Diamond handle for dragging the anchor point
 │   ├── AnnotationEditor      # Draggable annotation with text editing
 │   ├── AnnotationsData       # Static annotation renderer
 │   ├── ArrowZone             # Handles for creating/editing arrows

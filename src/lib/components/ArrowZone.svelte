@@ -29,7 +29,10 @@
 
 	const { xScale, yScale, x, y, config, width, height } = getContext('LayerCake');
 
-	let { d, side, noteDimensions } = $props();
+	// boxHeight is the border box, which is what the anchor transform's percentage
+	// resolves against. noteDimensions is the padding box and stays as it was, so
+	// arrow centering doesn't move.
+	let { d, side, noteDimensions, boxHeight = 0 } = $props();
 
 	/** @type {Ref<HoverState | null>} */
 	const hovering = getContext('hovering');
@@ -74,7 +77,7 @@
 	}
 
 	/** Annotation box position and dimensions */
-	let annoBox = $derived(getAnnotationBox(d, getScales()));
+	let annoBox = $derived(getAnnotationBox(d, getScales(), boxHeight));
 
 	/** Default source offsets */
 	let defaultSourceDx = $derived(side === 'west' ? -HANDLE_OFFSET_PX : HANDLE_OFFSET_PX);
@@ -83,7 +86,7 @@
 	/** Current source position in pixels */
 	let sourcePos = $derived.by(() => {
 		if (arrow) {
-			return getArrowSource(d, arrow, getScales(), noteDimensions[1]);
+			return getArrowSource(d, arrow, getScales(), boxHeight);
 		}
 		// Default position when no arrow exists
 		const dx = defaultSourceDx;
@@ -200,8 +203,8 @@
 
 		if (draggingSource && dragX !== null && dragY !== null) {
 			// Update source position using shared coordinate utils
-			const newSourceDx = calculateSourceDx(dragX, d, side, scales);
-			const newSourceDy = calculateSourceDy(dragY, d, scales);
+			const newSourceDx = calculateSourceDx(dragX, d, side, scales, boxHeight);
+			const newSourceDy = calculateSourceDy(dragY, d, scales, boxHeight);
 
 			if (arrow) {
 				modifyArrow(d.id, side, {

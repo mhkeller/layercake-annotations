@@ -14,7 +14,11 @@
 		/** Callback when resizing */
 		ondrag,
 		/** Container selector for position calculations */
-		containerClass = '.chart-container'
+		containerClass = '.chart-container',
+		/** Anchor X position (0-100%) for resize compensation */
+		anchorX = 0,
+		/** Anchor Y position (0-100%) for resize compensation */
+		anchorY = 0
 	} = $props();
 
 	/** Parse width to number */
@@ -63,13 +67,27 @@
 
 		const isEast = active.classList.contains('east');
 		const isWest = active.classList.contains('west');
+		const parent = active.parentElement.closest(containerClass)?.getBoundingClientRect();
 
 		if (isEast) {
 			const delta = event.pageX - initialPos.x;
 			const newWidth = Math.round(initialRect.width + delta);
 			if (newWidth < 50) return;
 			width = `${newWidth}px`;
-			ondrag();
+
+			// With non-zero anchor, compensate position to keep anchor visually stable
+			// When width grows, visual left edge shifts left by (anchorX/100) * delta
+			// To compensate, move anchor point right by that amount
+			if (anchorX > 0 && parent) {
+				const compensation = (anchorX / 100) * delta;
+				// Calculate current anchor position and add compensation
+				const currentAnchorX = initialRect.left - parent.left - $padding.left + (anchorX / 100) * initialRect.width;
+				const newAnchorX = currentAnchorX + compensation;
+				const currentAnchorY = initialRect.top - parent.top - $padding.top + (anchorY / 100) * active.parentElement.getBoundingClientRect().height;
+				ondrag([newAnchorX, currentAnchorY]);
+			} else {
+				ondrag();
+			}
 		}
 
 		if (isWest) {
@@ -79,23 +97,28 @@
 
 			width = `${newWidth}px`;
 
-			// Calculate new position - the left edge moves with the mouse
-			const parent = active.parentElement.closest(containerClass)?.getBoundingClientRect();
+			// Calculate new anchor position
+			// When resizing west, the right edge should stay fixed relative to anchor
 			if (parent) {
-				const newLeft = event.pageX - parent.left - $padding.left;
-				const newTop = initialRect.top - parent.top - $padding.top;
-				ondrag([newLeft, newTop]);
+				// The west edge is moving to event.pageX
+				// We need to find where the anchor point should be
+				const westEdge = event.pageX - parent.left - $padding.left;
+				const newAnchorX = westEdge + (anchorX / 100) * newWidth;
+				const currentAnchorY = initialRect.top - parent.top - $padding.top + (anchorY / 100) * active.parentElement.getBoundingClientRect().height;
+				ondrag([newAnchorX, currentAnchorY]);
 			} else {
 				ondrag();
 			}
 		}
-		}
+	}
 
-	/** Keyboard resize handler */
+	/** Keyboard resize handler - resizes from east edge */
 	function onResize(delta) {
 		const currentWidth = parseWidth(width);
 		const newWidth = Math.max(50, currentWidth + delta);
 		width = `${newWidth}px`;
+		// The anchor doesn't shift to keep up, the way it does on a mouse drag. A
+		// keypress has no parent box to measure against.
 		ondrag();
 	}
 </script>

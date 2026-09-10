@@ -60,6 +60,10 @@ export interface Annotation {
 	style?: string;
 	/** Custom CSS class name(s) to add to the annotation element */
 	class?: string;
+	/** Anchor X position as percentage (0-100) of annotation width. Default 0 (left edge). */
+	anchorX?: number;
+	/** Anchor Y position as percentage (0-100) of annotation height. Default 0 (top edge). */
+	anchorY?: number;
 	/** Arrows attached to this annotation */
 	arrows: Arrow[];
 }

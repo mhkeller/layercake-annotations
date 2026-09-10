@@ -7,6 +7,7 @@
 	import EditableText from './EditableText.svelte';
 	import ResizeHandles from './ResizeHandles.svelte';
 	import ArrowZone from './ArrowZone.svelte';
+	import AnchorHandle from './AnchorHandle.svelte';
 
 	import invertScale from '$lib/modules/invertScale.js';
 	import filterObject from '$lib/modules/filterObject.js';
@@ -16,7 +17,7 @@
 	/**
 	 * Layer Cake configuration
 	 */
-	const { config, xScale, yScale, xGet, yGet, percentRange } = getContext('LayerCake');
+	const { config, xScale, yScale, xGet, yGet, percentRange, width: chartWidth, height: chartHeight } = getContext('LayerCake');
 	let units = $derived($percentRange === true ? '%' : 'px');
 
 	/**
@@ -24,8 +25,14 @@
 	 */
 	let isEditable = $state(false);
 	let noteDimensions = $state([0, 0]);
+	/** @type {HTMLElement|undefined} The annotation box, measured when the anchor moves. */
+	let boxEl = $state();
 	// svelte-ignore state_referenced_locally
 	let width = $state(d.width);
+	// svelte-ignore state_referenced_locally
+	let anchorX = $state(d.anchorX ?? 0);
+	// svelte-ignore state_referenced_locally
+	let anchorY = $state(d.anchorY ?? 0);
 
 	/**
 	 * Arrow sides - simplified to just west and east
@@ -88,8 +95,87 @@
 	// svelte-ignore state_referenced_locally
 	let alignment = $state(d.align || 'left');
 
+	/**
+	 * Anchor positions - cycle clockwise with Option+click
+	 * @type {Array<{x: number, y: number}>}
+	 */
+	const anchorPositions = [
+		{ x: 0, y: 0 },      // top-left (default)
+		{ x: 50, y: 0 },     // top-center
+		{ x: 100, y: 0 },    // top-right
+		{ x: 100, y: 50 },   // middle-right
+		{ x: 100, y: 100 },  // bottom-right
+		{ x: 50, y: 100 },   // bottom-center
+		{ x: 0, y: 100 },    // bottom-left
+		{ x: 0, y: 50 },     // middle-left
+		{ x: 50, y: 50 }     // center
+	];
+
+	/**
+	 * Find current anchor position index
+	 */
+	function getCurrentAnchorIndex() {
+		const idx = anchorPositions.findIndex(
+			(pos) => pos.x === anchorX && pos.y === anchorY
+		);
+		return idx >= 0 ? idx : 0;
+	}
+
+	/**
+	 * Move the anchor point and leave the annotation where it is on screen. The
+	 * box hangs off the anchor, so moving the anchor would drag the box along
+	 * with it. Shifting dx and dy by the same distance cancels that out.
+	 * @param {number} newAnchorX - The new anchor X, 0-100.
+	 * @param {number} newAnchorY - The new anchor Y, 0-100.
+	 * @param {{anchorX: number, anchorY: number, dx: number, dy: number}} [from] - Where the move started from. Defaults to where the annotation is now.
+	 */
+	function setAnchor(newAnchorX, newAnchorY, from) {
+		const start = from ?? { anchorX, anchorY, dx: d.dx, dy: d.dy };
+
+		// Measure rather than read a bound width: the transform's percentage is of
+		// the border box, and offsetWidth/clientWidth are each off by a rounding or
+		// a border.
+		const box = boxEl?.getBoundingClientRect();
+		const deltaX = ((newAnchorX - start.anchorX) / 100) * (box?.width ?? 0);
+		const deltaY = ((newAnchorY - start.anchorY) / 100) * (box?.height ?? 0);
+
+		anchorX = newAnchorX;
+		anchorY = newAnchorY;
+
+		modifyAnnotation(d.id, {
+			anchorX: newAnchorX,
+			anchorY: newAnchorY,
+			dx: start.dx + (deltaX / $chartWidth) * 100,
+			dy: start.dy + (deltaY / $chartHeight) * 100
+		});
+	}
+
+	/**
+	 * Where the annotation sat when the anchor drag started. Every move measures
+	 * from here, so a fast drag can't accumulate rounding drift.
+	 * @type {{anchorX: number, anchorY: number, dx: number, dy: number}|null}
+	 */
+	let anchorDragStart = null;
+
+	function onAnchorDragStart() {
+		anchorDragStart = { anchorX, anchorY, dx: d.dx, dy: d.dy };
+	}
+
+	/**
+	 * @param {number} newAnchorX
+	 * @param {number} newAnchorY
+	 */
+	function onAnchorDrag(newAnchorX, newAnchorY) {
+		setAnchor(newAnchorX, newAnchorY, anchorDragStart ?? undefined);
+	}
+
+	function onAnchorDragEnd() {
+		anchorDragStart = null;
+	}
+
 	function onclick(e) {
-		if (e.metaKey) {
+		// Cmd+click: cycle text alignment
+		if (e.metaKey && !e.altKey) {
 			let newAlignment;
 			if (alignment === 'left') {
 				newAlignment = 'center';
@@ -101,9 +187,20 @@
 			alignment = newAlignment;
 			modifyAnnotation(d.id, { align: newAlignment });
 		}
+		// Option+click (Alt+click): cycle anchor position
+		else if (e.altKey && !e.metaKey) {
+			const nextIdx = (getCurrentAnchorIndex() + 1) % anchorPositions.length;
+			const newAnchor = anchorPositions[nextIdx];
+			setAnchor(newAnchor.x, newAnchor.y);
+		}
 	}
 
 	const grabbers = ['west', 'east'];
+
+	// The border box height, which is what the anchor transform's percentage is
+	// measured against. Reading noteDimensions first is what makes this re-measure
+	// when the box changes size, since getBoundingClientRect isn't reactive.
+	let boxHeight = $derived(noteDimensions[1] ? (boxEl?.getBoundingClientRect().height ?? 0) : 0);
 </script>
 
 {#if d}
@@ -115,9 +212,12 @@
 		{width}
 		{onclick}
 		canDrag={!isEditable}
-		bannedTargets={['arrow-zone']}
+		bannedTargets={['arrow-zone', 'anchor-indicator']}
 		bind:noteDimensions
+		bind:boxEl
 		{containerClass}
+		{anchorX}
+		{anchorY}
 	>
 		<div class="layercake-annotation {d.class || ''}" style={d.style} data-id={d.id}>
 			<EditableText
@@ -127,11 +227,19 @@
 				onSave={(newText) => modifyAnnotation(d.id, { text: newText })}
 			/>
 		</div>
-		<ResizeHandles bind:width {ondrag} {grabbers} {containerClass} />
+		<ResizeHandles bind:width {ondrag} {grabbers} {containerClass} {anchorX} {anchorY} />
+		<AnchorHandle
+			id={d.id}
+			{anchorX}
+			{anchorY}
+			onDragStart={onAnchorDragStart}
+			onDrag={onAnchorDrag}
+			onDragEnd={onAnchorDragEnd}
+		/>
 	</Draggable>
 
 	{#each arrowSides as side}
-		<ArrowZone {d} {side} {noteDimensions} />
+		<ArrowZone {d} {side} {noteDimensions} {boxHeight} />
 	{/each}
 {/if}
 

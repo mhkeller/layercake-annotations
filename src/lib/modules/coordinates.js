@@ -4,6 +4,7 @@
  * Coordinate System:
  * - Annotations are positioned in DATA SPACE (using xScale/yScale)
  * - dx/dy offsets are PERCENTAGES of chart width/height
+ * - anchorX/anchorY define where the anchor point is within the box (0-100%)
  * - Arrow source dx/dy are PIXEL offsets from annotation edge
  * - Arrow target is in DATA SPACE with optional percentage offsets
  *
@@ -19,6 +20,7 @@ export const HANDLE_OFFSET_PX = 12;
 
 /**
  * Calculate annotation box position in pixels.
+ * Accounts for anchor offset (CSS transform) to return actual visual position.
  *
  * @param {Object} anno - Annotation object with x/y data values and dx/dy percentage offsets
  * @param {Object} scales - Object containing LayerCake scales and accessors
@@ -28,21 +30,30 @@ export const HANDLE_OFFSET_PX = 12;
  * @param {Function} scales.y - Y accessor function
  * @param {number} scales.width - Chart width in pixels
  * @param {number} scales.height - Chart height in pixels
+ * @param {number} [annoHeight] - Annotation height in pixels (for anchor Y calculation)
  * @returns {{ left: number, top: number, width: number }}
  */
-export function getAnnotationBox(anno, scales) {
+export function getAnnotationBox(anno, scales, annoHeight = 0) {
 	const { xScale, yScale, x, y, width, height } = scales;
 
 	// Convert percentage offsets to pixels
 	const offsetX = ((anno.dx ?? 0) / 100) * width;
 	const offsetY = ((anno.dy ?? 0) / 100) * height;
 
-	// Calculate top-left position (data values are nested in anno.data)
-	const left = xScale(x(anno.data)) + offsetX;
-	const top = yScale(y(anno.data)) + offsetY;
-
 	// Get width (stored as "150px" string or use default)
 	const annoWidth = anno.width ? parseInt(anno.width) : DEFAULT_ANNOTATION_WIDTH;
+
+	// Calculate anchor point position (where CSS left/top are set)
+	const anchorX = xScale(x(anno.data)) + offsetX;
+	const anchorY = yScale(y(anno.data)) + offsetY;
+
+	// Apply anchor offset to get actual top-left corner
+	// CSS transform: translate(-anchorX%, -anchorY%) shifts the box
+	const anchorOffsetX = ((anno.anchorX ?? 0) / 100) * annoWidth;
+	const anchorOffsetY = ((anno.anchorY ?? 0) / 100) * annoHeight;
+
+	const left = anchorX - anchorOffsetX;
+	const top = anchorY - anchorOffsetY;
 
 	return { left, top, width: annoWidth };
 }
@@ -57,7 +68,7 @@ export function getAnnotationBox(anno, scales) {
  * @returns {{ x: number, y: number }}
  */
 export function getArrowSource(anno, arrow, scales, annoHeight = 0) {
-	const box = getAnnotationBox(anno, scales);
+	const box = getAnnotationBox(anno, scales, annoHeight);
 
 	// Default offsets when no arrow source is specified
 	const defaultDx = arrow.side === 'west' ? -HANDLE_OFFSET_PX : HANDLE_OFFSET_PX;
@@ -112,10 +123,11 @@ export function getArrowTarget(arrow, scales) {
  * @param {Object} anno - Annotation object
  * @param {string} side - 'east' or 'west'
  * @param {Object} scales - LayerCake scales
+ * @param {number} [annoHeight] - Annotation height in pixels (for anchor calculation)
  * @returns {number} - The dx offset to store
  */
-export function calculateSourceDx(pixelX, anno, side, scales) {
-	const box = getAnnotationBox(anno, scales);
+export function calculateSourceDx(pixelX, anno, side, scales, annoHeight = 0) {
+	const box = getAnnotationBox(anno, scales, annoHeight);
 
 	if (side === 'east') {
 		// dx is offset from right edge
@@ -131,9 +143,10 @@ export function calculateSourceDx(pixelX, anno, side, scales) {
  * @param {number} pixelY - Current Y position in pixels
  * @param {Object} anno - Annotation object
  * @param {Object} scales - LayerCake scales
+ * @param {number} [annoHeight] - Annotation height in pixels (for anchor calculation)
  * @returns {number} - The dy offset to store
  */
-export function calculateSourceDy(pixelY, anno, scales) {
-	const box = getAnnotationBox(anno, scales);
+export function calculateSourceDy(pixelY, anno, scales, annoHeight = 0) {
+	const box = getAnnotationBox(anno, scales, annoHeight);
 	return pixelY - box.top;
 }

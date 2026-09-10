@@ -15,16 +15,26 @@
 		canDrag = true,
 		bannedTargets = [],
 		noteDimensions = $bindable(),
+		// The box itself, so anchor math can measure it. A CSS percentage in
+		// `transform` is measured against the border box, while noteDimensions is
+		// the padding box, and the two differ by the border.
+		boxEl = $bindable(),
 		containerClass = '.chart-container',
 		width,
 		onclick,
-		children
+		children,
+		anchorX = 0,
+		anchorY = 0
 	} = $props();
+
+	/** CSS transform for anchor offset */
+	let transformStyle = $derived(
+		anchorX || anchorY ? `translate(-${anchorX}%, -${anchorY}%)` : undefined
+	);
 
 	/**
 	 * State vars
 	 */
-	let el = $state();
 	let isBanned = $state(false);
 	let thisMoving = $state(false);
 
@@ -42,16 +52,20 @@
 
 	/**
 	 * Broadcast the elements movements on drag
+	 * Position reported is the anchor point, not top-left corner
 	 */
 	function onmousemove(e) {
 		if (thisMoving && canDrag && !isBanned) {
-			const { left, top } = el.getBoundingClientRect();
+			const rect = boxEl.getBoundingClientRect();
+			const parent = boxEl.closest(containerClass).getBoundingClientRect();
 
-			const parent = el.closest(containerClass).getBoundingClientRect();
+			// Calculate anchor point position (accounting for transform offset)
+			const anchorOffsetX = (anchorX / 100) * rect.width;
+			const anchorOffsetY = (anchorY / 100) * rect.height;
 
 			ondrag([
-				left - parent.left - $padding.left + e.movementX,
-				top - parent.top - $padding.top - 0 + e.movementY
+				rect.left - parent.left - $padding.left + anchorOffsetX + e.movementX,
+				rect.top - parent.top - $padding.top + anchorOffsetY + e.movementY
 			]);
 		}
 	}
@@ -60,30 +74,39 @@
 		moving.value = false;
 		thisMoving = false;
 	}
-	function onmouseover() {
+	// enter/leave rather than over/out: the box has children that take the mouse
+	// themselves, like the resize grabbers and the anchor handle, and over/out
+	// count a move onto a child as leaving the box.
+	function onmouseenter() {
 		if (moving.value) return;
 		hovering.value = { annotationId: id, type: 'body' };
 	}
-	function onmouseout() {
+	function onmouseleave() {
 		if (moving.value) return;
 		hovering.value = null;
 	}
 </script>
 
 <div
-	bind:this={el}
+	bind:this={boxEl}
 	style:left
 	style:top
 	style:width
+	style:transform={transformStyle}
 	class="draggable"
 	class:canDrag
 	class:hovering={hovering.value?.annotationId === id}
 	{onclick}
 	{onmousedown}
-	{onmouseover}
-	{onmouseout}
-	onfocus={onmouseover}
-	onblur={onmouseout}
+	{onmouseenter}
+	{onmouseleave}
+	onfocus={onmouseenter}
+	onblur={(e) => {
+		// Tabbing to the resize grabbers or the anchor handle moves focus to a
+		// child, which still counts as leaving this element. Stay hovered so those
+		// controls don't vanish as they're reached.
+		if (!boxEl?.contains(e.relatedTarget)) onmouseleave();
+	}}
 	onkeydown={(e) => e.key === 'Delete' && onclick(e)}
 	role="button"
 	tabindex="0"

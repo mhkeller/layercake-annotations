@@ -62,8 +62,8 @@
 	});
 
 	function handleDoubleClick(e) {
-		// Don't enter edit mode if Cmd is held (used for alignment cycling)
-		if (e.metaKey) return;
+		// Don't enter edit mode if Cmd is held (alignment cycling) or Option is held (anchor cycling)
+		if (e.metaKey || e.altKey) return;
 		isEditable = true;
 		isEditing.value = true;
 		document.addEventListener('click', handleClickOutside);
