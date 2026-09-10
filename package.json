@@ -1,6 +1,13 @@
 {
 	"name": "@mhkeller/layercake-annotations",
 	"version": "0.4.0",
+	"description": "Interactive text annotations with swoopy arrows for Layer Cake charts",
+	"homepage": "https://github.com/mhkeller/layercake-annotations",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/mhkeller/layercake-annotations.git"
+	},
+	"license": "MIT",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && pnpm package",
