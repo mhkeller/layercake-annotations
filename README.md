@@ -8,9 +8,7 @@ Add interactive text annotations with swoopy arrows to [LayerCake](https://layer
 pnpm add layercake@^11 @mhkeller/layercake-annotations
 ```
 
-Requires Layer Cake 11 and Svelte 5.40 or newer. `layercake` is a peer
-dependency, so install it yourself and pin the major — a bare `layercake` will
-pick up the next major the day it ships.
+Requires Layer Cake 11 and Svelte 5.40 or newer. `layercake` is a peer dependency, so install it yourself and pin the major — a bare `layercake` will pick up the next major the day it ships.
 
 ## Quick Start
 
@@ -116,17 +114,9 @@ Dragging reaches any value in between. The Option+click cycle visits these nine.
 
 ### Arrow structure
 
-An arrow's `source.dx` is pixels from the near edge of the annotation, and its
-`source.dy` is pixels down from the **anchor point**. The two use different
-origins on purpose: the box's width is stored in the config, so its edges are
-known, but its height comes out of how the text wraps, so the anchor point is
-the only vertical position that can be worked out without measuring the page.
-That is what lets a published chart draw its arrows correctly without measuring
-anything.
+An arrow's `source.dx` is pixels from the near edge of the annotation, and its `source.dy` is pixels down from the **anchor point**. The two use different origins on purpose: the box's width is stored in the config, so its edges are known, but its height comes out of how the text wraps, so the anchor point is the only vertical position that can be worked out without measuring the page. That is what lets a published chart draw its arrows correctly without measuring anything.
 
-To put an arrow at the middle or the bottom of the box, move the anchor there
-with `anchorY` and leave `source.dy` at 0. The browser resolves `anchorY`
-against the real box, so it keeps working when the text re-wraps.
+To put an arrow at the middle or the bottom of the box, move the anchor there with `anchorY` and leave `source.dy` at 0. The browser resolves `anchorY` against the real box, so it keeps working when the text re-wraps.
 
 ```js
 {

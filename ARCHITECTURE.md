@@ -26,28 +26,15 @@ Annotations.svelte          # Entry point - switches based on `editable` prop
 
 ## The measurement rule
 
-> The box's measured height may be read in the editor, at the moment a gesture
-> turns into stored numbers. It may never be read by code that draws a saved
-> arrow.
+> The box's measured height may be read in the editor, at the moment a gesture turns into stored numbers. It may never be read by code that draws a saved arrow.
 
-An annotation has exactly one point whose position is knowable from its config:
-the anchor point. Its width is stored, so the left and right edges are knowable
-too. Its height is not — it comes out of how the text wraps — so nothing else
-vertical can be worked out without measuring the page.
+An annotation has exactly one point whose position is knowable from its config: the anchor point. Its width is stored, so the left and right edges are knowable too. Its height is not — it comes out of how the text wraps — so nothing else vertical can be worked out without measuring the page.
 
-That is why `source.dx` is pixels from the near edge while `source.dy` is pixels
-down from the anchor point. The asymmetry is the rule showing through, and it is
-what lets a published chart draw its arrows without measuring anything.
+That is why `source.dx` is pixels from the near edge while `source.dy` is pixels down from the anchor point. The asymmetry is the rule showing through, and it is what lets a published chart draw its arrows without measuring anything.
 
-To put an arrow at the middle or bottom of the box, move the anchor there with
-`anchorY` and leave `source.dy` at 0. The browser resolves `anchorY` against the
-real box, so that survives the text re-wrapping.
+To put an arrow at the middle or bottom of the box, move the anchor there with `anchorY` and leave `source.dy` at 0. The browser resolves `anchorY` against the real box, so that survives the text re-wrapping.
 
-Grep for `getBoundingClientRect` to check the rule still holds. Every hit should
-be in `Draggable`, `ResizeHandles`, `AnchorHandle` or `AnnotationEditor`'s
-`setAnchor` — all of which run while the user is dragging something. A hit in
-`Arrows.svelte` or `AnnotationsData.svelte` means the rule has been broken, and
-published charts will be wrong in a way the screenshot tests won't show.
+Grep for `getBoundingClientRect` to check the rule still holds. Every hit should be in `Draggable`, `ResizeHandles`, `AnchorHandle` or `AnnotationEditor`'s `setAnchor` — all of which run while the user is dragging something. A hit in `Arrows.svelte` or `AnnotationsData.svelte` means the rule has been broken, and published charts will be wrong in a way the screenshot tests won't show.
 
 ## Coordinate Systems
 
@@ -67,7 +54,7 @@ Final pixel position = scale(dataValue) + (percentage / 100) × chartDimension
 
 ### Arrow Coordinates
 
-- **Source**: Stored as pixel offsets from annotation edge
+- **Source**: `dx` is pixels from the near edge of the annotation, `dy` is pixels down from the anchor point. See the measurement rule above for why the two differ.
 - **Target**: Stored in data space with optional percentage offsets (for ordinal scales)
 
 ## State Management
@@ -147,21 +134,27 @@ Annotations often need to be positioned *near* a data point but not exactly on i
 Centralizes all position calculations to prevent drift between components:
 
 ```javascript
-getAnnotationBox(anno, scales)     // Annotation position/size in pixels
-getArrowSource(anno, arrow, scales) // Arrow source in pixels
-getArrowTarget(arrow, scales)       // Arrow target in pixels
-calculateSourceDx(pixelX, ...)      // Convert pixel → stored offset
+getAnchorPoint(anno, k)        // The one point knowable from config alone
+getBoxEdges(anno, k)           // left, right, width - deliberately no top or bottom
+getArrowSource(anno, arrow, k) // Where an arrow leaves its annotation
+getArrowTarget(arrow, k)       // Where it points
+calculateSourceDx(pixelX, anno, side, k) // Pixel → stored offset
+calculateSourceDy(pixelY, anno, k)
 ```
+
+Every one of these is a pure function of the config and the scales. None takes a measured dimension, which is what keeps published charts correct without a measurement pass.
 
 ### `invertScale.js`
 
-Converts pixel positions back to data values. Handles both linear and ordinal scales:
+Converts positions back to data values. Handles both linear and ordinal scales:
 
 ```javascript
-const [dataValue, percentOffset] = invertScale(scale, pixelPosition);
+const [dataValue, percentOffset] = invertScale(scale, pos, size, percentRange);
 // For linear: percentOffset is always 0
 // For ordinal: percentOffset is position within the band (0-100)
 ```
+
+`size` and `percentRange` are required because a chart with `percentRange` set has scales whose ranges run 0-100, while positions come off the page in pixels. Inverting a pixel against a percentage range doesn't throw, it just puts the annotation somewhere else.
 
 ### `arrowUtils.js`
 
@@ -207,7 +200,7 @@ Clear previewArrow, arrow now in annotation.arrows
 ### Toggling arrow curve direction
 
 ```
-Cmd+click on arrow handle or path
+Cmd+click on an arrow handle
     ↓
 Cycle: clockwise → null (straight) → counter-clockwise
     ↓
@@ -218,15 +211,13 @@ Arrow re-renders with new curve
 
 ## Testing
 
-Visual regression tests using Playwright:
+Three layers, because screenshots alone can't catch a misplaced arrow:
 
 - `tests/unit/` - the pure geometry, run under node
 - `tests/geometry.test.js` - arrow coordinates at a non-zero anchor, asserted numerically
 - `tests/annotations.test.js` - screenshots, linear and ordinal charts
 
-The screenshots alone can't catch arrow misplacement: every scenario they cover
-sits at `anchorY` 0, where the anchor term drops out and wrong maths still looks
-right. That is what `tests/geometry.test.js` is for.
+The screenshots alone can't catch arrow misplacement: every scenario they cover sits at `anchorY` 0, where the anchor term drops out and wrong maths still looks right. That is what `tests/geometry.test.js` is for.
 
 Run with:
 ```bash
