@@ -27,9 +27,10 @@
 		anchorY = 0
 	} = $props();
 
-	/** CSS transform for anchor offset */
-	let transformStyle = $derived(
-		anchorX || anchorY ? `translate(-${anchorX}%, -${anchorY}%)` : undefined
+	// The standalone `translate` property rather than `transform`, so a consumer's
+	// own transform in `d.style` survives.
+	let translateStyle = $derived(
+		anchorX || anchorY ? `-${anchorX}% -${anchorY}%` : undefined
 	);
 
 	/**
@@ -56,8 +57,13 @@
 	 */
 	function onmousemove(e) {
 		if (thisMoving && canDrag && !isBanned) {
+			// Nothing to measure against if the wrapper doesn't match. Better to not
+			// move than to throw on every mousemove.
+			const container = boxEl.closest(containerClass);
+			if (!container) return;
+
 			const rect = boxEl.getBoundingClientRect();
-			const parent = boxEl.closest(containerClass).getBoundingClientRect();
+			const parent = container.getBoundingClientRect();
 
 			// Calculate anchor point position (accounting for transform offset)
 			const anchorOffsetX = (anchorX / 100) * rect.width;
@@ -92,7 +98,7 @@
 	style:left
 	style:top
 	style:width
-	style:transform={transformStyle}
+	style:translate={translateStyle}
 	class="draggable"
 	class:canDrag
 	class:hovering={hovering.value?.annotationId === id}

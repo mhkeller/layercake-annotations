@@ -22,8 +22,10 @@
 	let annotations = $state([
 		{
 			id: 0,
-			year: '1982',
-			value: 12,
+			data: {
+				year: '1982',
+				value: 12
+			},
 			dx: -5,
 			dy: 0,
 			text: 'Ordinal annotation',
