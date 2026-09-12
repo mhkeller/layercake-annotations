@@ -99,20 +99,27 @@ That asymmetry — X free, Y one line — is the rule showing through.
 
 ### What it gives up
 
-A published arrow stops tracking the box when the box's height changes in the
-*reader's* browser: a late webfont, a larger default font size, a translated
-string. Exposure is proportional to `anchorY`, and zero at `anchorY: 0`.
+Less than it first appears. `anchorY` is *already* a percent-of-box control, and
+the browser resolves it: the anchor point's position is pure config, and the box
+is placed around it by `transform: translate(-anchorX%, -anchorY%)`. CSS does the
+percent-of-an-unknown-height arithmetic, so JS never needs the number.
 
-Two cheap things claw most of it back, and neither puts measurement in the
-render path:
+So an arrow leaving the vertical middle is `anchorY: 50` with `source.dy: 0`; the
+bottom edge is `anchorY: 100`. Those track re-wrap forever, in published charts,
+with no measurement — when the text re-wraps the browser re-resolves the
+transform.
 
-- `source: { dy: '50%' }` — how an author says "stay centred whatever the text
-  does". Borrow `parseCssValue` from the docs site
-  (`layercake/src/_modules/arrowUtils.js`) so `dy` accepts `12`, `'12px'` and
-  `'50%'`. The README already claims `dy` behaves this way.
-- A `bind:borderBoxSize` inside `AnnotationEditor` that rewrites `source.dy`
-  when the height changes, preserving the box-relative offset while authoring.
-  ~10 lines, editor only.
+The real limitation is narrower: there is exactly **one** such point per
+annotation, and it is shared between the data-point pinning and the arrows. A box
+pinned by its top-left whose arrow leaves from its middle-right cannot be
+expressed without measuring. That is the whole cost.
+
+Do **not** add `source: { dy: '50%' }` as a way around this. It is incoherent
+here: 50% of the box height requires knowing the box height, which is the one
+thing the invariant forbids in the render path. It works in the docs site only
+because that code measures the element first. Either it breaks the invariant or
+it resolves at authoring time and does not track re-wrap — it cannot do what it
+advertises.
 
 ### Why not the alternatives
 
@@ -126,7 +133,8 @@ this one first unanimously (82, 84, 84).
 | Anchor-local arrows | Best structural argument, but a 0×0 wrapper becomes the box's containing block and `percentRange` vanishes; ~1,580 of 2,413 lines |
 | Port the docs-site renderer wholesale | Measures at draw time, so it emits `d=""` on the server; `getElPosition` measures against the wrong parent here |
 | Pure CSS anchoring | `d: shape()` ships in no engine, `d: path()` is unsupported in WebKit, and `anchor()` disagrees across engines once the anchor element has a transform |
-| Store height in config as authoritative | A stale height is worse than a measured one and uglier than none |
+| Store a measured height in config | A cached layout result. Depends on width, text, font, font-size, line-height and engine, so it goes stale with nothing to signal it |
+| Author a height as a constraint, with a vertical resize handle | Not stale — it is an input, like `width`. Rejected because the editor edits text inline, so a declared height clips the text as it is typed. Overflowing horizontally merely wraps; overflowing vertically does not |
 
 A useful null result: Layer Cake renders nothing server-side without
 `ssr={true}`, and with it `containerWidth` defaults to 100 — so a responsive
@@ -244,15 +252,20 @@ observer callbacks.
 
 ## Decisions still open
 
-1. **Vertical resize.** There is a horizontal resize handle and a `width` field,
-   and no vertical equivalent. A vertical resize handle plus a stored height
-   would make every geometry question closed-form and moot most of this document.
-   Nobody proposed it; it deserves a yes or no rather than silence.
-2. **The dead hit area** (see 4). Revive it and accept a dead corridor, or delete
+1. **The dead hit area** (see 4). Revive it and accept a dead corridor, or delete
    it and keep `ArrowZone`'s duplicate.
-3. **Version number.** Everything here is breaking. `1.0.0` is defensible now the
+2. **Version number.** Everything here is breaking. `1.0.0` is defensible now the
    anchor feature is finished; `0.5.0` matches the existing habit of shipping
    breaking changes as minors.
+
+## Settled
+
+**Vertical resize / stored height: no** (2026-09-12). Storing a *measured* height
+caches a layout result and goes stale. Authoring a height as a *constraint* is
+not stale — it is an input like `width` — but the editor edits text inline, and a
+declared height clips text as it is typed. Height stays content-driven, and
+`anchorY` serves as the percent-of-box control since CSS resolves it without any
+measurement.
 
 ## Verification
 
