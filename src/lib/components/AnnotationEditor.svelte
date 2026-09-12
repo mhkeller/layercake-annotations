@@ -57,8 +57,8 @@
 	 */
 	async function ondrag(position = []) {
 		const [x, y] = position;
-		const xVal = x ? invertScale($xScale, x) : [];
-		const yVal = y ? invertScale($yScale, y) : [];
+		const xVal = x ? invertScale($xScale, x, $chartWidth, $percentRange) : [];
+		const yVal = y ? invertScale($yScale, y, $chartHeight, $percentRange) : [];
 
 		// Build data object, preserving existing values and overlaying new ones
 		const newData = filterObject(

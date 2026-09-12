@@ -29,7 +29,7 @@
 	/**
 	 * LayerCake context
 	 */
-	const { xScale, yScale, config } = getContext('LayerCake');
+	const { xScale, yScale, config, width, height, percentRange } = getContext('LayerCake');
 
 	/** @type {SaveAnnotationConfigFn | undefined} */
 	const saveAnnotationConfig = getContext('saveAnnotationConfig');
@@ -75,7 +75,10 @@
 		const annotation = newAnnotation(e, ++idCounter, {
 			xScale: $xScale,
 			yScale: $yScale,
-			config: $config
+			config: $config,
+			width: $width,
+			height: $height,
+			percentRange: $percentRange
 		});
 		annos.push(annotation);
 		saveConfig_debounced(annos);

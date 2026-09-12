@@ -18,7 +18,9 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
 		"lint": "prettier --check .",
 		"format": "prettier --write .",
-		"test": "playwright test",
+		"test": "pnpm test:unit && pnpm test:e2e",
+		"test:unit": "node --test tests/unit/*.test.js",
+		"test:e2e": "playwright test",
 		"test:ui": "playwright test --ui",
 		"test:update": "playwright test --update-snapshots"
 	},

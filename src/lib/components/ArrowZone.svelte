@@ -26,7 +26,7 @@
 		HANDLE_OFFSET_PX
 	} from '$lib/modules/coordinates.js';
 
-	const { xScale, yScale, x, y, config, width, height } = getContext('LayerCake');
+	const { xScale, yScale, x, y, config, width, height, percentRange } = getContext('LayerCake');
 
 	let { d, side } = $props();
 
@@ -196,8 +196,8 @@
 				});
 			} else {
 				// Creating new arrow - need target too
-				const [targetDataX, targetOffsetX] = invertScale($xScale, targetX);
-				const [targetDataY, targetOffsetY] = invertScale($yScale, targetY);
+				const [targetDataX, targetOffsetX] = invertScale($xScale, targetX, $width, $percentRange);
+				const [targetDataY, targetOffsetY] = invertScale($yScale, targetY, $height, $percentRange);
 
 				setArrow(d.id, {
 					side,
@@ -217,8 +217,8 @@
 
 		if (draggingTarget && dragX !== null && dragY !== null) {
 			// Update target position (convert to data space)
-			const [targetDataX, targetOffsetX] = invertScale($xScale, dragX);
-			const [targetDataY, targetOffsetY] = invertScale($yScale, dragY);
+			const [targetDataX, targetOffsetX] = invertScale($xScale, dragX, $width, $percentRange);
+			const [targetDataY, targetOffsetY] = invertScale($yScale, dragY, $height, $percentRange);
 
 			setArrow(d.id, {
 				side,

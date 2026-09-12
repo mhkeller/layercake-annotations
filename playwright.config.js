@@ -8,6 +8,8 @@ const baseURL = `http://localhost:${port}`;
 export default defineConfig({
 	testDir: './tests',
 	testMatch: '**/*.test.js',
+	// tests/unit runs under node, not a browser
+	testIgnore: '**/unit/**',
 
 	// Run tests in parallel
 	fullyParallel: true,

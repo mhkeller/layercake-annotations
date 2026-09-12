@@ -9,9 +9,9 @@ import invertScale from './invertScale.js';
  * @param {Object} options - LayerCake scales and config
  * @returns {Annotation}
  */
-export default function newAnnotation(e, id, { xScale, yScale, config }) {
-	const xVal = invertScale(xScale, e.offsetX);
-	const yVal = invertScale(yScale, e.offsetY);
+export default function newAnnotation(e, id, { xScale, yScale, config, width, height, percentRange }) {
+	const xVal = invertScale(xScale, e.offsetX, width, percentRange);
+	const yVal = invertScale(yScale, e.offsetY, height, percentRange);
 
 	return {
 		id,
