@@ -17,6 +17,7 @@
 	 */
 
 	import { getContext } from 'svelte';
+	import { getLayerCakeContext } from 'layercake';
 	import invertScale from '$lib/modules/invertScale.js';
 	import {
 		getArrowSource,
@@ -26,7 +27,7 @@
 		HANDLE_OFFSET_PX
 	} from '$lib/modules/coordinates.js';
 
-	const { xScale, yScale, x, y, config, width, height, percentRange } = getContext('LayerCake');
+	const k = getLayerCakeContext();
 
 	let { d, side } = $props();
 
@@ -63,12 +64,12 @@
 	/** Build scales object for coordinate utilities */
 	function getScales() {
 		return {
-			xScale: $xScale,
-			yScale: $yScale,
-			x: $x,
-			y: $y,
-			width: $width,
-			height: $height
+			xScale: k.xScale,
+			yScale: k.yScale,
+			x: k.x,
+			y: k.y,
+			width: k.width,
+			height: k.height
 		};
 	}
 
@@ -152,30 +153,47 @@
 	}
 
 	/** Start dragging source handle */
-	function onSourceMousedown() {
+	function onSourceMousedown(e) {
 		moving.value = true;
 		draggingSource = true;
 		dragX = sourceX;
 		dragY = sourceY;
+		rememberGrab(e, sourceX, sourceY);
 		updateDragState();
 	}
 
 	/** Start dragging target handle (or create mode) */
-	function onTargetMousedown() {
+	function onTargetMousedown(e) {
 		moving.value = true;
 		draggingTarget = true;
 		dragX = arrow ? targetX : sourceX;
 		dragY = arrow ? targetY : sourceY;
+		rememberGrab(e, dragX, dragY);
 		updateDragState();
 	}
+
+	// Where the pointer sat relative to the handle when the drag started, so the
+	// handle doesn't jump under the cursor on the first move.
+	let grabX = 0;
+	let grabY = 0;
 
 	/** Track mouse during drag */
 	function onmousemove(e) {
 		if (!draggingSource && !draggingTarget) return;
 
-		dragX += e.movementX;
-		dragY += e.movementY;
+		// Absolute, rather than summing movementX: that drifts under page zoom and
+		// loses a frame's motion whenever the pointer leaves the window.
+		const [px, py] = k.pointer(e);
+		dragX = px - grabX;
+		dragY = py - grabY;
 		updateDragState();
+	}
+
+	/** @param {MouseEvent} e */
+	function rememberGrab(e, x, y) {
+		const [px, py] = k.pointer(e);
+		grabX = px - x;
+		grabY = py - y;
 	}
 
 	/** On release, save the arrow */
@@ -196,8 +214,8 @@
 				});
 			} else {
 				// Creating new arrow - need target too
-				const [targetDataX, targetOffsetX] = invertScale($xScale, targetX, $width, $percentRange);
-				const [targetDataY, targetOffsetY] = invertScale($yScale, targetY, $height, $percentRange);
+				const [targetDataX, targetOffsetX] = invertScale(k.xScale, targetX, k.width, k.percentRange);
+				const [targetDataY, targetOffsetY] = invertScale(k.yScale, targetY, k.height, k.percentRange);
 
 				setArrow(d.id, {
 					side,
@@ -205,8 +223,8 @@
 					source: { dx: newSourceDx, dy: newSourceDy },
 					target: {
 						data: {
-							[$config.x]: targetDataX,
-							[$config.y]: targetDataY
+							[k.config.x]: targetDataX,
+							[k.config.y]: targetDataY
 						},
 						dx: targetOffsetX,
 						dy: targetOffsetY
@@ -217,8 +235,8 @@
 
 		if (draggingTarget && dragX !== null && dragY !== null) {
 			// Update target position (convert to data space)
-			const [targetDataX, targetOffsetX] = invertScale($xScale, dragX, $width, $percentRange);
-			const [targetDataY, targetOffsetY] = invertScale($yScale, dragY, $height, $percentRange);
+			const [targetDataX, targetOffsetX] = invertScale(k.xScale, dragX, k.width, k.percentRange);
+			const [targetDataY, targetOffsetY] = invertScale(k.yScale, dragY, k.height, k.percentRange);
 
 			setArrow(d.id, {
 				side,
@@ -229,8 +247,8 @@
 				},
 				target: {
 					data: {
-						[$config.x]: targetDataX,
-						[$config.y]: targetDataY
+						[k.config.x]: targetDataX,
+						[k.config.y]: targetDataY
 					},
 					dx: targetOffsetX,
 					dy: targetOffsetY

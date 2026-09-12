@@ -4,7 +4,8 @@
   Supports west (left) and east (right) resizing only.
 -->
 <script>
-	import { getContext } from 'svelte';
+	import { getLayerCakeContext } from 'layercake';
+
 
 	let {
 		/** Which handles to show: 'west', 'east', or both */
@@ -13,8 +14,6 @@
 		width = $bindable(),
 		/** Callback when resizing */
 		ondrag,
-		/** Container selector for position calculations */
-		containerClass = '.chart-container',
 		/** Anchor X position (0-100%) for resize compensation */
 		anchorX = 0
 	} = $props();
@@ -26,7 +25,7 @@
 		return 0;
 	}
 
-	const { padding } = getContext('LayerCake');
+	const k = getLayerCakeContext();
 
 	let active = $state(null);
 	let initialRect = $state(null);
@@ -65,7 +64,7 @@
 
 		const isEast = active.classList.contains('east');
 		const isWest = active.classList.contains('west');
-		const parent = active.parentElement.closest(containerClass)?.getBoundingClientRect();
+		const parent = k.element?.getBoundingClientRect();
 
 		if (isEast) {
 			const delta = event.pageX - initialPos.x;
@@ -79,7 +78,7 @@
 			if (anchorX > 0 && parent) {
 				const compensation = (anchorX / 100) * delta;
 				// Calculate current anchor position and add compensation
-				const currentAnchorX = initialRect.left - parent.left - $padding.left + (anchorX / 100) * initialRect.width;
+				const currentAnchorX = initialRect.left - parent.left - k.padding.left + (anchorX / 100) * initialRect.width;
 				const newAnchorX = currentAnchorX + compensation;
 				// Only x moves. The anchor is pinned to the data point, so the box just
 				// grows around it if the text re-wraps.
@@ -101,7 +100,7 @@
 			if (parent) {
 				// The west edge is moving to event.pageX
 				// We need to find where the anchor point should be
-				const westEdge = event.pageX - parent.left - $padding.left;
+				const westEdge = event.pageX - parent.left - k.padding.left;
 				const newAnchorX = westEdge + (anchorX / 100) * newWidth;
 				// Only x moves. The anchor is pinned to the data point, so the box just
 				// grows around it if the text re-wraps.

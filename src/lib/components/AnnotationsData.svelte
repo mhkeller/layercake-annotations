@@ -5,16 +5,16 @@
 <script>
 	/** @typedef {import('../types.js').Annotation} Annotation */
 
-	import { getContext } from 'svelte';
 
+	import { getLayerCakeContext } from 'layercake';
 	import { DEFAULT_ANNOTATION_WIDTH } from '$lib/modules/coordinates.js';
 
-	const { xGet, yGet, percentRange } = getContext('LayerCake');
+	const k = getLayerCakeContext();
 
 	/** @type {{ annotations?: Annotation[], getText?: (d: Annotation) => string }} */
 	let { annotations = $bindable([]), getText = (d) => d.text } = $props();
 
-	let units = $derived($percentRange === true ? '%' : 'px');
+	let units = $derived(k.percentRange === true ? '%' : 'px');
 </script>
 
 <div class="layercake-annotations">
@@ -23,8 +23,8 @@
 		<div
 			class="static-wrapper"
 			data-id={i}
-			style:left={`calc(${$xGet(d.data)}${units} + ${d.dx || 0}%)`}
-			style:top={`calc(${$yGet(d.data)}${units} + ${d.dy || 0}%)`}
+			style:left={`calc(${k.xGet(d.data)}${units} + ${d.dx || 0}%)`}
+			style:top={`calc(${k.yGet(d.data)}${units} + ${d.dy || 0}%)`}
 			style:width={d.width ?? `${DEFAULT_ANNOTATION_WIDTH}px`}
 			style:translate={d.anchorX || d.anchorY ? `-${d.anchorX || 0}% -${d.anchorY || 0}%` : undefined}
 		>

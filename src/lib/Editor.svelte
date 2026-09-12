@@ -10,7 +10,7 @@
 	 */
 
 	import { getContext, setContext, onDestroy } from 'svelte';
-	import { Svg, Html } from 'layercake';
+	import { Svg, Html, getLayerCakeContext } from 'layercake';
 
 	import AnnotationEditor from '$lib/components/AnnotationEditor.svelte';
 	import ArrowheadMarker from '$lib/components/ArrowheadMarker.svelte';
@@ -23,13 +23,13 @@
 
 	const markerId = $props.id();
 
-	/** @type {{ annotations?: Annotation[], containerClass?: string }} */
-	let { annotations: annos = $bindable([]), containerClass } = $props();
+	/** @type {{ annotations?: Annotation[] }} */
+	let { annotations: annos = $bindable([]) } = $props();
 
 	/**
 	 * LayerCake context
 	 */
-	const { xScale, yScale, config, width, height, percentRange } = getContext('LayerCake');
+	const k = getLayerCakeContext();
 
 	/** @type {SaveAnnotationConfigFn | undefined} */
 	const saveAnnotationConfig = getContext('saveAnnotationConfig');
@@ -73,12 +73,12 @@
 		if (isEditing.value === true) return;
 
 		const annotation = newAnnotation(e, ++idCounter, {
-			xScale: $xScale,
-			yScale: $yScale,
-			config: $config,
-			width: $width,
-			height: $height,
-			percentRange: $percentRange
+			xScale: k.xScale,
+			yScale: k.yScale,
+			config: k.config,
+			width: k.width,
+			height: k.height,
+			percentRange: k.percentRange
 		});
 		annos.push(annotation);
 		saveConfig_debounced(annos);
@@ -213,7 +213,7 @@
 
 	<div class="layercake-annotations">
 		{#each annos as d (d.id)}
-			<AnnotationEditor {d} {containerClass} />
+			<AnnotationEditor {d} />
 		{/each}
 	</div>
 </Html>

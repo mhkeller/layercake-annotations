@@ -2,6 +2,7 @@
 	/** @typedef {import('../types.js').ModifyAnnotationFn} ModifyAnnotationFn */
 
 	import { getContext } from 'svelte';
+	import { getLayerCakeContext } from 'layercake';
 
 	import Draggable from './Draggable.svelte';
 	import EditableText from './EditableText.svelte';
@@ -13,13 +14,13 @@
 	import filterObject from '$lib/modules/filterObject.js';
 	import { HANDLE_OFFSET_PX, DEFAULT_ANNOTATION_WIDTH } from '$lib/modules/coordinates.js';
 
-	let { d, containerClass } = $props();
+	let { d } = $props();
 
 	/**
 	 * Layer Cake configuration
 	 */
-	const { config, xScale, yScale, xGet, yGet, percentRange, width: chartWidth, height: chartHeight } = getContext('LayerCake');
-	let units = $derived($percentRange === true ? '%' : 'px');
+	const k = getLayerCakeContext();
+	let units = $derived(k.percentRange === true ? '%' : 'px');
 
 	/**
 	 * State variables
@@ -51,23 +52,23 @@
 	/**
 	 * Coordinates
 	 */
-	let left = $derived(`calc(${$xGet(d.data)}${units} + ${d.dx}%)`);
-	let top = $derived(`calc(${$yGet(d.data)}${units} + ${d.dy}%)`);
+	let left = $derived(`calc(${k.xGet(d.data)}${units} + ${d.dx}%)`);
+	let top = $derived(`calc(${k.yGet(d.data)}${units} + ${d.dy}%)`);
 
 	/**
 	 * @param {Array} [position] - The x and y pixel coordinates of the draggable element.
 	 */
 	async function ondrag(position = []) {
 		const [x, y] = position;
-		const xVal = x ? invertScale($xScale, x, $chartWidth, $percentRange) : [];
-		const yVal = y ? invertScale($yScale, y, $chartHeight, $percentRange) : [];
+		const xVal = x ? invertScale(k.xScale, x, k.width, k.percentRange) : [];
+		const yVal = y ? invertScale(k.yScale, y, k.height, k.percentRange) : [];
 
 		// Build data object, preserving existing values and overlaying new ones
 		const newData = filterObject(
 			{
 				...d.data,
-				[$config.x]: xVal[0],
-				[$config.y]: yVal[0]
+				[k.config.x]: xVal[0],
+				[k.config.y]: yVal[0]
 			},
 			(d) => d !== undefined
 		);
@@ -159,8 +160,8 @@
 		modifyAnnotation(d.id, {
 			anchorX: newAnchorX,
 			anchorY: newAnchorY,
-			dx: start.dx + (deltaX / $chartWidth) * 100,
-			dy: start.dy + (deltaY / $chartHeight) * 100,
+			dx: start.dx + (deltaX / k.width) * 100,
+			dy: start.dy + (deltaY / k.height) * 100,
 			...(arrows ? { arrows } : {})
 		});
 	}
@@ -236,7 +237,6 @@
 		bannedTargets={['arrow-zone', 'anchor-indicator']}
 		bind:noteDimensions
 		bind:boxEl
-		{containerClass}
 		{anchorX}
 		{anchorY}
 	>
@@ -248,7 +248,7 @@
 				onSave={(newText) => modifyAnnotation(d.id, { text: newText })}
 			/>
 		</div>
-		<ResizeHandles bind:width {ondrag} {grabbers} {containerClass} {anchorX} />
+		<ResizeHandles bind:width {ondrag} {grabbers} {anchorX} />
 		<AnchorHandle
 			id={d.id}
 			{anchorX}

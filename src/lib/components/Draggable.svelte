@@ -6,6 +6,7 @@
 	 */
 
 	import { getContext } from 'svelte';
+	import { getLayerCakeContext } from 'layercake';
 
 	let {
 		id,
@@ -19,7 +20,6 @@
 		// `transform` is measured against the border box, while noteDimensions is
 		// the padding box, and the two differ by the border.
 		boxEl = $bindable(),
-		containerClass = '.chart-container',
 		width,
 		onclick,
 		children,
@@ -43,7 +43,7 @@
 	const hovering = getContext('hovering');
 	/** @type {Ref<boolean>} */
 	const moving = getContext('moving');
-	const { padding } = getContext('LayerCake');
+	const k = getLayerCakeContext();
 
 	function onmousedown(e) {
 		moving.value = true;
@@ -57,21 +57,20 @@
 	 */
 	function onmousemove(e) {
 		if (thisMoving && canDrag && !isBanned) {
-			// Nothing to measure against if the wrapper doesn't match. Better to not
-			// move than to throw on every mousemove.
-			const container = boxEl.closest(containerClass);
-			if (!container) return;
+			// Layer Cake hands us its own container, so there's nothing to look up
+			// and nothing for a consumer to configure. It's undefined until mount.
+			if (!k.element) return;
 
 			const rect = boxEl.getBoundingClientRect();
-			const parent = container.getBoundingClientRect();
+			const parent = k.element.getBoundingClientRect();
 
 			// Calculate anchor point position (accounting for transform offset)
 			const anchorOffsetX = (anchorX / 100) * rect.width;
 			const anchorOffsetY = (anchorY / 100) * rect.height;
 
 			ondrag([
-				rect.left - parent.left - $padding.left + anchorOffsetX + e.movementX,
-				rect.top - parent.top - $padding.top + anchorOffsetY + e.movementY
+				rect.left - parent.left - k.padding.left + anchorOffsetX + e.movementX,
+				rect.top - parent.top - k.padding.top + anchorOffsetY + e.movementY
 			]);
 		}
 	}

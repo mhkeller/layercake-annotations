@@ -14,6 +14,7 @@
 	 */
 
 	import { getContext } from 'svelte';
+	import { getLayerCakeContext } from 'layercake';
 
 	import { createArrowPath } from '../modules/arrowUtils.js';
 	import { getArrowSource, getArrowTarget } from '../modules/coordinates.js';
@@ -21,7 +22,7 @@
 	/** @type {{ annotations?: Annotation[], markerId: string }} */
 	let { annotations = [], markerId } = $props();
 
-	const { xScale, yScale, x, y, width, height } = getContext('LayerCake');
+	const k = getLayerCakeContext();
 
 	/** @type {Ref<DragState | null> | undefined} - Only available in Editor mode */
 	const dragStateRef = getContext('previewArrow');
@@ -33,12 +34,12 @@
 	 */
 	function getScales() {
 		return {
-			xScale: $xScale,
-			yScale: $yScale,
-			x: $x,
-			y: $y,
-			width: $width,
-			height: $height
+			xScale: k.xScale,
+			yScale: k.yScale,
+			x: k.x,
+			y: k.y,
+			width: k.width,
+			height: k.height
 		};
 	}
 

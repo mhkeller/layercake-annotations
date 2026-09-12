@@ -5,8 +5,12 @@ Add interactive text annotations with swoopy arrows to [LayerCake](https://layer
 ## Installation
 
 ```sh
-pnpm add @mhkeller/layercake-annotations
+pnpm add layercake@^11 @mhkeller/layercake-annotations
 ```
+
+Requires Layer Cake 11 and Svelte 5.40 or newer. `layercake` is a peer
+dependency, so install it yourself and pin the major — a bare `layercake` will
+pick up the next major the day it ships.
 
 ## Quick Start
 
@@ -194,7 +198,7 @@ against the real box, so it keeps working when the text re-wraps.
 ## TypeScript
 
 ```ts
-import type { Annotation, Arrow } from '@mhkeller/layercake-annotations/types';
+import type { Annotation, Arrow } from '@mhkeller/layercake-annotations';
 ```
 
 ## Components
