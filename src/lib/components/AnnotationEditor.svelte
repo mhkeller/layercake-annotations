@@ -11,7 +11,7 @@
 
 	import invertScale from '$lib/modules/invertScale.js';
 	import filterObject from '$lib/modules/filterObject.js';
-	import { HANDLE_OFFSET_PX } from '$lib/modules/coordinates.js';
+	import { HANDLE_OFFSET_PX, DEFAULT_ANNOTATION_WIDTH } from '$lib/modules/coordinates.js';
 
 	let { d, containerClass } = $props();
 
@@ -28,8 +28,10 @@
 	let noteDimensions = $state([0, 0]);
 	/** @type {HTMLElement|undefined} The annotation box, measured when the anchor moves. */
 	let boxEl = $state();
+	// The geometry assumes this width when the config omits one, so give the box
+	// the same number rather than letting it shrink to fit its text.
 	// svelte-ignore state_referenced_locally
-	let width = $state(d.width);
+	let width = $state(d.width ?? `${DEFAULT_ANNOTATION_WIDTH}px`);
 	// svelte-ignore state_referenced_locally
 	let anchorX = $state(d.anchorX ?? 0);
 	// svelte-ignore state_referenced_locally

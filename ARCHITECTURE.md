@@ -13,6 +13,7 @@ Annotations.svelte          # Entry point - switches based on `editable` prop
 ├── Editor.svelte           # Edit mode: state management, context providers
 │   ├── Arrows.svelte       # SVG arrow rendering
 │   └── AnnotationEditor.svelte (×N)
+│       ├── AnchorHandle.svelte   # drag the anchor point
 │       ├── Draggable.svelte
 │       │   ├── EditableText.svelte
 │       │   └── ResizeHandles.svelte
@@ -22,6 +23,31 @@ Annotations.svelte          # Entry point - switches based on `editable` prop
     ├── Arrows.svelte
     └── AnnotationsData.svelte
 ```
+
+## The measurement rule
+
+> The box's measured height may be read in the editor, at the moment a gesture
+> turns into stored numbers. It may never be read by code that draws a saved
+> arrow.
+
+An annotation has exactly one point whose position is knowable from its config:
+the anchor point. Its width is stored, so the left and right edges are knowable
+too. Its height is not — it comes out of how the text wraps — so nothing else
+vertical can be worked out without measuring the page.
+
+That is why `source.dx` is pixels from the near edge while `source.dy` is pixels
+down from the anchor point. The asymmetry is the rule showing through, and it is
+what lets a published chart draw its arrows without measuring anything.
+
+To put an arrow at the middle or bottom of the box, move the anchor there with
+`anchorY` and leave `source.dy` at 0. The browser resolves `anchorY` against the
+real box, so that survives the text re-wrapping.
+
+Grep for `getBoundingClientRect` to check the rule still holds. Every hit should
+be in `Draggable`, `ResizeHandles`, `AnchorHandle` or `AnnotationEditor`'s
+`setAnchor` — all of which run while the user is dragging something. A hit in
+`Arrows.svelte` or `AnnotationsData.svelte` means the rule has been broken, and
+published charts will be wrong in a way the screenshot tests won't show.
 
 ## Coordinate Systems
 
@@ -194,8 +220,13 @@ Arrow re-renders with new curve
 
 Visual regression tests using Playwright:
 
-- `tests/annotations.test.js` - Linear scale chart
-- `tests/ordinal.test.js` - Ordinal (bar) chart
+- `tests/unit/` - the pure geometry, run under node
+- `tests/geometry.test.js` - arrow coordinates at a non-zero anchor, asserted numerically
+- `tests/annotations.test.js` - screenshots, linear and ordinal charts
+
+The screenshots alone can't catch arrow misplacement: every scenario they cover
+sits at `anchorY` 0, where the anchor term drops out and wrong maths still looks
+right. That is what `tests/geometry.test.js` is for.
 
 Run with:
 ```bash

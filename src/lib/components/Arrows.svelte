@@ -27,7 +27,6 @@
 	const dragStateRef = getContext('previewArrow');
 
 	/** @type {ModifyArrowFn | undefined} - Only available in Editor mode */
-	const modifyArrow = getContext('modifyArrow');
 
 	/**
 	 * Build scales object for coordinate utilities
@@ -55,39 +54,6 @@
 		return createArrowPath(source, target, clockwise);
 	}
 
-	/**
-	 * Toggle clockwise on cmd+click - cycle order depends on side
-	 */
-	function handleArrowClick(e, anno, arrow) {
-		if (!e.metaKey || !modifyArrow) return;
-
-		const side = arrow.side;
-		const clockwise =
-			arrow.clockwise !== undefined ? arrow.clockwise : side === 'west' ? false : true;
-
-		let newClockwise;
-		if (side === 'east') {
-			// East: clockwise → straight → counter-clockwise → clockwise
-			if (clockwise === true) {
-				newClockwise = null;
-			} else if (clockwise === null) {
-				newClockwise = false;
-			} else {
-				newClockwise = true;
-			}
-		} else {
-			// West: counter-clockwise → straight → clockwise → counter-clockwise
-			if (clockwise === false) {
-				newClockwise = null;
-			} else if (clockwise === null) {
-				newClockwise = true;
-			} else {
-				newClockwise = false;
-			}
-		}
-
-		modifyArrow(anno.id, side, { clockwise: newClockwise });
-	}
 
 	/**
 	 * Check if a specific arrow is currently being dragged
@@ -129,18 +95,6 @@
 					<!-- Visible arrow -->
 					<path class="arrow-visible" marker-end="url(#{markerId})" d={pathD}
 					></path>
-					<!-- Invisible hit area for clicking (edit mode only) -->
-					{#if modifyArrow}
-						<path
-							class="arrow-hitarea"
-							d={pathD}
-							onclick={(e) => handleArrowClick(e, anno, arrow)}
-							onkeydown={(e) => e.key === 'Enter' && handleArrowClick(e, anno, arrow)}
-							role="button"
-							tabindex="0"
-							aria-label="Arrow - Cmd+Enter to toggle curve direction"
-						></path>
-					{/if}
 				{/if}
 			{/each}
 		{/if}
@@ -164,12 +118,5 @@
 		stroke: #000;
 		stroke-width: 1;
 		pointer-events: none;
-	}
-	.arrow-hitarea {
-		fill: none;
-		stroke: transparent;
-		stroke-width: 12;
-		cursor: pointer;
-		pointer-events: stroke;
 	}
 </style>
