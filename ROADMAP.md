@@ -4,8 +4,11 @@ One planned pass over the library: fix the arrow geometry properly, drop the
 dead weight, and move to Layer Cake v11. Written down so the reasoning survives
 the gap between planning it and doing it.
 
-Status as of 2026-09-12: branch `feat/registration-drag`, five commits, not
-pushed. Nothing below is started.
+Status as of 2026-09-12: **done**, on branch `feat/registration-drag`, not
+pushed. Kept as the record of why the library is shaped the way it is; the
+reasoning matters more than the checklist.
+
+Still open: whether this ships as `0.5.0` or `1.0.0`.
 
 ## Why this exists
 
@@ -252,11 +255,22 @@ observer callbacks.
 
 ## Decisions still open
 
-1. **The dead hit area** (see 4). Revive it and accept a dead corridor, or delete
-   it and keep `ArrowZone`'s duplicate.
-2. **Version number.** Everything here is breaking. `1.0.0` is defensible now the
+1. **Version number.** Everything here is breaking. `1.0.0` is defensible now the
    anchor feature is finished; `0.5.0` matches the existing habit of shipping
    breaking changes as minors.
+
+## Deliberately not done
+
+**Freeing `side` from being the arrow key.** `modifyArrow(id, side, props)` caps
+an annotation at one west and one east arrow. Changing the key would enable more,
+but the editor only ever offers two zones, so it would be a data-model change in
+support of a feature that doesn't exist. Worth doing the day a third arrow is
+wanted, not before.
+
+**The dead hit area: deleted rather than revived.** `.note-listener` covers the
+whole Html layer, so `Arrows.svelte`'s `.arrow-hitarea` never received a click
+and the cmd+click that fires is `ArrowZone`'s. Reviving it would have carved a
+12px corridor along every arrow where click-to-create stops working.
 
 ## Settled
 
