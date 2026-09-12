@@ -1,7 +1,13 @@
 Changelog
 ===
 
-# Unreleased
+# 1.0.0
+
+> 2026-09-12
+
+First stable release. The anchor point is finished, the geometry is settled, and
+the package has a license — there's nothing left that was waiting to change
+shape before calling it 1.0.
 
 **BREAKING CHANGE**: Requires Layer Cake v11. `layercake` is now a peer
 dependency at `^11.0.0`, so install it yourself. On npm an app pinned to

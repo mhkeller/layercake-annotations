@@ -8,7 +8,7 @@ Status as of 2026-09-12: **done**, on branch `feat/registration-drag`, not
 pushed. Kept as the record of why the library is shaped the way it is; the
 reasoning matters more than the checklist.
 
-Still open: whether this ships as `0.5.0` or `1.0.0`.
+Shipped as `1.0.0`. Nothing left open.
 
 ## Why this exists
 
@@ -252,12 +252,6 @@ deletes both copies of `getScales()` rather than translating them.
 Measurement cannot loop here: writing `left`/`top` on an absolutely positioned,
 content-sized box cannot change its size. Measured — 20 box moves produced 0
 observer callbacks.
-
-## Decisions still open
-
-1. **Version number.** Everything here is breaking. `1.0.0` is defensible now the
-   anchor feature is finished; `0.5.0` matches the existing habit of shipping
-   breaking changes as minors.
 
 ## Deliberately not done
 
