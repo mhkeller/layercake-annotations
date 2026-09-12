@@ -144,7 +144,9 @@ test('every anchor preset keeps the arrow on the annotation', async ({ page }) =
 		const inside = start.y >= box.y - 2 && start.y <= box.y + box.height + 2;
 		if (!inside) {
 			const { x, y } = ANCHOR_PRESETS[i];
-			offenders.push(`anchor ${x}/${y}: arrow starts at y=${start.y.toFixed(1)}, box is ${box.y.toFixed(1)}..${(box.y + box.height).toFixed(1)}`);
+			offenders.push(
+				`anchor ${x}/${y}: arrow starts at y=${start.y.toFixed(1)}, box is ${box.y.toFixed(1)}..${(box.y + box.height).toFixed(1)}`
+			);
 		}
 	}
 

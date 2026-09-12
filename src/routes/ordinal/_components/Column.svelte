@@ -24,7 +24,9 @@
 	});
 
 	let columnHeight = $derived((d) => {
-		return k.yRange[0] - k.yGet(d);
+		// The first render runs before the chart has been measured, so this can come
+		// out negative, and an SVG rect won't take a negative height.
+		return Math.max(0, k.yRange[0] - k.yGet(d));
 	});
 </script>
 
