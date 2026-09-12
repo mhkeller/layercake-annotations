@@ -16,9 +16,7 @@
 		/** Container selector for position calculations */
 		containerClass = '.chart-container',
 		/** Anchor X position (0-100%) for resize compensation */
-		anchorX = 0,
-		/** Anchor Y position (0-100%) for resize compensation */
-		anchorY = 0
+		anchorX = 0
 	} = $props();
 
 	/** Parse width to number */
@@ -83,8 +81,9 @@
 				// Calculate current anchor position and add compensation
 				const currentAnchorX = initialRect.left - parent.left - $padding.left + (anchorX / 100) * initialRect.width;
 				const newAnchorX = currentAnchorX + compensation;
-				const currentAnchorY = initialRect.top - parent.top - $padding.top + (anchorY / 100) * active.parentElement.getBoundingClientRect().height;
-				ondrag([newAnchorX, currentAnchorY]);
+				// Only x moves. The anchor is pinned to the data point, so the box just
+				// grows around it if the text re-wraps.
+				ondrag([newAnchorX, null]);
 			} else {
 				ondrag();
 			}
@@ -104,8 +103,9 @@
 				// We need to find where the anchor point should be
 				const westEdge = event.pageX - parent.left - $padding.left;
 				const newAnchorX = westEdge + (anchorX / 100) * newWidth;
-				const currentAnchorY = initialRect.top - parent.top - $padding.top + (anchorY / 100) * active.parentElement.getBoundingClientRect().height;
-				ondrag([newAnchorX, currentAnchorY]);
+				// Only x moves. The anchor is pinned to the data point, so the box just
+				// grows around it if the text re-wraps.
+				ondrag([newAnchorX, null]);
 			} else {
 				ondrag();
 			}

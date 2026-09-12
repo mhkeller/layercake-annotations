@@ -112,13 +112,25 @@ Dragging reaches any value in between. The Option+click cycle visits these nine.
 
 ### Arrow structure
 
+An arrow's `source.dx` is pixels from the near edge of the annotation, and its
+`source.dy` is pixels down from the **anchor point**. The two use different
+origins on purpose: the box's width is stored in the config, so its edges are
+known, but its height comes out of how the text wraps, so the anchor point is
+the only vertical position that can be worked out without measuring the page.
+That is what lets a published chart draw its arrows correctly without measuring
+anything.
+
+To put an arrow at the middle or the bottom of the box, move the anchor there
+with `anchorY` and leave `source.dy` at 0. The browser resolves `anchorY`
+against the real box, so it keeps working when the text re-wraps.
+
 ```js
 {
   side: 'east',                    // 'west' or 'east' - which side of annotation
   clockwise: true,                 // true = clockwise curve, false = counter-clockwise, null = straight
   source: {
-    dx: 12,                        // Pixels from annotation edge (horizontal)
-    dy: 15                         // Pixels from annotation center (vertical)
+    dx: 12,                        // Pixels from the near edge of the annotation
+    dy: 15                         // Pixels down from the anchor point
   },
   target: {
     data: {
@@ -261,3 +273,4 @@ State is shared via Svelte context using the `createRef` pattern:
 1. Check that `coordinates.js` functions are used consistently
 2. Verify the correct `scales` object is being passed
 3. For east arrows, remember `dx` is from the RIGHT edge
+4. `source.dy` is measured from the anchor point, not from the top of the box

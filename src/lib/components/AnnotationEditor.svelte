@@ -11,6 +11,7 @@
 
 	import invertScale from '$lib/modules/invertScale.js';
 	import filterObject from '$lib/modules/filterObject.js';
+	import { HANDLE_OFFSET_PX } from '$lib/modules/coordinates.js';
 
 	let { d, containerClass } = $props();
 
@@ -127,10 +128,10 @@
 	 * with it. Shifting dx and dy by the same distance cancels that out.
 	 * @param {number} newAnchorX - The new anchor X, 0-100.
 	 * @param {number} newAnchorY - The new anchor Y, 0-100.
-	 * @param {{anchorX: number, anchorY: number, dx: number, dy: number}} [from] - Where the move started from. Defaults to where the annotation is now.
+	 * @param {ReturnType<typeof snapshot>} [from] - Where the move started from. Defaults to where the annotation is now.
 	 */
 	function setAnchor(newAnchorX, newAnchorY, from) {
-		const start = from ?? { anchorX, anchorY, dx: d.dx, dy: d.dy };
+		const start = from ?? snapshot();
 
 		// Measure rather than read a bound width: the transform's percentage is of
 		// the border box, and offsetWidth/clientWidth are each off by a rounding or
@@ -142,23 +143,45 @@
 		anchorX = newAnchorX;
 		anchorY = newAnchorY;
 
+		// Arrows hang off the anchor point, and the compensation above slides that
+		// point down the chart by deltaY. Take the same off each source so the
+		// arrows stay where they are.
+		const arrows = d.arrows?.map((a) => ({
+			...a,
+			source: {
+				dx: a.source?.dx ?? (a.side === 'west' ? -HANDLE_OFFSET_PX : HANDLE_OFFSET_PX),
+				dy: (start.sourceDy[a.side] ?? a.source?.dy ?? 0) - deltaY
+			}
+		}));
+
 		modifyAnnotation(d.id, {
 			anchorX: newAnchorX,
 			anchorY: newAnchorY,
 			dx: start.dx + (deltaX / $chartWidth) * 100,
-			dy: start.dy + (deltaY / $chartHeight) * 100
+			dy: start.dy + (deltaY / $chartHeight) * 100,
+			...(arrows ? { arrows } : {})
 		});
 	}
 
 	/**
-	 * Where the annotation sat when the anchor drag started. Every move measures
-	 * from here, so a fast drag can't accumulate rounding drift.
-	 * @type {{anchorX: number, anchorY: number, dx: number, dy: number}|null}
+	 * Where the annotation and its arrows sit right now. A move measures from one
+	 * of these rather than from live values, so a drag can't accumulate drift.
+	 */
+	function snapshot() {
+		/** @type {Record<string, number>} */
+		const sourceDy = {};
+		for (const a of d.arrows ?? []) sourceDy[a.side] = a.source?.dy ?? 0;
+		return { anchorX, anchorY, dx: d.dx, dy: d.dy, sourceDy };
+	}
+
+	/**
+	 * Where the annotation sat when the anchor drag started.
+	 * @type {ReturnType<typeof snapshot>|null}
 	 */
 	let anchorDragStart = null;
 
 	function onAnchorDragStart() {
-		anchorDragStart = { anchorX, anchorY, dx: d.dx, dy: d.dy };
+		anchorDragStart = snapshot();
 	}
 
 	/**
@@ -197,10 +220,6 @@
 
 	const grabbers = ['west', 'east'];
 
-	// The border box height, which is what the anchor transform's percentage is
-	// measured against. Reading noteDimensions first is what makes this re-measure
-	// when the box changes size, since getBoundingClientRect isn't reactive.
-	let boxHeight = $derived(noteDimensions[1] ? (boxEl?.getBoundingClientRect().height ?? 0) : 0);
 </script>
 
 {#if d}
@@ -227,7 +246,7 @@
 				onSave={(newText) => modifyAnnotation(d.id, { text: newText })}
 			/>
 		</div>
-		<ResizeHandles bind:width {ondrag} {grabbers} {containerClass} {anchorX} {anchorY} />
+		<ResizeHandles bind:width {ondrag} {grabbers} {containerClass} {anchorX} />
 		<AnchorHandle
 			id={d.id}
 			{anchorX}
@@ -239,7 +258,7 @@
 	</Draggable>
 
 	{#each arrowSides as side}
-		<ArrowZone {d} {side} {noteDimensions} {boxHeight} />
+		<ArrowZone {d} {side} />
 	{/each}
 {/if}
 

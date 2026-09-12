@@ -19,7 +19,6 @@
 	import { getContext } from 'svelte';
 	import invertScale from '$lib/modules/invertScale.js';
 	import {
-		getAnnotationBox,
 		getArrowSource,
 		getArrowTarget,
 		calculateSourceDx,
@@ -29,10 +28,7 @@
 
 	const { xScale, yScale, x, y, config, width, height } = getContext('LayerCake');
 
-	// boxHeight is the border box, which is what the anchor transform's percentage
-	// resolves against. noteDimensions is the padding box and stays as it was, so
-	// arrow centering doesn't move.
-	let { d, side, noteDimensions, boxHeight = 0 } = $props();
+	let { d, side } = $props();
 
 	/** @type {Ref<HoverState | null>} */
 	const hovering = getContext('hovering');
@@ -76,26 +72,14 @@
 		};
 	}
 
-	/** Annotation box position and dimensions */
-	let annoBox = $derived(getAnnotationBox(d, getScales(), boxHeight));
+	/** Where an arrow would start if this side doesn't have one yet */
+	let placeholderArrow = $derived({ side, source: undefined });
 
-	/** Default source offsets */
-	let defaultSourceDx = $derived(side === 'west' ? -HANDLE_OFFSET_PX : HANDLE_OFFSET_PX);
-	let defaultSourceDy = $derived(noteDimensions[1] / 2);
-
-	/** Current source position in pixels */
-	let sourcePos = $derived.by(() => {
-		if (arrow) {
-			return getArrowSource(d, arrow, getScales(), boxHeight);
-		}
-		// Default position when no arrow exists
-		const dx = defaultSourceDx;
-		const dy = defaultSourceDy;
-		if (side === 'east') {
-			return { x: annoBox.left + annoBox.width + dx, y: annoBox.top + dy };
-		}
-		return { x: annoBox.left + dx, y: annoBox.top + dy };
-	});
+	/**
+	 * Current source position in pixels. Same function the renderer uses, so the
+	 * handle and the drawn arrow can't drift apart.
+	 */
+	let sourcePos = $derived(getArrowSource(d, arrow ?? placeholderArrow, getScales()));
 
 	let sourceX = $derived(sourcePos.x);
 	let sourceY = $derived(sourcePos.y);
@@ -203,8 +187,8 @@
 
 		if (draggingSource && dragX !== null && dragY !== null) {
 			// Update source position using shared coordinate utils
-			const newSourceDx = calculateSourceDx(dragX, d, side, scales, boxHeight);
-			const newSourceDy = calculateSourceDy(dragY, d, scales, boxHeight);
+			const newSourceDx = calculateSourceDx(dragX, d, side, scales);
+			const newSourceDy = calculateSourceDy(dragY, d, scales);
 
 			if (arrow) {
 				modifyArrow(d.id, side, {
@@ -236,15 +220,12 @@
 			const [targetDataX, targetOffsetX] = invertScale($xScale, dragX);
 			const [targetDataY, targetOffsetY] = invertScale($yScale, dragY);
 
-			// Keep existing source or use defaults
-			const existingSourceDx = arrow?.source?.dx ?? defaultSourceDx;
-
 			setArrow(d.id, {
 				side,
 				clockwise,
 				source: {
-					dx: existingSourceDx,
-					dy: arrow?.source?.dy ?? defaultSourceDy
+					dx: arrow?.source?.dx ?? (side === 'west' ? -HANDLE_OFFSET_PX : HANDLE_OFFSET_PX),
+					dy: arrow?.source?.dy ?? 0
 				},
 				target: {
 					data: {
