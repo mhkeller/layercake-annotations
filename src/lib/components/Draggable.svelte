@@ -17,6 +17,9 @@
 		// The box itself, so anchor math can measure its border box — the same box
 		// a percentage in `translate` resolves against.
 		boxEl = $bindable(),
+		// How tall that box is. The one dimension the config can't supply: it comes
+		// out of how the text wraps, so only the DOM knows it.
+		boxHeight = $bindable(0),
 		width,
 		onclick,
 		children,
@@ -44,10 +47,17 @@
 	let grabX = 0;
 	let grabY = 0;
 
-	function onmousedown(e) {
+	function onpointerdown(e) {
 		moving.value = true;
 		thisMoving = true;
 		if (!boxEl) return;
+
+		// Capture on whatever was pressed rather than on the box, so every later
+		// move and the release come to this annotation however far the pointer
+		// travels. Capture retargets the events that follow, and a click reported
+		// against the box instead of against the text would cost the double-click
+		// that opens the editor. Moves still reach the handler below by bubbling.
+		e.target.setPointerCapture(e.pointerId);
 
 		const rect = boxEl.getBoundingClientRect();
 		grabX = e.clientX - rect.left - (anchorX / 100) * rect.width;
@@ -58,7 +68,7 @@
 	 * Broadcast the element's movements on drag. The position reported is the
 	 * anchor point, not the top-left corner.
 	 */
-	function onmousemove(e) {
+	function onpointermove(e) {
 		if (!thisMoving || !canDrag) return;
 
 		// Absolute, rather than summing movementX: that drifts under page zoom and
@@ -70,7 +80,7 @@
 		ondrag([px - grabX, py - grabY]);
 	}
 
-	function onmouseup() {
+	function onpointerup() {
 		moving.value = false;
 		thisMoving = false;
 	}
@@ -89,6 +99,7 @@
 
 <div
 	bind:this={boxEl}
+	bind:offsetHeight={boxHeight}
 	style:left
 	style:top
 	style:width
@@ -97,7 +108,9 @@
 	class:canDrag
 	class:hovering={hovering.value?.annotationId === id}
 	{onclick}
-	{onmousedown}
+	{onpointerdown}
+	{onpointermove}
+	{onpointerup}
 	{onmouseenter}
 	{onmouseleave}
 	onfocus={onmouseenter}
@@ -114,8 +127,6 @@
 >
 	{@render children()}
 </div>
-
-<svelte:window {onmouseup} {onmousemove} />
 
 <style>
 	.draggable {

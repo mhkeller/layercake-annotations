@@ -4,7 +4,6 @@
   Supports west (left) and east (right) resizing only.
 -->
 <script>
-	import { onDestroy } from 'svelte';
 	import { getLayerCakeContext } from 'layercake';
 
 	import { annotationWidth } from '$lib/modules/coordinates.js';
@@ -27,9 +26,14 @@
 	let initialRect = $state(null);
 	let initialPos = $state(null);
 
-	function onmousedown(event) {
+	function onpointerdown(event) {
 		event.stopPropagation();
 		active = event.target;
+
+		// Capture routes every later move and the release here, however far the
+		// pointer travels, and the browser hands it back when the drag ends.
+		active.setPointerCapture(event.pointerId);
+
 		isEast = active.classList.contains('east');
 		const rect = active.parentElement.getBoundingClientRect();
 		const [pointerX] = k.pointer(event);
@@ -40,32 +44,18 @@
 		};
 		initialPos = { x: pointerX };
 		active.classList.add('selected');
-
-		window.addEventListener('mousemove', onmousemove);
-		window.addEventListener('mouseup', onmouseup);
 	}
 
-	function onmouseup() {
+	function onpointerup() {
 		if (!active) return;
 
 		active.classList.remove('selected');
 		active = null;
 		initialRect = null;
 		initialPos = null;
-
-		stopListening();
 	}
 
-	function stopListening() {
-		window.removeEventListener('mousemove', onmousemove);
-		window.removeEventListener('mouseup', onmouseup);
-	}
-
-	// Deleting an annotation mid-resize takes this component with it, so drop the
-	// window listeners on the way out rather than leaving them running.
-	onDestroy(stopListening);
-
-	function onmousemove(event) {
+	function onpointermove(event) {
 		if (!active) return;
 
 		const [pointerX] = k.pointer(event);
@@ -118,7 +108,9 @@
 {#each grabbers as grabber}
 	<div
 		class="grabber {grabber}"
-		{onmousedown}
+		{onpointerdown}
+		{onpointermove}
+		{onpointerup}
 		onkeydown={(e) => {
 			if (e.key === 'ArrowLeft') {
 				onResize(-10);

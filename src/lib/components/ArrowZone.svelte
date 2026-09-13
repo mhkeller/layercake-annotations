@@ -20,8 +20,10 @@
 	import { getLayerCakeContext } from 'layercake';
 	import invertScale from '$lib/modules/invertScale.js';
 	import {
+		getAnchorPoint,
 		getArrowSource,
 		getArrowTarget,
+		getBoxEdges,
 		calculateSourceDx,
 		calculateSourceDy,
 		resolveArrowSource,
@@ -30,7 +32,7 @@
 
 	const k = getLayerCakeContext();
 
-	let { d, side } = $props();
+	let { d, side, boxHeight = 0 } = $props();
 
 	/** @type {Ref<HoverState | null>} */
 	const hovering = getContext('hovering');
@@ -61,10 +63,25 @@
 	);
 
 	/**
-	 * Current source position in pixels. Same function the renderer uses, so the
-	 * handle and the drawn arrow can't drift apart.
+	 * Where a new arrow would leave from: the middle of the box's near edge. Not
+	 * the anchor point, which would slide the handle around every time the anchor
+	 * moved and read as the anchor dragging the arrows with it.
 	 */
-	let sourcePos = $derived(getArrowSource(d, arrow ?? { side }, k));
+	function newArrowSource() {
+		const anchor = getAnchorPoint(d, k);
+		const { left, right } = getBoxEdges(d, k, anchor);
+		return {
+			x: side === 'east' ? right + HANDLE_OFFSET_PX : left - HANDLE_OFFSET_PX,
+			y: anchor.y + boxHeight * (0.5 - (d.anchorY ?? 0) / 100)
+		};
+	}
+
+	/**
+	 * Current source position in pixels. An existing arrow goes through the same
+	 * function the renderer uses, so the handle and the drawn arrow can't drift
+	 * apart.
+	 */
+	let sourcePos = $derived(arrow ? getArrowSource(d, arrow, k) : newArrowSource());
 
 	let sourceX = $derived(sourcePos.x);
 	let sourceY = $derived(sourcePos.y);
@@ -130,8 +147,19 @@
 		modifyArrow(d.id, side, { clockwise: newClockwise });
 	}
 
+	/**
+	 * Capture routes every later move and the release to the handle that started
+	 * the drag, however far the pointer travels, and the browser hands it back when
+	 * the drag ends.
+	 * @param {PointerEvent & { currentTarget: Element }} e
+	 */
+	function capture(e) {
+		e.currentTarget.setPointerCapture(e.pointerId);
+	}
+
 	/** Start dragging source handle */
-	function onSourceMousedown(e) {
+	function onSourcePointerdown(e) {
+		capture(e);
 		moving.value = true;
 		draggingSource = true;
 		dragX = sourceX;
@@ -141,7 +169,8 @@
 	}
 
 	/** Start dragging target handle (or create mode) */
-	function onTargetMousedown(e) {
+	function onTargetPointerdown(e) {
+		capture(e);
 		moving.value = true;
 		draggingTarget = true;
 		dragX = arrow ? targetX : sourceX;
@@ -155,8 +184,8 @@
 	let grabX = 0;
 	let grabY = 0;
 
-	/** Track mouse during drag */
-	function onmousemove(e) {
+	/** Track the pointer during a drag */
+	function onpointermove(e) {
 		if (!draggingSource && !draggingTarget) return;
 
 		// Absolute, rather than summing movementX: that drifts under page zoom and
@@ -175,7 +204,7 @@
 	}
 
 	/** On release, save the arrow */
-	function onmouseup() {
+	function onpointerup() {
 		// Only process if we were actually dragging
 		if (!draggingSource && !draggingTarget) return;
 
@@ -227,9 +256,14 @@
 			setArrow(d.id, {
 				side,
 				clockwise,
-				source: {
-					...resolveArrowSource(arrow ?? { side })
-				},
+				// A new arrow starts where its handle was sitting, which is not the
+				// anchor, so store the offsets rather than leaning on the defaults.
+				source: arrow
+					? resolveArrowSource(arrow)
+					: {
+							dx: calculateSourceDx(sourceX, d, side, k),
+							dy: calculateSourceDy(sourceY, d, k)
+						},
 				target: {
 					data: {
 						[k.config.x]: targetDataX,
@@ -268,7 +302,9 @@
 {#if arrow}
 	<!-- Source handle (when arrow exists) -->
 	<div
-		onmousedown={onSourceMousedown}
+		onpointerdown={onSourcePointerdown}
+		{onpointermove}
+		{onpointerup}
 		{onclick}
 		onkeydown={(e) => e.key === 'Enter' && onclick(e)}
 		onfocus={() => onmouseover('source')}
@@ -287,7 +323,9 @@
 
 	<!-- Target handle (when arrow exists) -->
 	<div
-		onmousedown={onTargetMousedown}
+		onpointerdown={onTargetPointerdown}
+		{onpointermove}
+		{onpointerup}
 		{onclick}
 		onkeydown={(e) => e.key === 'Enter' && onclick(e)}
 		onfocus={() => onmouseover('target')}
@@ -306,7 +344,9 @@
 {:else}
 	<!-- Create handle (no arrow yet) - drag to create -->
 	<div
-		onmousedown={onTargetMousedown}
+		onpointerdown={onTargetPointerdown}
+		{onpointermove}
+		{onpointerup}
 		onfocus={() => onmouseover('create')}
 		onblur={onmouseout}
 		onmouseover={() => onmouseover('create')}
@@ -321,8 +361,6 @@
 		style:top="{(draggingTarget ? dragY : sourceY) - diameterPx / 2}px"
 	></div>
 {/if}
-
-<svelte:window {onmouseup} {onmousemove} />
 
 <style>
 	.arrow-zone {
