@@ -1,8 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
-// Vite's default, unless something else already has the port. Set PORT to move
-// the dev server and the tests together.
-const port = Number(process.env.PORT) || 5173;
+// The dev server port from .claude/launch.json, off Vite's shared default. Set
+// PORT to move the dev server and the tests together.
+const port = Number(process.env.PORT) || 5273;
 const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({
@@ -31,7 +31,7 @@ export default defineConfig({
 		trace: 'on-first-retry',
 
 		// Screenshot on failure
-		screenshot: 'only-on-failure',
+		screenshot: 'only-on-failure'
 	},
 
 	// Configure projects for major browsers
@@ -40,9 +40,9 @@ export default defineConfig({
 			name: 'chromium',
 			use: {
 				browserName: 'chromium',
-				viewport: { width: 1280, height: 720 },
-			},
-		},
+				viewport: { width: 1280, height: 720 }
+			}
+		}
 	],
 
 	// Run your local dev server before starting the tests
@@ -50,7 +50,7 @@ export default defineConfig({
 		command: `npm run dev -- --port ${port}`,
 		url: baseURL,
 		reuseExistingServer: !process.env.CI,
-		timeout: 120 * 1000,
+		timeout: 120 * 1000
 	},
 
 	// Snapshot options - omit platform from path so macOS and Linux use same snapshots
@@ -59,8 +59,7 @@ export default defineConfig({
 	expect: {
 		toHaveScreenshot: {
 			maxDiffPixels: 100,
-			stylePath: './tests/screenshot.css',
-		},
-	},
+			stylePath: './tests/screenshot.css'
+		}
+	}
 });
-

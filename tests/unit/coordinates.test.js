@@ -5,6 +5,7 @@ import {
 	getAnchorPoint,
 	getBoxEdges,
 	getArrowSource,
+	getArrowTarget,
 	calculateSourceDx,
 	calculateSourceDy,
 	HANDLE_OFFSET_PX
@@ -102,4 +103,27 @@ test('invertScale leaves band scales alone but still converts the position', () 
 	// 600px of a 1000px chart is 60%, which lands in band 'b'.
 	const [value] = invertScale(band, 600, 1000, true);
 	assert.equal(value, 'b');
+});
+
+test('percentRange scales are converted to pixels before the offsets are added', () => {
+	// The same chart in percent mode: the scales emit 0-100 rather than pixels.
+	// myX 100 lands at 10% of 1000px, myY 200 at 40% of 500px - the same places
+	// the pixel-mode chart puts them, which is the point.
+	const pct = { ...k, percentRange: true, xScale: (v) => v / 10, yScale: (v) => v / 5 };
+
+	assert.deepEqual(getAnchorPoint(anno(), pct), getAnchorPoint(anno(), k));
+	assert.deepEqual(getAnchorPoint(anno(), pct), { x: 100, y: 200 });
+
+	// dx/dy are already percentages of the chart, so they must survive untouched:
+	// 10% of 1000 to the right, 20% of 500 up.
+	assert.deepEqual(getAnchorPoint(anno({ dx: 10, dy: -20 }), pct), { x: 200, y: 100 });
+});
+
+test('an arrow target in a percentRange chart lands in pixels too', () => {
+	const pct = { ...k, percentRange: true, xScale: (v) => v / 10, yScale: (v) => v / 5 };
+	const arrow = { side: 'east', target: { data: { myX: 500, myY: 400 }, dx: 0, dy: 0 } };
+
+	// The SVG layer arrows are drawn into carries no viewBox, so it is always in
+	// pixels regardless of the scale ranges.
+	assert.deepEqual(getArrowTarget(arrow, pct), { x: 500, y: 400 });
 });

@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+import { ANCHOR_PRESETS } from '../src/lib/modules/anchorPresets.js';
+
 /**
  * Numeric geometry checks.
  *
@@ -13,38 +15,51 @@ import { test, expect } from '@playwright/test';
 
 const CHART = '.chart-container.line';
 
-/** Option+click cycles the anchor through nine presets, clockwise from top-left. */
-const ANCHOR_PRESETS = [
-	{ x: 0, y: 0 },
-	{ x: 50, y: 0 },
-	{ x: 100, y: 0 },
-	{ x: 100, y: 50 },
-	{ x: 100, y: 100 },
-	{ x: 50, y: 100 },
-	{ x: 0, y: 100 },
-	{ x: 0, y: 50 },
-	{ x: 50, y: 50 }
-];
+/** The annotation box, whichever mode drew it. */
+const BOX = `${CHART} .draggable, ${CHART} .static-wrapper`;
 
 test.beforeEach(async ({ page }) => {
+	// No wait here: every test opens with setEditMode, which waits on the box it needs.
 	await page.goto('/');
-	await page.waitForLoadState('networkidle');
 });
 
 async function setEditMode(page, enabled) {
 	const checkbox = page.locator('input[type="checkbox"]');
 	if ((await checkbox.isChecked()) !== enabled) {
 		await checkbox.click();
-		await page.waitForTimeout(300);
 	}
+	// Each mode draws its own box, so the box on the page says the switch landed.
+	await expect(
+		page.locator(enabled ? `${CHART} .draggable` : `${CHART} .static-wrapper`).first()
+	).toBeAttached();
 }
 
-/** Step the anchor to a preset by index, using Option+click on the annotation. */
-async function cycleAnchorTo(page, index) {
+/**
+ * Which preset the anchor sits on. The box carries the anchor as an inline
+ * `translate: -x% -y%`, and leaves the property off while both are zero.
+ */
+async function anchorIndex(page) {
+	const value = await page
+		.locator(BOX)
+		.first()
+		.evaluate((el) => el.style.translate);
+	// A browser may drop a trailing zero when it serializes the style, so a part
+	// that isn't there is zero.
+	const [x = 0, y = 0] = value ? value.split(/\s+/).map((part) => -parseFloat(part)) : [];
+	return ANCHOR_PRESETS.findIndex((preset) => preset.x === x && preset.y === y);
+}
+
+/**
+ * Option+click the annotation to move the anchor forward by `steps` presets,
+ * counting from wherever it is now. Each step waits for the box's inline style
+ * to show it landed.
+ */
+async function stepAnchor(page, steps) {
 	const draggable = page.locator(`${CHART} .draggable`).first();
-	for (let i = 0; i < index; i++) {
+	for (let i = 0; i < steps; i++) {
+		const next = ((await anchorIndex(page)) + 1) % ANCHOR_PRESETS.length;
 		await draggable.click({ modifiers: ['Alt'], force: true });
-		await page.waitForTimeout(120);
+		await expect.poll(() => anchorIndex(page)).toBe(next);
 	}
 }
 
@@ -64,21 +79,23 @@ async function centre(locator) {
 }
 
 async function boxRect(page) {
-	const el = page.locator(`${CHART} .draggable, ${CHART} .static-wrapper`).first();
-	return el.boundingBox();
+	return page.locator(BOX).first().boundingBox();
 }
 
 test('drawn arrow starts where its source handle sits, at a non-zero anchor', async ({ page }) => {
 	await setEditMode(page, true);
 
-	// Preset 4 is bottom-right, so anchorY is 100 and the anchor term can't cancel.
-	await cycleAnchorTo(page, 4);
+	// Four steps from the top-left default is bottom-right, so anchorY is 100 and
+	// the anchor term can't cancel.
+	await stepAnchor(page, 4);
 
 	const chart = page.locator(CHART);
 	await chart.locator('.draggable').first().hover({ force: true });
-	await page.waitForTimeout(150);
 
 	const handle = chart.locator('.arrow-zone.source').first();
+	// The handle is always in the DOM and hovering the annotation is what shows it,
+	// so the visible class is the signal that the hover landed.
+	await expect(handle).toHaveClass(/visible/);
 	await expect(handle).toBeVisible();
 
 	const arrow = chart.locator('path.arrow-visible').first();
@@ -95,9 +112,10 @@ test('arrow stays attached to the annotation in static mode, at a non-zero ancho
 	page
 }) => {
 	await setEditMode(page, true);
-	await cycleAnchorTo(page, 4);
+	await stepAnchor(page, 4);
 	await setEditMode(page, false);
-	await page.waitForTimeout(200);
+	// The static box carries the same anchor, so its style says the swap is done.
+	await expect.poll(() => anchorIndex(page)).toBe(4);
 
 	const box = await boxRect(page);
 	const arrow = page.locator(`${CHART} path.arrow-visible`).first();
@@ -118,9 +136,8 @@ test('moving the anchor leaves an attached arrow where it was', async ({ page })
 
 	const before = await pathStart(arrow);
 
-	// Bottom-right: the anchor moves a full box width and height.
-	await cycleAnchorTo(page, 4);
-	await page.waitForTimeout(200);
+	// Four steps is bottom-right: the anchor moves a full box width and height.
+	await stepAnchor(page, 4);
 
 	const after = await pathStart(arrow);
 
@@ -136,8 +153,7 @@ test('every anchor preset keeps the arrow on the annotation', async ({ page }) =
 	const offenders = [];
 
 	for (let i = 1; i < ANCHOR_PRESETS.length; i++) {
-		await cycleAnchorTo(page, 1);
-		await page.waitForTimeout(120);
+		await stepAnchor(page, 1);
 
 		const box = await boxRect(page);
 		const start = await pathStart(arrow);
@@ -151,4 +167,85 @@ test('every anchor preset keeps the arrow on the annotation', async ({ page }) =
 	}
 
 	expect(offenders).toEqual([]);
+});
+
+test('an annotation can be dragged to chart x 0', async ({ page }) => {
+	await setEditMode(page, true);
+
+	const chart = page.locator(CHART);
+	const box = chart.locator('.draggable').first();
+
+	// k.pointer() reports 0 at the left edge of the Html layer: that is where the
+	// chart area starts, inside the padding. Reading it off the page keeps this
+	// independent of whatever padding the demo happens to use.
+	const origin = await chart.locator('.layercake-layout-html').first().boundingBox();
+
+	await box.hover({ force: true });
+	const grabber = chart.locator('.grabber.west').first();
+	await expect(grabber).toBeVisible();
+	const grab = await grabber.boundingBox();
+	const y = grab.y + grab.height / 2;
+
+	await page.mouse.move(grab.x + grab.width / 2, y);
+	await page.mouse.down();
+
+	// Stop at 1px on the way. Zero is the only position a truthiness check drops,
+	// so a broken guard parks the box here and the last move does nothing.
+	await page.mouse.move(origin.x + 1, y);
+	await expect.poll(() => box.evaluate((el) => el.style.left)).toBe('1px');
+
+	await page.mouse.move(origin.x, y);
+	await page.mouse.up();
+
+	await expect.poll(() => box.evaluate((el) => el.style.left)).toBe('0px');
+});
+
+test('dragging the annotation body moves it by the distance dragged', async ({ page }) => {
+	await setEditMode(page, true);
+
+	const box = page.locator(`${CHART} .draggable`).first();
+	const before = await box.boundingBox();
+
+	const dx = 60;
+	const dy = 25;
+	await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
+	await page.mouse.down();
+	// Several steps, because one drag mechanism sums per-event deltas and another
+	// reads an absolute pointer: both have to land in the same place.
+	for (const step of [0.3, 0.7, 1]) {
+		await page.mouse.move(
+			before.x + before.width / 2 + dx * step,
+			before.y + before.height / 2 + dy * step
+		);
+	}
+	await page.mouse.up();
+
+	await expect.poll(async () => Math.round((await box.boundingBox()).x - before.x)).toBe(dx);
+	expect(Math.abs((await box.boundingBox()).y - before.y - dy)).toBeLessThan(2);
+});
+
+test('resizing from the west edge keeps the arrows and the data point', async ({ page }) => {
+	await setEditMode(page, true);
+
+	const chart = page.locator(CHART);
+	const box = chart.locator('.draggable').first();
+	const arrow = chart.locator('path.arrow-visible').first();
+	await expect(arrow).toBeAttached();
+
+	await box.hover({ force: true });
+	const grabber = chart.locator('.grabber.west').first();
+	await expect(grabber).toBeVisible();
+	const g = await grabber.boundingBox();
+	const y = g.y + g.height / 2;
+
+	await page.mouse.move(g.x + g.width / 2, y);
+	await page.mouse.down();
+	await page.mouse.move(g.x - 60, y);
+	await page.mouse.up();
+
+	// A resize reports only x. If the y data value gets dropped on the way through,
+	// the scale returns NaN and every path built from it silently stops rendering.
+	await expect(arrow).toBeAttached();
+	expect(await arrow.getAttribute('d')).not.toContain('NaN');
+	expect((await box.boundingBox()).height).toBeGreaterThan(0);
 });

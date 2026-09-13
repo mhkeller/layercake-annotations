@@ -22,7 +22,6 @@ const modes = ['edit', 'static'];
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/');
-	await page.waitForLoadState('networkidle');
 });
 
 /**
