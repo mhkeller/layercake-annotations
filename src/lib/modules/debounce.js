@@ -3,7 +3,7 @@
  * arguments it was given.
  * @param {Function} func - The function to run.
  * @param {number} [timeout=300] - How long the calls have to stop for, in milliseconds.
- * @returns The debounced function, which also carries `cancel` and `flush`.
+ * @returns The debounced function, which also carries `flush`.
  */
 export default function debounce(func, timeout = 300) {
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
@@ -15,12 +15,6 @@ export default function debounce(func, timeout = 300) {
 		lastArgs = args;
 		clearTimeout(timer);
 		timer = setTimeout(() => debounced.flush(), timeout);
-	};
-
-	// Drop the call that's waiting.
-	debounced.cancel = () => {
-		clearTimeout(timer);
-		timer = undefined;
 	};
 
 	// Run the waiting call now instead of waiting out the clock. Does nothing if

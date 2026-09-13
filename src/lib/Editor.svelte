@@ -67,26 +67,19 @@
 	setContext('previewArrow', previewArrow);
 
 	/**
-	 * Add a new annotation to the chart
+	 * Add a new annotation at a position in the chart area, in pixels
 	 */
-	function onclick(e) {
+	function addAnnotation(x, y) {
 		if (isEditing.value === true) return;
 
-		const annotation = newAnnotation(e, ++idCounter, {
-			xScale: k.xScale,
-			yScale: k.yScale,
-			config: k.config,
-			width: k.width,
-			height: k.height,
-			percentRange: k.percentRange
-		});
+		const annotation = newAnnotation(x, y, ++idCounter, k);
 		annos.push(annotation);
 		saveConfig_debounced(annos);
 	}
 
 	// One click makes one annotation. A double click on empty chart space sends two
 	// click events a few dozen milliseconds apart, so ignore the second.
-	const onclick_debounced = debounceLeading(onclick, 250);
+	const addAnnotation_debounced = debounceLeading(addAnnotation, 250);
 
 	// Annotations.svelte swaps this component out when `editable` goes false, so
 	// let a save that's already waiting land instead of losing it.
@@ -202,9 +195,10 @@
 </Svg>
 
 <Html>
+	<!-- A click lands where the pointer is, Enter puts the note in the middle of the chart. -->
 	<div
-		onclick={onclick_debounced}
-		onkeydown={(e) => e.key === 'Enter' && onclick(e)}
+		onclick={(e) => addAnnotation_debounced(e.offsetX, e.offsetY)}
+		onkeydown={(e) => e.key === 'Enter' && addAnnotation_debounced(k.width / 2, k.height / 2)}
 		role="button"
 		tabindex="0"
 		aria-label="Click to add annotation"
