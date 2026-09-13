@@ -12,8 +12,8 @@
 
 	// Column chart components
 	import Column from './ordinal/_components/Column.svelte';
-	import OrdinalAxisX from './ordinal/_components/AxisX.svelte';
-	import OrdinalAxisY from './ordinal/_components/AxisY.svelte';
+	import OrdinalAxisX from './_components/AxisX.svelte';
+	import OrdinalAxisY from './_components/AxisY.svelte';
 
 	// Data
 	import lineData from './_data/points.csv';

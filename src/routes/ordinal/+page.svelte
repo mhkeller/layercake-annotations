@@ -4,8 +4,8 @@
 	import { Annotations } from '$lib/index.js';
 
 	import Column from './_components/Column.svelte';
-	import AxisX from './_components/AxisX.svelte';
-	import AxisY from './_components/AxisY.svelte';
+	import AxisX from '../_components/AxisX.svelte';
+	import AxisY from '../_components/AxisY.svelte';
 
 	// This example loads csv data as json using @rollup/plugin-dsv
 	import data from './_data/groups.csv';
