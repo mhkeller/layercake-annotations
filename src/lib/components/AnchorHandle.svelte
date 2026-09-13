@@ -16,6 +16,9 @@
 
 	import { getContext, onDestroy } from 'svelte';
 
+	/** How far one arrow key moves the anchor, in percentage points. */
+	const STEP = 5;
+
 	let {
 		/** Annotation ID */
 		id,
@@ -23,8 +26,8 @@
 		anchorX = 0,
 		/** Current anchor Y position (0-100%) */
 		anchorY = 0,
-		/** How far one arrow key moves the anchor, in percentage points */
-		step = 5,
+		/** The annotation box, which the anchor is measured against */
+		boxEl,
 		/** Runs when a drag starts, so the parent can note where the annotation sat */
 		onDragStart,
 		/** Runs on every move with the new anchor position, as percentages of the box */
@@ -46,9 +49,7 @@
 	// Show it while the annotation is hovered, and hold it there for the whole
 	// drag. The pointer leaves the box all the time on the way to a far corner.
 	let visible = $derived(
-		dragging ||
-			focused ||
-			(hovering.value?.annotationId === id && hovering.value?.type === 'body')
+		dragging || focused || (hovering.value?.annotationId === id && hovering.value?.type === 'body')
 	);
 
 	/**
@@ -66,14 +67,13 @@
 
 	/** @param {MouseEvent} event */
 	function onmousedown(event) {
-		const box = el?.closest('.draggable');
-		if (!box) return;
+		if (!boxEl || !el) return;
 
 		// The annotation moves itself on mousedown. Keep this one to ourselves.
 		event.stopPropagation();
 		event.preventDefault();
 
-		boxRect = box.getBoundingClientRect();
+		boxRect = boxEl.getBoundingClientRect();
 
 		// Measure the gap against where the diamond is actually drawn, not where the
 		// box math says it should be. The two differ by the box's border.
@@ -141,10 +141,10 @@
 	/** @param {KeyboardEvent} event */
 	function onkeydown(event) {
 		const nudge = {
-			ArrowLeft: [-step, 0],
-			ArrowRight: [step, 0],
-			ArrowUp: [0, -step],
-			ArrowDown: [0, step]
+			ArrowLeft: [-STEP, 0],
+			ArrowRight: [STEP, 0],
+			ArrowUp: [0, -STEP],
+			ArrowDown: [0, STEP]
 		}[event.key];
 		if (!nudge) return;
 
