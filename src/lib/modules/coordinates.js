@@ -28,6 +28,49 @@ export const DEFAULT_ANNOTATION_WIDTH = 155;
 export const HANDLE_OFFSET_PX = 12;
 
 /**
+ * How wide the annotation is, in pixels. One predicate and one default, shared by
+ * the geometry and by the elements that draw the box, so the two cannot disagree
+ * about how wide it is.
+ * @param {Object} anno - The annotation.
+ * @returns {number}
+ */
+export function annotationWidth(anno) {
+	const parsed = typeof anno?.width === 'number' ? anno.width : parseInt(anno?.width);
+	return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_ANNOTATION_WIDTH;
+}
+
+/**
+ * An arrow's source offsets with the defaults filled in: `dx` is pixels from the
+ * near edge, `dy` is pixels down from the anchor point. The read path and the two
+ * write paths all come through here, so an unset source means the same everywhere.
+ * @param {Object} arrow - The arrow, with a side and an optional source.
+ * @returns {{ dx: number, dy: number }}
+ */
+export function resolveArrowSource(arrow) {
+	return {
+		dx: arrow.source?.dx ?? (arrow.side === 'west' ? -HANDLE_OFFSET_PX : HANDLE_OFFSET_PX),
+		dy: arrow.source?.dy ?? 0
+	};
+}
+
+/**
+ * A scale's output in pixels.
+ *
+ * With `percentRange` the scales emit 0-100 instead of pixels, but everything
+ * drawn from them is measured in pixels: the SVG layer arrows live in carries no
+ * viewBox, and the box's `left` is a pixel offset. So the conversion belongs here,
+ * once. This is the mirror of what `invertScale` does on the way back in.
+ *
+ * @param {number} value - What the scale returned.
+ * @param {number} size - The chart's width or height, whichever matches the scale.
+ * @param {boolean} percentRange - Whether the chart's ranges are percentages.
+ * @returns {number}
+ */
+function toPixels(value, size, percentRange) {
+	return percentRange === true ? (value / 100) * size : value;
+}
+
+/**
  * The annotation's anchor point — the spot that pins to the data point, and the
  * only vertical position knowable without measuring.
  * @param {Object} anno - The annotation.
@@ -35,10 +78,10 @@ export const HANDLE_OFFSET_PX = 12;
  * @returns {{ x: number, y: number }}
  */
 export function getAnchorPoint(anno, k) {
-	const { xScale, yScale, x, y, width, height } = k;
+	const { xScale, yScale, x, y, width, height, percentRange } = k;
 	return {
-		x: xScale(x(anno.data)) + ((anno.dx ?? 0) / 100) * width,
-		y: yScale(y(anno.data)) + ((anno.dy ?? 0) / 100) * height
+		x: toPixels(xScale(x(anno.data)), width, percentRange) + ((anno.dx ?? 0) / 100) * width,
+		y: toPixels(yScale(y(anno.data)), height, percentRange) + ((anno.dy ?? 0) / 100) * height
 	};
 }
 
@@ -47,13 +90,14 @@ export function getAnchorPoint(anno, k) {
  * would need the height, and the height needs the DOM.
  * @param {Object} anno - The annotation.
  * @param {Object} k - The Layer Cake context.
+ * @param {{ x: number, y: number }} [anchor] - The anchor point, if the caller already has it.
  * @returns {{ left: number, right: number, width: number }}
  */
-export function getBoxEdges(anno, k) {
-	const annoWidth = anno.width ? parseInt(anno.width) : DEFAULT_ANNOTATION_WIDTH;
+export function getBoxEdges(anno, k, anchor = getAnchorPoint(anno, k)) {
+	const annoWidth = annotationWidth(anno);
 
-	// The box hangs off the anchor point, shifted by the CSS transform.
-	const left = getAnchorPoint(anno, k).x - ((anno.anchorX ?? 0) / 100) * annoWidth;
+	// The box hangs off the anchor point, shifted by the CSS translate.
+	const left = anchor.x - ((anno.anchorX ?? 0) / 100) * annoWidth;
 
 	return { left, right: left + annoWidth, width: annoWidth };
 }
@@ -66,14 +110,13 @@ export function getBoxEdges(anno, k) {
  * @returns {{ x: number, y: number }}
  */
 export function getArrowSource(anno, arrow, k) {
-	const { left, right } = getBoxEdges(anno, k);
-
-	const dx = arrow.source?.dx ?? (arrow.side === 'west' ? -HANDLE_OFFSET_PX : HANDLE_OFFSET_PX);
-	const dy = arrow.source?.dy ?? 0;
+	const anchor = getAnchorPoint(anno, k);
+	const { left, right } = getBoxEdges(anno, k, anchor);
+	const { dx, dy } = resolveArrowSource(arrow);
 
 	return {
 		x: (arrow.side === 'east' ? right : left) + dx,
-		y: getAnchorPoint(anno, k).y + dy
+		y: anchor.y + dy
 	};
 }
 
@@ -84,10 +127,14 @@ export function getArrowSource(anno, arrow, k) {
  * @returns {{ x: number, y: number }}
  */
 export function getArrowTarget(arrow, k) {
-	const { xScale, yScale, x, y, width, height } = k;
+	const { xScale, yScale, x, y, width, height, percentRange } = k;
 	return {
-		x: xScale(x(arrow.target.data)) + ((arrow.target?.dx ?? 0) / 100) * width,
-		y: yScale(y(arrow.target.data)) + ((arrow.target?.dy ?? 0) / 100) * height
+		x:
+			toPixels(xScale(x(arrow.target.data)), width, percentRange) +
+			((arrow.target?.dx ?? 0) / 100) * width,
+		y:
+			toPixels(yScale(y(arrow.target.data)), height, percentRange) +
+			((arrow.target?.dy ?? 0) / 100) * height
 	};
 }
 

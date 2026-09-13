@@ -5,30 +5,34 @@
 <script>
 	/** @typedef {import('../types.js').Annotation} Annotation */
 
-
 	import { getLayerCakeContext } from 'layercake';
-	import { DEFAULT_ANNOTATION_WIDTH } from '$lib/modules/coordinates.js';
+	import { annotationWidth, getAnchorPoint } from '$lib/modules/coordinates.js';
 
 	const k = getLayerCakeContext();
 
 	/** @type {{ annotations?: Annotation[], getText?: (d: Annotation) => string }} */
 	let { annotations = $bindable([]), getText = (d) => d.text } = $props();
-
-	let units = $derived(k.percentRange === true ? '%' : 'px');
 </script>
 
 <div class="layercake-annotations">
 	{#each annotations as d, i}
+		{@const anchor = getAnchorPoint(d, k)}
 		<!-- Wrapper mirrors Draggable structure -->
 		<div
 			class="static-wrapper"
 			data-id={i}
-			style:left={`calc(${k.xGet(d.data)}${units} + ${d.dx || 0}%)`}
-			style:top={`calc(${k.yGet(d.data)}${units} + ${d.dy || 0}%)`}
-			style:width={d.width ?? `${DEFAULT_ANNOTATION_WIDTH}px`}
-			style:translate={d.anchorX || d.anchorY ? `-${d.anchorX || 0}% -${d.anchorY || 0}%` : undefined}
+			style:left={`${anchor.x}px`}
+			style:top={`${anchor.y}px`}
+			style:width={`${annotationWidth(d)}px`}
+			style:translate={d.anchorX || d.anchorY
+				? `-${d.anchorX || 0}% -${d.anchorY || 0}%`
+				: undefined}
 		>
-			<div class="layercake-annotation {d.class || ''}" style={d.style} style:text-align={d.align || 'left'}>
+			<div
+				class="layercake-annotation {d.class || ''}"
+				style={d.style}
+				style:text-align={d.align || 'left'}
+			>
 				<pre>{getText(d)}</pre>
 			</div>
 		</div>
