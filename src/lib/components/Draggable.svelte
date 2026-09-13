@@ -14,11 +14,8 @@
 		top,
 		ondrag,
 		canDrag = true,
-		bannedTargets = [],
-		noteDimensions = $bindable(),
-		// The box itself, so anchor math can measure it. A CSS percentage in
-		// `transform` is measured against the border box, while noteDimensions is
-		// the padding box, and the two differ by the border.
+		// The box itself, so anchor math can measure its border box — the same box
+		// a percentage in `translate` resolves against.
 		boxEl = $bindable(),
 		width,
 		onclick,
@@ -29,14 +26,11 @@
 
 	// The standalone `translate` property rather than `transform`, so a consumer's
 	// own transform in `d.style` survives.
-	let translateStyle = $derived(
-		anchorX || anchorY ? `-${anchorX}% -${anchorY}%` : undefined
-	);
+	let translateStyle = $derived(anchorX || anchorY ? `-${anchorX}% -${anchorY}%` : undefined);
 
 	/**
 	 * State vars
 	 */
-	let isBanned = $state(false);
 	let thisMoving = $state(false);
 
 	/** @type {Ref<HoverState | null>} */
@@ -45,34 +39,35 @@
 	const moving = getContext('moving');
 	const k = getLayerCakeContext();
 
+	// How far the pointer sits from the anchor point, so the box doesn't jump under
+	// the cursor on the first move. Measured once: the pointer carries the rest.
+	let grabX = 0;
+	let grabY = 0;
+
 	function onmousedown(e) {
 		moving.value = true;
 		thisMoving = true;
-		isBanned = [...e.target.classList].some((c) => bannedTargets.includes(c));
+		if (!boxEl) return;
+
+		const rect = boxEl.getBoundingClientRect();
+		grabX = e.clientX - rect.left - (anchorX / 100) * rect.width;
+		grabY = e.clientY - rect.top - (anchorY / 100) * rect.height;
 	}
 
 	/**
-	 * Broadcast the elements movements on drag
-	 * Position reported is the anchor point, not top-left corner
+	 * Broadcast the element's movements on drag. The position reported is the
+	 * anchor point, not the top-left corner.
 	 */
 	function onmousemove(e) {
-		if (thisMoving && canDrag && !isBanned) {
-			// Layer Cake hands us its own container, so there's nothing to look up
-			// and nothing for a consumer to configure. It's undefined until mount.
-			if (!k.element) return;
+		if (!thisMoving || !canDrag) return;
 
-			const rect = boxEl.getBoundingClientRect();
-			const parent = k.element.getBoundingClientRect();
+		// Absolute, rather than summing movementX: that drifts under page zoom and
+		// loses a frame's motion whenever the pointer leaves the window.
+		const [px, py] = k.pointer(e);
+		// NaN until Layer Cake's container mounts.
+		if (!Number.isFinite(px)) return;
 
-			// Calculate anchor point position (accounting for transform offset)
-			const anchorOffsetX = (anchorX / 100) * rect.width;
-			const anchorOffsetY = (anchorY / 100) * rect.height;
-
-			ondrag([
-				rect.left - parent.left - k.padding.left + anchorOffsetX + e.movementX,
-				rect.top - parent.top - k.padding.top + anchorOffsetY + e.movementY
-			]);
-		}
+		ondrag([px - grabX, py - grabY]);
 	}
 
 	function onmouseup() {
@@ -116,8 +111,6 @@
 	role="button"
 	tabindex="0"
 	aria-label="Annotation - drag to move, press Delete to remove"
-	bind:clientWidth={noteDimensions[0]}
-	bind:clientHeight={noteDimensions[1]}
 >
 	{@render children()}
 </div>

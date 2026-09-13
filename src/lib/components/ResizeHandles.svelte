@@ -4,8 +4,10 @@
   Supports west (left) and east (right) resizing only.
 -->
 <script>
+	import { onDestroy } from 'svelte';
 	import { getLayerCakeContext } from 'layercake';
 
+	import { annotationWidth } from '$lib/modules/coordinates.js';
 
 	let {
 		/** Which handles to show: 'west', 'east', or both */
@@ -18,29 +20,25 @@
 		anchorX = 0
 	} = $props();
 
-	/** Parse width to number */
-	function parseWidth(w) {
-		if (typeof w === 'number') return w;
-		if (typeof w === 'string') return parseInt(w) || 0;
-		return 0;
-	}
-
 	const k = getLayerCakeContext();
 
 	let active = $state(null);
+	let isEast = false;
 	let initialRect = $state(null);
 	let initialPos = $state(null);
 
 	function onmousedown(event) {
 		event.stopPropagation();
 		active = event.target;
+		isEast = active.classList.contains('east');
 		const rect = active.parentElement.getBoundingClientRect();
+		const [pointerX] = k.pointer(event);
 		initialRect = {
 			width: rect.width,
-			left: rect.left,
-			top: rect.top
+			// Chart space, off the same event as the pointer, so a scroll can't pull them apart.
+			left: pointerX - (event.clientX - rect.left)
 		};
-		initialPos = { x: event.pageX };
+		initialPos = { x: pointerX };
 		active.classList.add('selected');
 
 		window.addEventListener('mousemove', onmousemove);
@@ -55,69 +53,64 @@
 		initialRect = null;
 		initialPos = null;
 
+		stopListening();
+	}
+
+	function stopListening() {
 		window.removeEventListener('mousemove', onmousemove);
 		window.removeEventListener('mouseup', onmouseup);
 	}
 
+	// Deleting an annotation mid-resize takes this component with it, so drop the
+	// window listeners on the way out rather than leaving them running.
+	onDestroy(stopListening);
+
 	function onmousemove(event) {
 		if (!active) return;
 
-		const isEast = active.classList.contains('east');
-		const isWest = active.classList.contains('west');
-		const parent = k.element?.getBoundingClientRect();
+		const [pointerX] = k.pointer(event);
+		// Nothing to measure against before the chart mounts.
+		if (!Number.isFinite(pointerX) || !Number.isFinite(initialPos.x)) {
+			ondrag();
+			return;
+		}
 
 		if (isEast) {
-			const delta = event.pageX - initialPos.x;
+			const delta = pointerX - initialPos.x;
 			const newWidth = Math.round(initialRect.width + delta);
 			if (newWidth < 50) return;
 			width = `${newWidth}px`;
 
-			// With non-zero anchor, compensate position to keep anchor visually stable
-			// When width grows, visual left edge shifts left by (anchorX/100) * delta
-			// To compensate, move anchor point right by that amount
-			if (anchorX > 0 && parent) {
-				const compensation = (anchorX / 100) * delta;
-				// Calculate current anchor position and add compensation
-				const currentAnchorX = initialRect.left - parent.left - k.padding.left + (anchorX / 100) * initialRect.width;
-				const newAnchorX = currentAnchorX + compensation;
-				// Only x moves. The anchor is pinned to the data point, so the box just
-				// grows around it if the text re-wraps.
+			// Nudge the anchor right as the box grows so its left edge stays put. Only x moves.
+			if (anchorX > 0) {
+				const currentAnchorX = initialRect.left + (anchorX / 100) * initialRect.width;
+				const newAnchorX = currentAnchorX + (anchorX / 100) * delta;
 				ondrag([newAnchorX, null]);
 			} else {
 				ondrag();
 			}
 		}
 
-		if (isWest) {
-			const delta = initialPos.x - event.pageX;
+		if (!isEast) {
+			const delta = initialPos.x - pointerX;
 			const newWidth = Math.round(initialRect.width + delta);
 			if (newWidth < 50) return;
 
 			width = `${newWidth}px`;
 
-			// Calculate new anchor position
-			// When resizing west, the right edge should stay fixed relative to anchor
-			if (parent) {
-				// The west edge is moving to event.pageX
-				// We need to find where the anchor point should be
-				const westEdge = event.pageX - parent.left - k.padding.left;
-				const newAnchorX = westEdge + (anchorX / 100) * newWidth;
-				// Only x moves. The anchor is pinned to the data point, so the box just
-				// grows around it if the text re-wraps.
-				ondrag([newAnchorX, null]);
-			} else {
-				ondrag();
-			}
+			// The left edge follows the pointer; the anchor rides at its share of the width. Only x moves.
+			const newAnchorX = pointerX + (anchorX / 100) * newWidth;
+			ondrag([newAnchorX, null]);
 		}
 	}
 
 	/** Keyboard resize handler - resizes from east edge */
 	function onResize(delta) {
-		const currentWidth = parseWidth(width);
+		const currentWidth = annotationWidth({ width });
 		const newWidth = Math.max(50, currentWidth + delta);
 		width = `${newWidth}px`;
-		// The anchor doesn't shift to keep up, the way it does on a mouse drag. A
-		// keypress has no parent box to measure against.
+		// The anchor doesn't shift to keep up, the way it does on a mouse drag:
+		// a keypress carries no pointer position to convert.
 		ondrag();
 	}
 </script>
@@ -127,8 +120,14 @@
 		class="grabber {grabber}"
 		{onmousedown}
 		onkeydown={(e) => {
-			if (e.key === 'ArrowLeft') { onResize(-10); e.preventDefault(); }
-			if (e.key === 'ArrowRight') { onResize(10); e.preventDefault(); }
+			if (e.key === 'ArrowLeft') {
+				onResize(-10);
+				e.preventDefault();
+			}
+			if (e.key === 'ArrowRight') {
+				onResize(10);
+				e.preventDefault();
+			}
 		}}
 		role="slider"
 		tabindex="0"
