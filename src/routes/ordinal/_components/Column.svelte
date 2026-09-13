@@ -51,7 +51,8 @@
 			stroke-width={strokeWidth}
 		/>
 		{#if showLabels && yValue}
-			<text x={xPos + colWidth / 2} y={k.height - colHeight - 5} text-anchor="middle">{yValue}</text>
+			<text x={xPos + colWidth / 2} y={k.height - colHeight - 5} text-anchor="middle">{yValue}</text
+			>
 		{/if}
 	{/each}
 </g>

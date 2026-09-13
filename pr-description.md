@@ -34,4 +34,3 @@ This prevents issues when user datasets have fields named `id`, `dx`, `dy`, `tex
 - Updated `newAnnotation.js` factory
 - Updated demo page data structures
 - Updated README documentation
-
