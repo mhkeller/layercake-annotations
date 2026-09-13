@@ -27,6 +27,11 @@ Also in this release:
 - Pressing Enter on a focused chart creates an annotation in the middle of it, rather than one at an invalid position.
 - Dragging an annotation onto the exact left or top edge of the chart area now sticks, instead of being discarded as if it had not moved.
 - Resizing no longer walks the annotation upwards when the anchor isn't at the top.
+- The handle that starts a new arrow sits at the middle of the annotation's edge, so it holds still while the anchor moves. Arrows drawn this way store a `source.dy` of half the box's height.
+- The anchor diamond shows an open hand, and a closed one while it is being dragged.
+- The anchor diamond disappears with the rest of the hover controls once the pointer leaves. Pressing it gives it keyboard focus so the arrow keys work, and that focus used to keep it on screen by itself.
+- Pressing Enter on a focused annotation opens it for editing. It used to throw.
+- Dragging runs on pointer events with pointer capture. The library no longer listens for mouse moves across the whole page while a drag is in progress, and a drag that ends off the chart or outside the window is no longer lost.
 - Dropped the `underscore` dependency, which shipped whole to anyone importing only the static renderer.
 - Added `sideEffects: false` and a `default` export condition.
 - Added an MIT license.
