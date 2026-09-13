@@ -7,7 +7,6 @@
 <script>
 	/** @typedef {import('../types.js').Annotation} Annotation */
 	/** @typedef {import('../types.js').DragState} DragState */
-	/** @typedef {import('../types.js').ModifyArrowFn} ModifyArrowFn */
 	/**
 	 * @template T
 	 * @typedef {import('../types.js').Ref<T>} Ref
@@ -27,34 +26,16 @@
 	/** @type {Ref<DragState | null> | undefined} - Only available in Editor mode */
 	const dragStateRef = getContext('previewArrow');
 
-	/** @type {ModifyArrowFn | undefined} - Only available in Editor mode */
-
-	/**
-	 * Build scales object for coordinate utilities
-	 */
-	function getScales() {
-		return {
-			xScale: k.xScale,
-			yScale: k.yScale,
-			x: k.x,
-			y: k.y,
-			width: k.width,
-			height: k.height
-		};
-	}
-
 	/**
 	 * Compute the SVG path for a saved arrow
 	 */
 	function getStaticPath(anno, arrow) {
-		const scales = getScales();
-		const source = getArrowSource(anno, arrow, scales);
-		const target = getArrowTarget(arrow, scales);
+		const source = getArrowSource(anno, arrow, k);
+		const target = getArrowTarget(arrow, k);
 		const clockwise = arrow.clockwise !== undefined ? arrow.clockwise : true;
 
 		return createArrowPath(source, target, clockwise);
 	}
-
 
 	/**
 	 * Check if a specific arrow is currently being dragged
@@ -84,18 +65,17 @@
 	});
 </script>
 
-		<g class="swoops">
+<g class="swoops">
 	<!-- Render saved arrows (hide if this specific arrow is being dragged) -->
-			{#each annotations as anno}
-				{#if anno.arrows}
-					{#each anno.arrows as arrow}
+	{#each annotations as anno}
+		{#if anno.arrows}
+			{#each anno.arrows as arrow}
 				{@const arrowKey = `${anno.id}_${arrow.side}`}
 				{@const isBeingDragged = draggingArrowKey === arrowKey}
 				{#if !isBeingDragged}
 					{@const pathD = getStaticPath(anno, arrow)}
 					<!-- Visible arrow -->
-					<path class="arrow-visible" marker-end="url(#{markerId})" d={pathD}
-					></path>
+					<path class="arrow-visible" marker-end="url(#{markerId})" d={pathD}></path>
 				{/if}
 			{/each}
 		{/if}
@@ -103,8 +83,7 @@
 
 	<!-- Arrow being dragged (new or existing) - rendered with live coordinates -->
 	{#if dragPath}
-		<path class="arrow-visible" marker-end="url(#{markerId})" d={dragPath}
-		></path>
+		<path class="arrow-visible" marker-end="url(#{markerId})" d={dragPath}></path>
 	{/if}
 </g>
 

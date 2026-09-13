@@ -24,6 +24,7 @@
 		getArrowTarget,
 		calculateSourceDx,
 		calculateSourceDy,
+		resolveArrowSource,
 		HANDLE_OFFSET_PX
 	} from '$lib/modules/coordinates.js';
 
@@ -37,8 +38,6 @@
 	const setArrow = getContext('setArrow');
 	/** @type {ModifyArrowFn} */
 	const modifyArrow = getContext('modifyArrow');
-	/** @type {ModifyAnnotationFn} */
-	const modifyAnnotation = getContext('modifyAnnotation');
 	/** @type {Ref<boolean>} */
 	const moving = getContext('moving');
 	/** @type {Ref<DragState | null>} */
@@ -61,40 +60,19 @@
 		arrow?.clockwise !== undefined ? arrow.clockwise : side === 'west' ? false : true
 	);
 
-	/** Build scales object for coordinate utilities */
-	function getScales() {
-		return {
-			xScale: k.xScale,
-			yScale: k.yScale,
-			x: k.x,
-			y: k.y,
-			width: k.width,
-			height: k.height
-		};
-	}
-
-	/** Where an arrow would start if this side doesn't have one yet */
-	let placeholderArrow = $derived({ side, source: undefined });
-
 	/**
 	 * Current source position in pixels. Same function the renderer uses, so the
 	 * handle and the drawn arrow can't drift apart.
 	 */
-	let sourcePos = $derived(getArrowSource(d, arrow ?? placeholderArrow, getScales()));
+	let sourcePos = $derived(getArrowSource(d, arrow ?? { side }, k));
 
 	let sourceX = $derived(sourcePos.x);
 	let sourceY = $derived(sourcePos.y);
 
-	/** Current target position in pixels (when arrow exists) */
-	let targetX = $derived.by(() => {
-		if (!arrow) return sourceX + (side === 'west' ? -50 : 50);
-		return getArrowTarget(arrow, getScales()).x;
-	});
-
-	let targetY = $derived.by(() => {
-		if (!arrow) return sourceY;
-		return getArrowTarget(arrow, getScales()).y;
-	});
+	/** Current target position in pixels, or where a new arrow would point */
+	let targetPos = $derived(arrow ? getArrowTarget(arrow, k) : null);
+	let targetX = $derived(targetPos ? targetPos.x : sourceX + (side === 'west' ? -50 : 50));
+	let targetY = $derived(targetPos ? targetPos.y : sourceY);
 
 	/**
 	 * Zone positions for display
@@ -201,12 +179,10 @@
 		// Only process if we were actually dragging
 		if (!draggingSource && !draggingTarget) return;
 
-		const scales = getScales();
-
 		if (draggingSource && dragX !== null && dragY !== null) {
 			// Update source position using shared coordinate utils
-			const newSourceDx = calculateSourceDx(dragX, d, side, scales);
-			const newSourceDy = calculateSourceDy(dragY, d, scales);
+			const newSourceDx = calculateSourceDx(dragX, d, side, k);
+			const newSourceDy = calculateSourceDy(dragY, d, k);
 
 			if (arrow) {
 				modifyArrow(d.id, side, {
@@ -214,8 +190,18 @@
 				});
 			} else {
 				// Creating new arrow - need target too
-				const [targetDataX, targetOffsetX] = invertScale(k.xScale, targetX, k.width, k.percentRange);
-				const [targetDataY, targetOffsetY] = invertScale(k.yScale, targetY, k.height, k.percentRange);
+				const [targetDataX, targetOffsetX] = invertScale(
+					k.xScale,
+					targetX,
+					k.width,
+					k.percentRange
+				);
+				const [targetDataY, targetOffsetY] = invertScale(
+					k.yScale,
+					targetY,
+					k.height,
+					k.percentRange
+				);
 
 				setArrow(d.id, {
 					side,
@@ -242,8 +228,7 @@
 				side,
 				clockwise,
 				source: {
-					dx: arrow?.source?.dx ?? (side === 'west' ? -HANDLE_OFFSET_PX : HANDLE_OFFSET_PX),
-					dy: arrow?.source?.dy ?? 0
+					...resolveArrowSource(arrow ?? { side })
 				},
 				target: {
 					data: {
