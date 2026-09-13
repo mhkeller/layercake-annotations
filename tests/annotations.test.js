@@ -35,6 +35,10 @@ async function setEditMode(page, enabled) {
 		await checkbox.click();
 		await page.waitForTimeout(500);
 	}
+	// Each mode draws its own box, so a box on the page says the switch landed. On
+	// a call that changes nothing it says the chart has finished measuring itself,
+	// which is the thing worth waiting for: Layer Cake draws nothing until then.
+	await expect(page.locator(enabled ? '.draggable' : '.static-wrapper').first()).toBeAttached();
 }
 
 /**
@@ -147,32 +151,30 @@ for (const chartType of chartTypes) {
 
 for (const mode of modes) {
 	test(`custom style - ${mode}`, async ({ page }) => {
-		// Start in edit mode to add a new annotation
+		// The style goes on in edit mode either way. The mode being tested is the one
+		// the screenshot is taken in.
 		await setEditMode(page, true);
 
 		const chart = getChart(page, 'linear');
+		const annotation = chart.locator('.layercake-annotation').first();
+		await expect(annotation).toBeVisible();
 
-		// Click to add a new annotation
+		// This lands on the annotation rather than on bare chart, so it hovers it
+		// instead of making a second one. The hover is part of the baseline.
 		await chart.click({ position: { x: 600, y: 100 } });
-		await page.waitForTimeout(300);
+		await expect(chart.locator('.anchor-indicator')).toBeVisible();
 
-		// Add custom style to the new annotation via JavaScript
-		await page.evaluate(() => {
-			const annotations = document.querySelectorAll('.chart-container.line .layercake-annotation');
-			const newAnnotation = /** @type {HTMLElement} */ (annotations[annotations.length - 1]);
-			if (newAnnotation) {
-				newAnnotation.style.background = 'yellow';
-				newAnnotation.style.padding = '4px';
-				newAnnotation.style.borderRadius = '4px';
-			}
+		await annotation.evaluate((el) => {
+			el.style.background = 'yellow';
+			el.style.padding = '4px';
+			el.style.borderRadius = '4px';
 		});
-		await page.waitForTimeout(100);
+		// Assert the style landed. Without this the screenshot is the only thing
+		// checking it, and a screenshot can't say why it differs.
+		await expect(annotation).toHaveCSS('background-color', 'rgb(255, 255, 0)');
 
-		// Verify the style was applied
-		const styledAnnotation = chart.locator('.layercake-annotation').last();
-		await expect(styledAnnotation).toBeVisible();
-
-		// Switch to target mode if needed
+		// Static mode builds its own elements, so it drops the inline style — the
+		// static baseline is this annotation unstyled.
 		await setEditMode(page, mode === 'edit');
 
 		await expect(chart).toHaveScreenshot(`4-custom-style-${mode}.png`);
