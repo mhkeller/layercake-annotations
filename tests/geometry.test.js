@@ -10,7 +10,9 @@ import { ANCHOR_PRESETS } from '../src/lib/modules/anchorPresets.js';
  * right. These assert coordinates directly, at a non-zero anchor.
  *
  * The invariant under test: an arrow is drawn where its handle says it is, and
- * moving the anchor doesn't drag the arrow off the annotation.
+ * moving the anchor doesn't drag the arrow off the annotation. The handles' own
+ * behaviour is here too, for the same reason: a screenshot is one moment, and
+ * these are about what happens after the pointer moves on.
  */
 
 const CHART = '.chart-container.line';
@@ -145,6 +147,34 @@ test('moving the anchor leaves an attached arrow where it was', async ({ page })
 	expect(Math.abs(after.y - before.y)).toBeLessThan(2);
 });
 
+test('the handle that starts an arrow sits on the box, not on the anchor', async ({ page }) => {
+	await setEditMode(page, true);
+
+	// The west side has no arrow, so it shows the handle that would start one.
+	// That handle belongs to the box's edge and has to hold still while the anchor
+	// travels, or moving the anchor looks like it drags the arrows along.
+	const handle = page.locator(`${CHART} .arrow-zone.create`).first();
+	await expect(handle).toBeAttached();
+
+	const offenders = [];
+
+	for (let i = 0; i < ANCHOR_PRESETS.length; i++) {
+		if (i > 0) await stepAnchor(page, 1);
+
+		const box = await boxRect(page);
+		const grip = await centre(handle);
+		const middle = box.y + box.height / 2;
+		if (Math.abs(grip.y - middle) > 2) {
+			const { x, y } = ANCHOR_PRESETS[i];
+			offenders.push(
+				`anchor ${x}/${y}: handle at y=${grip.y.toFixed(1)}, box middle is ${middle.toFixed(1)}`
+			);
+		}
+	}
+
+	expect(offenders).toEqual([]);
+});
+
 test('every anchor preset keeps the arrow on the annotation', async ({ page }) => {
 	await setEditMode(page, true);
 
@@ -167,6 +197,40 @@ test('every anchor preset keeps the arrow on the annotation', async ({ page }) =
 	}
 
 	expect(offenders).toEqual([]);
+});
+
+test('the anchor handle goes when the hover goes, even after a press', async ({ page }) => {
+	await setEditMode(page, true);
+
+	const chart = page.locator(CHART);
+	await chart.locator('.draggable').first().hover({ force: true });
+
+	const handle = chart.locator('.anchor-indicator');
+	await expect(handle).toBeVisible();
+
+	// A press focuses the handle so the arrow keys work straight after a drag.
+	// That focus used to hold the diamond on screen after the pointer had gone.
+	await handle.click({ force: true });
+	await expect(handle).toBeVisible();
+
+	await page.mouse.move(1, 1);
+	await expect(handle).toHaveCount(0);
+});
+
+test('the anchor handle stays while it has keyboard focus', async ({ page }) => {
+	await setEditMode(page, true);
+
+	const chart = page.locator(CHART);
+	await chart.locator('.draggable').first().hover({ force: true });
+
+	const handle = chart.locator('.anchor-indicator');
+	await expect(handle).toBeVisible();
+	await handle.focus();
+
+	// Focus is the only thing holding it now, and it has to hold it: the arrow keys
+	// nudge the anchor, and they need something focused to reach.
+	await page.mouse.move(1, 1);
+	await expect(handle).toBeVisible();
 });
 
 test('an annotation can be dragged to chart x 0', async ({ page }) => {
