@@ -40,17 +40,21 @@ Grep for `getBoundingClientRect` to check the rule still holds. Every hit should
 
 The library juggles three coordinate systems:
 
-| System | Used For | Example |
-|--------|----------|---------|
-| **Data space** | Storing annotation/arrow positions | `{ date: new Date('2024-01-15'), value: 42 }` |
-| **Percentage offsets** | Fine-tuning position relative to chart | `dx: 5` = 5% of chart width |
-| **Pixels** | Rendering, drag interactions | `sourceX: 150, sourceY: 200` |
+| System                 | Used For                               | Example                                       |
+| ---------------------- | -------------------------------------- | --------------------------------------------- |
+| **Data space**         | Storing annotation/arrow positions     | `{ date: new Date('2024-01-15'), value: 42 }` |
+| **Percentage offsets** | Fine-tuning position relative to chart | `dx: 5` = 5% of chart width                   |
+| **Pixels**             | Rendering, drag interactions           | `sourceX: 150, sourceY: 200`                  |
 
 ### Annotation Position
 
 ```
-Final pixel position = scale(dataValue) + (percentage / 100) × chartDimension
+Final pixel position = toPixels(scale(dataValue)) + (percentage / 100) × chartDimension
 ```
+
+`getAnchorPoint` in `coordinates.js` is the only place that computes this, and both the editor and the static renderer set `left`/`top` from it. That matters because a chart with `percentRange` has scales whose ranges run 0-100 while everything drawn from them is in pixels — the SVG layer arrows live in carries no viewBox — so the scale's output has to be converted before the percentage offsets are added. A second implementation of this expression is how the two modes drift apart.
+
+The one position still left to CSS is `translate: -anchorX% -anchorY%`. That percentage is a share of the box's own height, which nothing can measure ahead of time, so the browser has to resolve it. Every other percentage here resolves against the chart, whose size JS already knows.
 
 ### Arrow Coordinates
 
@@ -75,15 +79,15 @@ hovering.value = { annotationId: 0, type: 'arrow' };
 
 ### Context Values
 
-| Key | Type | Purpose |
-|-----|------|---------|
-| `hovering` | `HoverState \| null` | Which element is hovered (shows handles) |
-| `moving` | `boolean` | Whether a drag is in progress |
-| `isEditing` | `boolean` | Whether text is being edited |
-| `previewArrow` | `DragState \| null` | Live arrow coordinates during drag |
-| `modifyAnnotation` | `function` | Update annotation properties |
-| `setArrow` | `function` | Create or update an arrow |
-| `modifyArrow` | `function` | Modify specific arrow properties |
+| Key                | Type                 | Purpose                                  |
+| ------------------ | -------------------- | ---------------------------------------- |
+| `hovering`         | `HoverState \| null` | Which element is hovered (shows handles) |
+| `moving`           | `boolean`            | Whether a drag is in progress            |
+| `isEditing`        | `boolean`            | Whether text is being edited             |
+| `previewArrow`     | `DragState \| null`  | Live arrow coordinates during drag       |
+| `modifyAnnotation` | `function`           | Update annotation properties             |
+| `setArrow`         | `function`           | Create or update an arrow                |
+| `modifyArrow`      | `function`           | Modify specific arrow properties         |
 
 ## Design Decisions
 
@@ -108,6 +112,7 @@ Clear previewArrow → normal rendering resumes
 ```
 
 **Benefits**:
+
 1. **Performance**: No coordinate conversions during drag
 2. **New arrows**: Can render arrow before it exists in data
 3. **Clean rendering**: Hide saved arrow while preview renders (no double-render)
@@ -115,7 +120,7 @@ Clear previewArrow → normal rendering resumes
 
 ### Why percentage offsets instead of pure data coordinates?
 
-Annotations often need to be positioned *near* a data point but not exactly on it (to avoid overlapping the chart line). Percentage offsets allow:
+Annotations often need to be positioned _near_ a data point but not exactly on it (to avoid overlapping the chart line). Percentage offsets allow:
 
 - Consistent visual offset regardless of scale domain
 - Easy manual adjustment (`dx: 5` = "5% to the right")
@@ -133,11 +138,13 @@ Annotations often need to be positioned *near* a data point but not exactly on i
 
 Centralizes all position calculations to prevent drift between components:
 
-```javascript
+```
 getAnchorPoint(anno, k)        // The one point knowable from config alone
 getBoxEdges(anno, k)           // left, right, width - deliberately no top or bottom
 getArrowSource(anno, arrow, k) // Where an arrow leaves its annotation
 getArrowTarget(arrow, k)       // Where it points
+annotationWidth(anno)          // The one width predicate and the one default
+resolveArrowSource(arrow)      // A source's offsets, defaults filled in
 calculateSourceDx(pixelX, anno, side, k) // Pixel → stored offset
 calculateSourceDy(pixelY, anno, k)
 ```
@@ -160,7 +167,7 @@ const [dataValue, percentOffset] = invertScale(scale, pos, size, percentRange);
 
 Generates SVG arc paths:
 
-```javascript
+```
 createArrowPath(source, target, clockwise, angle)
 // Returns: "M 100,50 a 75,75 0 0,1 100,50"
 ```
@@ -220,8 +227,8 @@ Three layers, because screenshots alone can't catch a misplaced arrow:
 The screenshots alone can't catch arrow misplacement: every scenario they cover sits at `anchorY` 0, where the anchor term drops out and wrong maths still looks right. That is what `tests/geometry.test.js` is for.
 
 Run with:
+
 ```bash
 pnpm test                                    # Run tests
 pnpm exec playwright test --update-snapshots # Update baselines
 ```
-
