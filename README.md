@@ -123,6 +123,8 @@ An arrow's `source.dx` is pixels from the near edge of the annotation, and its `
 
 To put an arrow at the middle or the bottom of the box, move the anchor there with `anchorY` and leave `source.dy` at 0. The browser resolves `anchorY` against the real box, so it keeps working when the text re-wraps.
 
+An arrow you draw in edit mode leaves from the middle of the annotation's edge, so its `source.dy` comes out as half the box's height. That is why the handle stays put when you move the anchor.
+
 ```js
 {
   side: 'east',                    // 'west' or 'east' - which side of annotation

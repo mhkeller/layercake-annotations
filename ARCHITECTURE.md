@@ -36,6 +36,8 @@ To put an arrow at the middle or bottom of the box, move the anchor there with `
 
 Grep for `getBoundingClientRect` to check the rule still holds. Every hit should be in `Draggable`, `ResizeHandles`, `AnchorHandle` or `AnnotationEditor`'s `setAnchor` — all of which run while the user is dragging something. A hit in `Arrows.svelte` or `AnnotationsData.svelte` means the rule has been broken, and published charts will be wrong in a way the screenshot tests won't show.
 
+One measurement runs outside a gesture: `Draggable` reports the box's height through `bind:offsetHeight`, so the handle that starts a new arrow can sit at the middle of the box's edge rather than at the anchor. The arrow that handle creates stores its own `source.dy`, so nothing measured here reaches a saved arrow. The dimension bindings count as measurement too, so grep for `bind:offset` and `bind:client` as well — a hit outside `Draggable` means the rule has slipped.
+
 ## Coordinate Systems
 
 The library juggles three coordinate systems:
@@ -195,11 +197,11 @@ Hover annotation → ArrowZone handles appear
     ↓
 Drag handle → onTargetMousedown()
     ↓
-mousemove updates previewArrow (pixels)
+pointermove updates previewArrow (pixels)
     ↓
 Arrows.svelte renders dragPath
     ↓
-mouseup → convert to data space → setArrow()
+pointerup → convert to data space → setArrow()
     ↓
 Clear previewArrow, arrow now in annotation.arrows
 ```

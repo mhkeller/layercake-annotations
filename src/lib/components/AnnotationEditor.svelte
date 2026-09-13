@@ -28,6 +28,9 @@
 	let isEditable = $state(false);
 	/** @type {HTMLElement|undefined} The annotation box, measured when the anchor moves. */
 	let boxEl = $state();
+	// How tall the box is right now, for the arrow handles that ride on its edge.
+	// Editor chrome only: a saved arrow's source is stored, never measured.
+	let boxHeight = $state(0);
 	// The box is given the width the geometry assumes, rather than being left to
 	// shrink to fit its text.
 	let width = $derived(`${annotationWidth(d)}px`);
@@ -196,6 +199,7 @@
 		{onclick}
 		canDrag={!isEditable}
 		bind:boxEl
+		bind:boxHeight
 		{anchorX}
 		{anchorY}
 	>
@@ -220,7 +224,7 @@
 	</Draggable>
 
 	{#each arrowSides as side}
-		<ArrowZone {d} {side} />
+		<ArrowZone {d} {side} {boxHeight} />
 	{/each}
 {/if}
 
