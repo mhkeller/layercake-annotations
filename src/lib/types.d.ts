@@ -3,12 +3,12 @@
  */
 
 /**
- * Arrow source position (pixel offsets from annotation edge)
+ * Where an arrow leaves its annotation, in pixels
  */
 export interface ArrowSource {
-	/** X offset in pixels from annotation edge (west=left, east=right) */
+	/** Pixels from the near edge of the annotation (west=left, east=right) */
 	dx: number;
-	/** Y offset in pixels from annotation top */
+	/** Pixels down from the anchor point */
 	dy: number;
 }
 
@@ -32,7 +32,7 @@ export interface Arrow {
 	side: 'west' | 'east';
 	/** Arc direction: true=clockwise, false=counter-clockwise, null=straight line */
 	clockwise: boolean | null;
-	/** Source position (pixel offsets from annotation) */
+	/** Where the arrow leaves the annotation, in pixels */
 	source: ArrowSource;
 	/** Target position (data coordinates) */
 	target: ArrowTarget;
@@ -62,7 +62,7 @@ export interface Annotation {
 	class?: string;
 	/** Anchor X position as percentage (0-100) of annotation width. Default 0 (left edge). */
 	anchorX?: number;
-	/** Anchor Y position as percentage (0-100) of annotation height. Default 0 (top edge). */
+	/** Anchor Y position as percentage (0-100) of annotation height. Arrow sources measure down from here. Default 0 (top edge). */
 	anchorY?: number;
 	/** Arrows attached to this annotation */
 	arrows: Arrow[];
