@@ -1,5 +1,10 @@
 # LayerCake Annotations
 
+[![npm version](https://img.shields.io/npm/v/@mhkeller/layercake-annotations.svg)](https://www.npmjs.com/package/@mhkeller/layercake-annotations)
+[![npm downloads](https://img.shields.io/npm/dm/@mhkeller/layercake-annotations.svg)](https://www.npmjs.com/package/@mhkeller/layercake-annotations)
+[![Tests](https://github.com/mhkeller/layercake-annotations/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/mhkeller/layercake-annotations/actions/workflows/test.yml)
+[![Deploy demo](https://github.com/mhkeller/layercake-annotations/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/mhkeller/layercake-annotations/actions/workflows/deploy.yml)
+
 Add interactive text annotations with swoopy arrows to [LayerCake](https://layercake.graphics) charts.
 
 **[Try the demo](https://mhkeller.github.io/layercake-annotations/)**
@@ -22,10 +27,14 @@ Requires Layer Cake 11 and Svelte 5.40 or newer. `layercake` is a peer dependenc
 	let annotations = $state([]);
 </script>
 
-<LayerCake {data} x="date" y="value">
-	<Annotations bind:annotations />
-</LayerCake>
+<div style="height: 300px">
+	<LayerCake {data} x="date" y="value">
+		<Annotations bind:annotations />
+	</LayerCake>
+</div>
 ```
+
+Layer Cake fills its parent, so give the parent a height.
 
 **Creating annotations:**
 
@@ -150,7 +159,7 @@ An arrow you draw in edit mode leaves from the middle of the annotation's edge, 
 
 ```svelte
 <script>
-	import { LayerCake, Svg, Html } from 'layercake';
+	import { LayerCake, Svg } from 'layercake';
 	import { Annotations } from '@mhkeller/layercake-annotations';
 	import Line from './Line.svelte';
 
@@ -196,7 +205,43 @@ An arrow you draw in edit mode leaves from the middle of the annotation's edge, 
 		<Annotations bind:annotations {editable} />
 	</LayerCake>
 </div>
+
+<style>
+	.chart-container {
+		width: 100%;
+		height: 250px;
+	}
+</style>
 ```
+
+## Different annotations on small screens
+
+An annotation's position is stored as a data value plus percentages, so it moves with the chart as the chart resizes. Its box width and arrow offsets are in pixels, so a layout placed on a wide chart can crowd a narrow one. For that, keep a second set placed for narrow charts and switch at a breakpoint, as the [demo](https://mhkeller.github.io/layercake-annotations/) does:
+
+```svelte
+<script>
+	import { MediaQuery } from 'svelte/reactivity';
+
+	const narrow = new MediaQuery('max-width: 799px');
+
+	let annotations = $state([
+		/* placed for a wide chart */
+	]);
+	let annotationsNarrow = $state([
+		/* placed for a narrow chart */
+	]);
+</script>
+
+<LayerCake {data} x="date" y="value">
+	{#if narrow.current}
+		<Annotations bind:annotations={annotationsNarrow} />
+	{:else}
+		<Annotations bind:annotations />
+	{/if}
+</LayerCake>
+```
+
+Edits change whichever set is showing. To place the narrow set, narrow the window and drag.
 
 ## TypeScript
 
@@ -216,8 +261,9 @@ import type { Annotation, Arrow } from '@mhkeller/layercake-annotations';
 
 ```sh
 pnpm install
-pnpm dev          # Start dev server at localhost:5173
-pnpm test         # Run Playwright visual regression tests
+pnpm dev          # Start the demo at localhost:5173
+pnpm test         # Run the unit tests and the Playwright screenshot tests
+pnpm test:update  # Rebuild the screenshot baselines after a visual change
 pnpm package      # Build for npm distribution
 ```
 
@@ -232,15 +278,23 @@ src/lib/
 │   ├── AnchorHandle          # Diamond handle for dragging the anchor point
 │   ├── AnnotationEditor      # Draggable annotation with text editing
 │   ├── AnnotationsData       # Static annotation renderer
+│   ├── ArrowheadMarker       # SVG marker for the arrowheads
 │   ├── ArrowZone             # Handles for creating/editing arrows
 │   ├── Arrows                # SVG arrow path rendering
 │   ├── Draggable             # Drag behavior wrapper
 │   ├── EditableText          # Contenteditable text input
 │   └── ResizeHandles         # Width resize handles
 ├── modules/
+│   ├── anchorPresets.js      # The nine anchor positions Option+click steps through
+│   ├── arrowUtils.js         # SVG arc path generation
 │   ├── coordinates.js        # Position calculations
+│   ├── createRef.svelte.js   # State reference shared between components
+│   ├── debounce.js           # Run once the calls stop coming
+│   ├── debounceLeading.js    # Run now, then drop calls for a while
+│   ├── filterObject.js       # Filter an object's keys
 │   ├── invertScale.js        # Pixel → data value conversion
-│   └── arrowUtils.js         # SVG arc path generation
+│   ├── newAnnotation.js      # A new annotation at a clicked position
+│   └── ordinalInvert.js      # Pixel → band value for ordinal scales
 └── types.d.ts                # TypeScript definitions
 ```
 

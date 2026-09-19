@@ -26,7 +26,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function setEditMode(page, enabled) {
-	const checkbox = page.locator('input[type="checkbox"]');
+	// The line chart's own switch, in the corner of its frame.
+	const checkbox = page.locator(CHART).getByRole('checkbox');
 	if ((await checkbox.isChecked()) !== enabled) {
 		await checkbox.click();
 	}

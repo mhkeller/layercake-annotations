@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
  * Test scenarios:
  * 1. One text annotation (with arrow already configured in data)
  * 2. An edited text annotation
- * 3. A resized text annotation (text wraps to multiple lines)
+ * 3. A resized text annotation (widened until its text fits on one line)
  *
  * Each scenario tested across:
  * - Linear chart (continuous scales) × Edit mode
@@ -25,20 +25,22 @@ test.beforeEach(async ({ page }) => {
 });
 
 /**
- * Helper to set edit mode on/off
+ * Helper to set edit mode on/off for one chart. Each chart has its own switch, in
+ * the corner of its frame.
  */
-async function setEditMode(page, enabled) {
-	const checkbox = page.locator('input[type="checkbox"]');
+async function setEditMode(page, chartType, enabled) {
+	const chart = getChart(page, chartType);
+	const checkbox = chart.getByRole('checkbox');
 	await checkbox.scrollIntoViewIfNeeded();
 	const isChecked = await checkbox.isChecked();
 	if (isChecked !== enabled) {
 		await checkbox.click();
 		await page.waitForTimeout(500);
 	}
-	// Each mode draws its own box, so a box on the page says the switch landed. On
+	// Each mode draws its own box, so a box in the chart says the switch landed. On
 	// a call that changes nothing it says the chart has finished measuring itself,
 	// which is the thing worth waiting for: Layer Cake draws nothing until then.
-	await expect(page.locator(enabled ? '.draggable' : '.static-wrapper').first()).toBeAttached();
+	await expect(chart.locator(enabled ? '.draggable' : '.static-wrapper').first()).toBeAttached();
 }
 
 /**
@@ -56,7 +58,7 @@ function getChart(page, chartType) {
 for (const chartType of chartTypes) {
 	for (const mode of modes) {
 		test(`text with arrow - ${chartType.name} - ${mode}`, async ({ page }) => {
-			await setEditMode(page, mode === 'edit');
+			await setEditMode(page, chartType.name, mode === 'edit');
 
 			const chart = getChart(page, chartType.name);
 			const annotation = chart.locator('.layercake-annotation').first();
@@ -83,7 +85,7 @@ for (const chartType of chartTypes) {
 	for (const mode of modes) {
 		test(`edited text - ${chartType.name} - ${mode}`, async ({ page }) => {
 			// Start in edit mode to edit text
-			await setEditMode(page, true);
+			await setEditMode(page, chartType.name, true);
 
 			const chart = getChart(page, chartType.name);
 			const annotation = chart.locator('.layercake-annotation').first();
@@ -99,7 +101,7 @@ for (const chartType of chartTypes) {
 			await page.waitForTimeout(300);
 
 			// Switch to target mode if needed
-			await setEditMode(page, mode === 'edit');
+			await setEditMode(page, chartType.name, mode === 'edit');
 
 			await expect(chart).toHaveScreenshot(`2-edited-${chartType.name}-${mode}.png`);
 		});
@@ -107,38 +109,52 @@ for (const chartType of chartTypes) {
 }
 
 // =============================================================================
-// SCENARIO 3: Resized annotation (text wraps to multiple lines)
+// SCENARIO 3: Resized annotation
 // =============================================================================
+
+// Wide enough to rewrap each chart's first note: "Annotation text" onto one line,
+// and "A counter-clockwise arrow" onto a different two. At the line chart's 100px
+// the text already wraps as far as it can, so narrowing would only push it out of
+// the box.
+const RESIZED_WIDTH = 160;
 
 for (const chartType of chartTypes) {
 	for (const mode of modes) {
 		test(`resized annotation - ${chartType.name} - ${mode}`, async ({ page }) => {
-			// Start in edit mode to resize
-			await setEditMode(page, true);
+			// The resize happens in edit mode either way. The mode being tested is the
+			// one the screenshot is taken in.
+			await setEditMode(page, chartType.name, true);
 
 			const chart = getChart(page, chartType.name);
 			const draggable = chart.locator('.draggable').first();
 
-			// Hover to show resize handles
+			// Hover to show the resize handles
 			await draggable.hover({ force: true });
-			await page.waitForTimeout(200);
 
-			// Find the east (right) resize handle
 			const grabber = chart.locator('.grabber.east').first();
 			const grabberBox = await grabber.boundingBox();
+			const width = await draggable.evaluate((el) => el.getBoundingClientRect().width);
+			const x = grabberBox.x + grabberBox.width / 2;
+			const y = grabberBox.y + grabberBox.height / 2;
 
-			// Drag the grabber left to make the annotation narrower (force text to wrap)
-			await page.mouse.move(
-				grabberBox.x + grabberBox.width / 2,
-				grabberBox.y + grabberBox.height / 2
-			);
+			// Drag the east edge out by exactly the difference. A move that asks for
+			// less than the 50px minimum is ignored outright, so the distance has to
+			// come from the box rather than being a fixed guess.
+			await page.mouse.move(x, y);
 			await page.mouse.down();
-			await page.mouse.move(grabberBox.x - 70, grabberBox.y);
+			await page.mouse.move(x + RESIZED_WIDTH - width, y);
 			await page.mouse.up();
-			await page.waitForTimeout(200);
 
-			// Switch to target mode if needed
-			await setEditMode(page, mode === 'edit');
+			// A drag that doesn't land has to fail here, not pass by matching an
+			// unresized screenshot.
+			await expect(draggable).toHaveCSS('width', `${RESIZED_WIDTH}px`);
+
+			await setEditMode(page, chartType.name, mode === 'edit');
+
+			// Static mode draws its own box, from the width the resize stored.
+			await expect(
+				chart.locator(mode === 'edit' ? '.draggable' : '.static-wrapper').first()
+			).toHaveCSS('width', `${RESIZED_WIDTH}px`);
 
 			await expect(chart).toHaveScreenshot(`3-resized-${chartType.name}-${mode}.png`);
 		});
@@ -153,15 +169,15 @@ for (const mode of modes) {
 	test(`custom style - ${mode}`, async ({ page }) => {
 		// The style goes on in edit mode either way. The mode being tested is the one
 		// the screenshot is taken in.
-		await setEditMode(page, true);
+		await setEditMode(page, 'linear', true);
 
 		const chart = getChart(page, 'linear');
 		const annotation = chart.locator('.layercake-annotation').first();
 		await expect(annotation).toBeVisible();
 
-		// This lands on the annotation rather than on bare chart, so it hovers it
-		// instead of making a second one. The hover is part of the baseline.
-		await chart.click({ position: { x: 600, y: 100 } });
+		// Click the annotation itself: a click on bare chart would make a second one.
+		// The click leaves it hovered, and the hover is part of the baseline.
+		await annotation.click({ force: true });
 		await expect(chart.locator('.anchor-indicator')).toBeVisible();
 
 		await annotation.evaluate((el) => {
@@ -175,7 +191,7 @@ for (const mode of modes) {
 
 		// Static mode builds its own elements, so it drops the inline style — the
 		// static baseline is this annotation unstyled.
-		await setEditMode(page, mode === 'edit');
+		await setEditMode(page, 'linear', mode === 'edit');
 
 		await expect(chart).toHaveScreenshot(`4-custom-style-${mode}.png`);
 	});
