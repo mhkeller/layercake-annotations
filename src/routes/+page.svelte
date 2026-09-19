@@ -1,6 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleBand } from 'd3-scale';
+	import { MediaQuery } from 'svelte/reactivity';
 
 	import { Annotations } from '$lib/index.js';
 
@@ -37,11 +38,16 @@
 	let lineEditable = $state(true);
 	let columnEditable = $state(true);
 
+	// Annotations are placed by eye, so each chart has a second set placed for narrow
+	// screens, where the wide set crowds the data. Edits change whichever set is
+	// showing, and that's the set logged to the console.
+	const narrow = new MediaQuery('max-width: 799px');
+
 	let lineAnnotations = $state([
 		{
 			id: 0,
-			data: { myX: 1995, myY: 5 },
-			dx: 0,
+			data: { myX: 1998.7556447398124, myY: 9.873341681901799 },
+			dx: 1.7,
 			dy: 0,
 			text: 'Annotation text',
 			width: '100px',
@@ -49,8 +55,39 @@
 				{
 					side: 'east',
 					clockwise: true,
-					source: { dx: 0, dy: 10 },
-					target: { data: { myX: 2010, myY: 4.5 }, dx: 0, dy: 0 }
+					source: { dx: -12, dy: 14 },
+					target: {
+						data: { myX: 2008.9587939698492, myY: 5.689651162790697 },
+						dx: 0,
+						dy: 0
+					}
+				}
+			]
+		}
+	]);
+
+	let lineAnnotationsNarrow = $state([
+		{
+			id: 0,
+			// Pinned by its bottom-center just left of the point the arrow points at, so
+			// the box sits above it at any width and stays inside the frame on a phone.
+			data: { myX: 2008.9587939698492, myY: 7.56 },
+			dx: -1,
+			dy: 0,
+			anchorX: 50,
+			anchorY: 100,
+			text: 'Annotation text',
+			width: '118px',
+			arrows: [
+				{
+					side: 'east',
+					clockwise: null,
+					source: { dx: -59, dy: 4 },
+					target: {
+						data: { myX: 2008.9587939698492, myY: 5.689651162790697 },
+						dx: 0,
+						dy: 0
+					}
 				}
 			]
 		}
@@ -59,17 +96,78 @@
 	let columnAnnotations = $state([
 		{
 			id: 0,
-			data: { year: '1981', value: 8 },
-			dx: 0,
+			data: { year: '1980', value: 14.5 },
+			dx: 0.9,
 			dy: 0,
-			text: 'Annotation text',
-			width: '100px',
+			text: 'A counter-clockwise arrow',
+			width: '120px',
+			arrows: [
+				{
+					side: 'west',
+					clockwise: false,
+					source: { dx: -6, dy: 13 },
+					target: { data: { year: '1979', value: 2.44 }, dx: 9.9, dy: 0 }
+				}
+			]
+		},
+		{
+			id: 1,
+			// Pinned by its top-right corner, and level with the other note.
+			data: { year: '1983', value: 14.5 },
+			dx: -5,
+			dy: 0,
+			anchorX: 100,
+			anchorY: 0,
+			align: 'right',
+			text: 'With a straight arrow',
+			width: '115px',
 			arrows: [
 				{
 					side: 'east',
-					clockwise: true,
-					source: { dx: 0, dy: 10 },
-					target: { data: { year: '1982', value: 8.5 }, dx: 0, dy: 0 }
+					clockwise: null,
+					source: { dx: 6, dy: 22 },
+					// 22px below the note's top, so the arrow runs level.
+					target: { data: { year: '1983', value: 12.58 }, dx: -0.4, dy: 0 }
+				}
+			]
+		}
+	]);
+
+	let columnAnnotationsNarrow = $state([
+		{
+			id: 0,
+			data: { year: '1980', value: 13.27 },
+			dx: 12.3,
+			dy: 0,
+			text: 'A counter-clockwise arrow',
+			width: '86px',
+			arrows: [
+				{
+					side: 'west',
+					clockwise: false,
+					source: { dx: -6, dy: 12 },
+					target: { data: { year: '1979', value: 2.44 }, dx: 9.9, dy: 0 }
+				}
+			]
+		},
+		{
+			id: 1,
+			// Pinned by its top-right corner, above the other note and below the tab.
+			data: { year: '1983', value: 18.51 },
+			dx: -10,
+			dy: 0,
+			anchorX: 100,
+			anchorY: 0,
+			align: 'right',
+			text: 'With a straight arrow',
+			width: '115px',
+			arrows: [
+				{
+					side: 'east',
+					clockwise: null,
+					source: { dx: 6, dy: 22 },
+					// 22px below the note's top, so the arrow runs level.
+					target: { data: { year: '1983', value: 16.59 }, dx: -0.8, dy: 0 }
 				}
 			]
 		}
@@ -124,7 +222,11 @@
 					<Area fill="url(#dot-screen)" />
 				</Svg>
 
-				<Annotations bind:annotations={lineAnnotations} editable={lineEditable} />
+				{#if narrow.current}
+					<Annotations bind:annotations={lineAnnotationsNarrow} editable={lineEditable} />
+				{:else}
+					<Annotations bind:annotations={lineAnnotations} editable={lineEditable} />
+				{/if}
 				<EditFrame bind:editable={lineEditable} />
 			</LayerCake>
 		</div>
@@ -147,7 +249,11 @@
 					<OrdinalAxisY snapBaselineLabel dx={-6} />
 					<Column fill="#1f4e9c" />
 				</Svg>
-				<Annotations bind:annotations={columnAnnotations} editable={columnEditable} />
+				{#if narrow.current}
+					<Annotations bind:annotations={columnAnnotationsNarrow} editable={columnEditable} />
+				{:else}
+					<Annotations bind:annotations={columnAnnotations} editable={columnEditable} />
+				{/if}
 				<EditFrame bind:editable={columnEditable} />
 			</LayerCake>
 		</div>

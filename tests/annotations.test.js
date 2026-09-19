@@ -112,9 +112,10 @@ for (const chartType of chartTypes) {
 // SCENARIO 3: Resized annotation
 // =============================================================================
 
-// Wide enough for "Annotation text" to fit on one line. At the demo's 100px it
-// already wraps onto two and can't wrap further, so narrowing would only push
-// the text out of the box.
+// Wide enough to rewrap each chart's first note: "Annotation text" onto one line,
+// and "A counter-clockwise arrow" onto a different two. At the line chart's 100px
+// the text already wraps as far as it can, so narrowing would only push it out of
+// the box.
 const RESIZED_WIDTH = 160;
 
 for (const chartType of chartTypes) {
