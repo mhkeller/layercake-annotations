@@ -49,8 +49,8 @@
 	let lineAnnotations = $state([
 		{
 			id: 0,
-			data: { myX: 1998.7556447398124, myY: 9.873341681901799 },
-			dx: 1.7,
+			data: { myX: 2002, myY: 9.873341681901799 },
+			dx: 0,
 			dy: 0,
 			text: 'Annotation text',
 			width: '100px',
@@ -268,6 +268,11 @@
 
 <style>
 	.page {
+		box-sizing: border-box;
+		width: 100%;
+		/* Past this the charts only get wider and their arrows swoopier. */
+		max-width: 1600px;
+		margin: 0 auto;
 		padding: 28px 32px 24px;
 		/* The layout is a column the height of the window. Without this, a window
 		   shorter than the page squeezes the charts rather than scrolling. */
