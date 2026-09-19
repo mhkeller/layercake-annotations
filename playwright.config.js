@@ -40,7 +40,10 @@ export default defineConfig({
 			name: 'chromium',
 			use: {
 				browserName: 'chromium',
-				viewport: { width: 1280, height: 720 }
+				// Tall enough to show the whole demo page without scrolling. Several
+				// tests hover an annotation and then screenshot it, and a scroll in
+				// between moves the annotation out from under the pointer.
+				viewport: { width: 1280, height: 900 }
 			}
 		}
 	],
