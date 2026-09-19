@@ -14,7 +14,9 @@
 	 * @typedef {import('../types.js').Ref<T>} Ref
 	 */
 
-	import { getContext, onDestroy } from 'svelte';
+	import { getContext } from 'svelte';
+
+	import { drag } from '$lib/modules/drag.js';
 
 	/** How far one arrow key moves the anchor, in percentage points. */
 	const STEP = 5;
@@ -62,67 +64,44 @@
 	 */
 	let boxRect = null;
 
-	// The gap between the pointer and the middle of the diamond, so it doesn't
-	// jump to the cursor on the first move.
-	let grabX = 0;
-	let grabY = 0;
+	// Works in client pixels, the same space the box is measured in.
+	const dragAnchor = drag({
+		moving,
+		onstart(event) {
+			if (!boxEl || !el) return null;
 
-	/** @param {PointerEvent} event */
-	function onpointerdown(event) {
-		if (!boxEl || !el) return;
+			event.preventDefault();
 
-		// The annotation moves itself on pointerdown. Keep this one to ourselves.
-		event.stopPropagation();
-		event.preventDefault();
+			boxRect = boxEl.getBoundingClientRect();
 
-		// Capture routes every later move and the release here, however far the
-		// pointer travels, and the browser hands it back when the drag ends.
-		el.setPointerCapture(event.pointerId);
+			// The drag starts from where the diamond is actually drawn, not where the
+			// box math says it should be. The two differ by the box's border.
+			const diamond = el.getBoundingClientRect();
 
-		boxRect = boxEl.getBoundingClientRect();
+			// preventDefault above stops the browser focusing this, so do it by hand and
+			// keep the arrow keys reachable. `focused` is what holds the diamond on
+			// screen for someone who tabbed to it. A press shouldn't do the same, or the
+			// diamond outlives the hover that put it there.
+			el.focus();
+			focused = false;
 
-		// Measure the gap against where the diamond is actually drawn, not where the
-		// box math says it should be. The two differ by the box's border.
-		const diamond = el.getBoundingClientRect();
-		grabX = event.clientX - (diamond.left + diamond.width / 2);
-		grabY = event.clientY - (diamond.top + diamond.height / 2);
+			dragging = true;
+			onDragStart?.();
 
-		// preventDefault above stops the browser focusing this, so do it by hand and
-		// keep the arrow keys reachable. `focused` is what holds the diamond on
-		// screen for someone who tabbed to it. A press shouldn't do the same, or the
-		// diamond outlives the hover that put it there.
-		el.focus();
-		focused = false;
-
-		dragging = true;
-		// Tells the rest of the editor a drag is under way, which is what keeps the
-		// hover from moving to another annotation mid-drag.
-		moving.value = true;
-		onDragStart?.();
-	}
-
-	/** @param {PointerEvent} event */
-	function onpointermove(event) {
-		if (!dragging || !boxRect) return;
-		onDrag?.(
-			toPercent(event.clientX - grabX - boxRect.left, boxRect.width),
-			toPercent(event.clientY - grabY - boxRect.top, boxRect.height)
-		);
-	}
-
-	function onpointerup() {
-		if (!dragging) return;
-
-		dragging = false;
-		moving.value = false;
-		boxRect = null;
-		onDragEnd?.();
-	}
-
-	// Deleting an annotation mid-drag takes this component with it. Hand the shared
-	// moving flag back on the way out, or hovering stays switched off for good.
-	onDestroy(() => {
-		if (dragging) moving.value = false;
+			return { x: diamond.left + diamond.width / 2, y: diamond.top + diamond.height / 2 };
+		},
+		onmove(pos) {
+			if (!boxRect) return;
+			onDrag?.(
+				toPercent(pos.x - boxRect.left, boxRect.width),
+				toPercent(pos.y - boxRect.top, boxRect.height)
+			);
+		},
+		onend() {
+			dragging = false;
+			boxRect = null;
+			onDragEnd?.();
+		}
 	});
 
 	/**
@@ -169,9 +148,7 @@
 		class:dragging
 		style:left="{anchorX}%"
 		style:top="{anchorY}%"
-		{onpointerdown}
-		{onpointermove}
-		{onpointerup}
+		{@attach dragAnchor}
 		{onkeydown}
 		onfocus={() => (focused = true)}
 		onblur={() => (focused = false)}
@@ -192,6 +169,8 @@
 		z-index: 10000;
 		opacity: 0.8;
 		cursor: grab;
+		/* A touch drag moves the anchor rather than scrolling the page */
+		touch-action: none;
 	}
 	.anchor-indicator.dragging {
 		opacity: 1;

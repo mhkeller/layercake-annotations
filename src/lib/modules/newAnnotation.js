@@ -1,6 +1,7 @@
 /** @typedef {import('../types.js').Annotation} Annotation */
 
-import invertScale from './invertScale.js';
+import { invertPoint } from './coordinates.js';
+import { DEFAULT_TEXT } from './noteText.js';
 
 /** How wide a freshly placed annotation starts out, in pixels. */
 const NEW_ANNOTATION_WIDTH = 91;
@@ -10,27 +11,19 @@ const NEW_ANNOTATION_WIDTH = 91;
  * @param {number} x - Position from the left of the chart area, in pixels.
  * @param {number} y - Position from the top of the chart area, in pixels.
  * @param {number} id - Unique identifier
- * @param {Object} options - LayerCake scales and config
- * @returns {Annotation}
+ * @param {Object} k - The Layer Cake context.
+ * @returns {Annotation | null} Null when the chart's accessors aren't keys, so there is nowhere to store the position.
  */
-export default function newAnnotation(
-	x,
-	y,
-	id,
-	{ xScale, yScale, config, width, height, percentRange }
-) {
-	const xVal = invertScale(xScale, x, width, percentRange);
-	const yVal = invertScale(yScale, y, height, percentRange);
+export default function newAnnotation(x, y, id, k) {
+	const point = invertPoint(x, y, k);
+	if (point === null) return null;
 
 	return {
 		id,
-		data: {
-			[config.x]: xVal[0],
-			[config.y]: yVal[0]
-		},
-		dx: xVal[1],
-		dy: yVal[1],
-		text: 'New note...',
+		data: point.data,
+		dx: point.dx,
+		dy: point.dy,
+		text: DEFAULT_TEXT,
 		width: `${NEW_ANNOTATION_WIDTH}px`,
 		arrows: []
 	};

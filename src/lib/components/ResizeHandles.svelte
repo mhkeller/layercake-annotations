@@ -2,131 +2,123 @@
   @component
   Horizontal resize handles for annotation text boxes.
   Supports west (left) and east (right) resizing only.
+  Reports the left edge and width the box should take. The parent stores them.
 -->
 <script>
+	/**
+	 * @template T
+	 * @typedef {import('../types.js').Ref<T>} Ref
+	 */
+
+	import { getContext } from 'svelte';
 	import { getLayerCakeContext } from 'layercake';
 
-	import { annotationWidth } from '$lib/modules/coordinates.js';
+	import { drag } from '$lib/modules/drag.js';
 
+	/** The narrowest a box can be made, in pixels. */
+	const MIN_WIDTH = 50;
+
+	/** How far one arrow key moves the east edge, in pixels. */
+	const STEP = 10;
+
+	/** @type {{ left: number, width: number, onresize: (box: { left: number, width: number }) => void }} */
 	let {
-		/** Which handles to show: 'west', 'east', or both */
-		grabbers = ['west', 'east'],
-		/** Current width in pixels (bound) - number or "Npx" string */
-		width = $bindable(),
-		/** Callback when resizing */
-		ondrag,
-		/** Anchor X position (0-100%) for resize compensation */
-		anchorX = 0
+		/** The box's left edge, in chart pixels */
+		left,
+		/** The box's width, in pixels */
+		width,
+		/** Runs on every move with the left edge and width the box should take, in chart pixels */
+		onresize
 	} = $props();
 
 	const k = getLayerCakeContext();
+	/** @type {Ref<boolean>} */
+	const moving = getContext('moving');
 
+	/** @type {'west' | 'east' | null} - Which handle is being dragged */
 	let active = $state(null);
-	let isEast = false;
-	let initialRect = $state(null);
-	let initialPos = $state(null);
 
-	function onpointerdown(event) {
-		event.stopPropagation();
-		active = event.target;
+	// Where the box's edges sat when the press landed. Every move is worked out
+	// from these two. The parent stores a rounded width, so measuring from the
+	// live props would let the edge that is meant to hold still creep.
+	let startLeft = 0;
+	let startRight = 0;
 
-		// Capture routes every later move and the release here, however far the
-		// pointer travels, and the browser hands it back when the drag ends.
-		active.setPointerCapture(event.pointerId);
-
-		isEast = active.classList.contains('east');
-		const rect = active.parentElement.getBoundingClientRect();
-		const [pointerX] = k.pointer(event);
-		initialRect = {
-			width: rect.width,
-			// Chart space, off the same event as the pointer, so a scroll can't pull them apart.
-			left: pointerX - (event.clientX - rect.left)
-		};
-		initialPos = { x: pointerX };
-		active.classList.add('selected');
+	/** @param {'west' | 'east'} side */
+	function start(side) {
+		active = side;
+		startLeft = left;
+		startRight = left + width;
 	}
 
-	function onpointerup() {
-		if (!active) return;
-
-		active.classList.remove('selected');
+	function onend() {
 		active = null;
-		initialRect = null;
-		initialPos = null;
 	}
 
-	function onpointermove(event) {
-		if (!active) return;
+	// The dragged thing is the right edge, so the gap between it and the pointer
+	// is kept and the edge doesn't jump on the first move. The left edge holds still.
+	const dragEast = drag({
+		moving,
+		pointer: k.pointer,
+		onstart() {
+			start('east');
+			return { x: startRight, y: 0 };
+		},
+		onmove(pos) {
+			onresize({ left: startLeft, width: Math.max(MIN_WIDTH, pos.x - startLeft) });
+		},
+		onend
+	});
 
-		const [pointerX] = k.pointer(event);
-		// Nothing to measure against before the chart mounts.
-		if (!Number.isFinite(pointerX) || !Number.isFinite(initialPos.x)) {
-			ondrag();
-			return;
-		}
+	// The left edge sits exactly under the pointer: the drag starts from the
+	// pointer's own x, so there is no gap to keep. The right edge holds still.
+	const dragWest = drag({
+		moving,
+		pointer: k.pointer,
+		onstart(e) {
+			start('west');
+			return { x: k.pointer(e)[0], y: 0 };
+		},
+		onmove(pos) {
+			const newWidth = Math.max(MIN_WIDTH, startRight - pos.x);
+			onresize({ left: startRight - newWidth, width: newWidth });
+		},
+		onend
+	});
 
-		if (isEast) {
-			const delta = pointerX - initialPos.x;
-			const newWidth = Math.round(initialRect.width + delta);
-			if (newWidth < 50) return;
-			width = `${newWidth}px`;
+	/**
+	 * Keyboard resize - moves the east edge, the left edge holds still
+	 * @param {KeyboardEvent} e
+	 */
+	function onkeydown(e) {
+		const delta = { ArrowLeft: -STEP, ArrowRight: STEP }[e.key];
+		if (!delta) return;
 
-			// Nudge the anchor right as the box grows so its left edge stays put. Only x moves.
-			if (anchorX > 0) {
-				const currentAnchorX = initialRect.left + (anchorX / 100) * initialRect.width;
-				const newAnchorX = currentAnchorX + (anchorX / 100) * delta;
-				ondrag([newAnchorX, null]);
-			} else {
-				ondrag();
-			}
-		}
-
-		if (!isEast) {
-			const delta = initialPos.x - pointerX;
-			const newWidth = Math.round(initialRect.width + delta);
-			if (newWidth < 50) return;
-
-			width = `${newWidth}px`;
-
-			// The left edge follows the pointer; the anchor rides at its share of the width. Only x moves.
-			const newAnchorX = pointerX + (anchorX / 100) * newWidth;
-			ondrag([newAnchorX, null]);
-		}
-	}
-
-	/** Keyboard resize handler - resizes from east edge */
-	function onResize(delta) {
-		const currentWidth = annotationWidth({ width });
-		const newWidth = Math.max(50, currentWidth + delta);
-		width = `${newWidth}px`;
-		// The anchor doesn't shift to keep up, the way it does on a mouse drag:
-		// a keypress carries no pointer position to convert.
-		ondrag();
+		e.preventDefault();
+		onresize({ left, width: Math.max(MIN_WIDTH, width + delta) });
 	}
 </script>
 
-{#each grabbers as grabber}
-	<div
-		class="grabber {grabber}"
-		{onpointerdown}
-		{onpointermove}
-		{onpointerup}
-		onkeydown={(e) => {
-			if (e.key === 'ArrowLeft') {
-				onResize(-10);
-				e.preventDefault();
-			}
-			if (e.key === 'ArrowRight') {
-				onResize(10);
-				e.preventDefault();
-			}
-		}}
-		role="slider"
-		tabindex="0"
-		aria-label="Resize handle - use arrow keys to adjust width"
-		aria-valuenow={width}
-	></div>
-{/each}
+<div
+	class="grabber west"
+	class:selected={active === 'west'}
+	{@attach dragWest}
+	{onkeydown}
+	role="slider"
+	tabindex="0"
+	aria-label="Resize handle - use arrow keys to adjust width"
+	aria-valuenow={width}
+></div>
+<div
+	class="grabber east"
+	class:selected={active === 'east'}
+	{@attach dragEast}
+	{onkeydown}
+	role="slider"
+	tabindex="0"
+	aria-label="Resize handle - use arrow keys to adjust width"
+	aria-valuenow={width}
+></div>
 
 <style>
 	.grabber {
@@ -141,6 +133,8 @@
 		background: red;
 		border-radius: 2px;
 		cursor: col-resize;
+		/* A touch drag resizes the box rather than scrolling the page */
+		touch-action: none;
 	}
 
 	.grabber.west {

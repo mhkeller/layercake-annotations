@@ -1,21 +1,33 @@
 <script>
 	/** @typedef {import('../types.js').Annotation} Annotation */
+	/** @typedef {import('../types.js').ResolvedAnnotation} ResolvedAnnotation */
+	/** @typedef {import('../types.js').HoverState} HoverState */
 	/** @typedef {import('../types.js').ModifyAnnotationFn} ModifyAnnotationFn */
+	/**
+	 * @template T
+	 * @typedef {import('../types.js').Ref<T>} Ref
+	 */
 
-	import { getContext } from 'svelte';
+	import { getContext, onDestroy } from 'svelte';
 	import { getLayerCakeContext } from 'layercake';
 
-	import Draggable from './Draggable.svelte';
+	import AnnotationBox from './AnnotationBox.svelte';
 	import EditableText from './EditableText.svelte';
 	import ResizeHandles from './ResizeHandles.svelte';
 	import ArrowZone from './ArrowZone.svelte';
 	import AnchorHandle from './AnchorHandle.svelte';
 
-	import invertScale from '$lib/modules/invertScale.js';
-	import filterObject from '$lib/modules/filterObject.js';
-	import { annotationWidth, getAnchorPoint, resolveArrowSource } from '$lib/modules/coordinates.js';
+	import {
+		annotationWidth,
+		getAnchorPoint,
+		getBoxEdges,
+		invertPoint
+	} from '$lib/modules/coordinates.js';
 	import { ANCHOR_PRESETS } from '$lib/modules/anchorPresets.js';
+	import { drag } from '$lib/modules/drag.js';
+	import { hasCmdOrCtrl } from '$lib/modules/modifierKeys.js';
 
+	/** @type {{ d: ResolvedAnnotation }} */
 	let { d } = $props();
 
 	/**
@@ -24,80 +36,134 @@
 	const k = getLayerCakeContext();
 
 	/**
+	 * Context variables
+	 */
+	/** @type {ModifyAnnotationFn} */
+	const modifyAnnotation = getContext('modifyAnnotation');
+	/** @type {Ref<number | null>} */
+	const editing = getContext('editing');
+	/** @type {Ref<HoverState | null>} */
+	const hovering = getContext('hovering');
+	/** @type {Ref<boolean>} */
+	const moving = getContext('moving');
+
+	// The editor keys its notes by id, so this component is the same note for as long as it lives.
+	// svelte-ignore state_referenced_locally
+	const id = d.id;
+
+	// A note that goes while it is hovered takes the hover with it. Otherwise the
+	// Delete key would still find a hover pointing at it.
+	onDestroy(() => {
+		if (hovering.value?.annotationId === id) hovering.value = null;
+	});
+
+	/**
 	 * State variables
 	 */
-	let isEditable = $state(false);
+	// The editor holds the id of the one note being edited. This note is editable while that id is its own.
+	let isEditable = $derived(editing.value === d.id);
+	// While the text is being edited, a press on the box belongs to the text.
+	let canDrag = $derived(!isEditable);
+	// `hovering` is the ref itself. This is whether it points at this note: its
+	// box or one of its arrow handles.
+	let hovered = $derived(hovering.value?.annotationId === d.id);
 	/** @type {HTMLElement|undefined} The annotation box, measured when the anchor moves. */
 	let boxEl = $state();
 	// How tall the box is right now, for the arrow handles that ride on its edge.
-	// Editor chrome only: a saved arrow's source is stored, never measured.
+	// The one dimension the config can't supply: it comes out of how the text
+	// wraps, so only the DOM knows it. Editor chrome only: a saved arrow's source
+	// is stored, never measured.
 	let boxHeight = $state(0);
-	// The box is given the width the geometry assumes, rather than being left to
-	// shrink to fit its text.
-	let width = $derived(`${annotationWidth(d)}px`);
-	let anchorX = $derived(d.anchorX ?? 0);
-	let anchorY = $derived(d.anchorY ?? 0);
 
 	/**
 	 * Arrow sides - simplified to just west and east
+	 * @type {Array<'west' | 'east'>}
 	 */
 	const arrowSides = ['west', 'east'];
 
 	/**
-	 * Context variables
-	 * @type {ModifyAnnotationFn}
-	 */
-	const modifyAnnotation = getContext('modifyAnnotation');
-
-	/**
 	 * Coordinates
 	 */
-	// The same function the arrows are drawn from, so the box and its arrows cannot
-	// disagree about where the anchor is. Only `translate` stays a percentage: that
-	// one is a share of a height nobody can measure.
+	// The anchor point in chart pixels, which is what a drag of the box works in.
 	let anchor = $derived(getAnchorPoint(d, k));
-	let left = $derived(`${anchor.x}px`);
-	let top = $derived(`${anchor.y}px`);
+	// The box's left edge and width in chart pixels, which is what a resize works in.
+	let edges = $derived(getBoxEdges(d, k, anchor));
 
 	/**
-	 * @param {Array} [position] - The x and y pixel coordinates of the draggable element.
+	 * Pin the anchor point to a new spot in the chart.
+	 * @param {{ x: number, y: number }} pos - Where the anchor point goes, in chart pixels.
 	 */
-	async function ondrag(position = []) {
-		const [x, y] = position;
-		// Deliberately a null check, not a truthiness one. 0 is a real position - the
-		// anchor sitting exactly on the chart's left or top edge - while null and
-		// undefined are how a resize says "this axis didn't move".
-		const xVal = x == null ? null : invertScale(k.xScale, x, k.width, k.percentRange);
-		const yVal = y == null ? null : invertScale(k.yScale, y, k.height, k.percentRange);
+	function ondrag(pos) {
+		const point = invertPoint(pos.x, pos.y, k);
+		if (point === null) return;
 
-		// Overlay only the axis that moved. Writing undefined over an axis that
-		// didn't drops the key and takes the data point with it, which leaves every
-		// scale returning NaN and every path built from one silently unrendered.
-		const newData = { ...d.data };
-		if (xVal?.[0] !== undefined) newData[k.config.x] = xVal[0];
-		if (yVal?.[0] !== undefined) newData[k.config.y] = yVal[0];
-
-		/** @type {Record<string, unknown>} */
-		const newProps = filterObject(
-			{
-				// Only include data if it has values (avoid overwriting with empty object)
-				data: Object.keys(newData).length > 0 ? newData : undefined,
-				dx: xVal?.[1],
-				dy: yVal?.[1]
-			},
-			(d) => d !== undefined
-		);
-
-		// Always save current width
-		if (width) {
-			newProps.width = width;
-		}
-
-		modifyAnnotation(d.id, newProps);
+		modifyAnnotation(d.id, { ...point, data: { ...d.data, ...point.data } });
 	}
 
-	/** Cmd+click cycles: left → center → right → left */
-	let alignment = $derived(d.align || 'left');
+	// A press on the box drags the whole note by its anchor point.
+	const dragBox = drag({
+		moving,
+		pointer: k.pointer,
+		onstart: () => (canDrag ? anchor : null),
+		onmove: ondrag
+	});
+
+	/**
+	 * Keep `boxHeight` in step with the box: once when the box lands on the page,
+	 * so the arrow handles sit right from the start, and again whenever its size changes.
+	 * @type {import('svelte/attachments').Attachment<HTMLElement>}
+	 */
+	function measureHeight(node) {
+		boxHeight = node.offsetHeight;
+
+		const observer = new ResizeObserver(() => {
+			boxHeight = node.offsetHeight;
+		});
+		// `offsetHeight` is the height of the border box, so that is the box to watch.
+		observer.observe(node, { box: 'border-box' });
+
+		return () => observer.disconnect();
+	}
+
+	// enter/leave rather than over/out: the box has children that take the mouse
+	// themselves, like the resize grabbers and the anchor handle, and over/out
+	// count a move onto a child as leaving the box.
+	function onmouseenter() {
+		if (moving.value) return;
+		hovering.value = { annotationId: d.id, type: 'body' };
+	}
+	function onmouseleave() {
+		if (moving.value) return;
+		hovering.value = null;
+	}
+
+	/**
+	 * Give the box the left edge and width a resize asks for. The width is stored
+	 * in whole pixels. The position is written only when the anchor point has to
+	 * move for the left edge to land where it was asked to.
+	 * @param {{ left: number, width: number }} box - In chart pixels.
+	 */
+	function onresize(box) {
+		const newWidth = Math.round(box.width);
+		const widthChanges = newWidth !== edges.width;
+		// The anchor rides at its share of the width. It moves when the left edge
+		// does, and when the width changes under an anchor that sits off that edge.
+		const anchorMoves = box.left !== edges.left || (d.anchorX !== 0 && widthChanges);
+		if (!widthChanges && !anchorMoves) return;
+
+		const stored = { width: `${newWidth}px` };
+		if (!anchorMoves) {
+			modifyAnnotation(d.id, stored);
+			return;
+		}
+
+		// Only x moves. The y axis is left out, so its data value stands: without it
+		// every scale returns NaN and every path built from one goes unrendered.
+		const point = invertPoint(box.left + (d.anchorX / 100) * newWidth, null, k);
+		if (point === null) return;
+
+		modifyAnnotation(d.id, { ...point, data: { ...d.data, ...point.data }, ...stored });
+	}
 
 	/**
 	 * Index of the preset nearest the current anchor.
@@ -106,7 +172,7 @@
 		let nearest = 0;
 		let nearestDistance = Infinity;
 		ANCHOR_PRESETS.forEach((pos, i) => {
-			const distance = (pos.x - anchorX) ** 2 + (pos.y - anchorY) ** 2;
+			const distance = (pos.x - d.anchorX) ** 2 + (pos.y - d.anchorY) ** 2;
 			if (distance < nearestDistance) {
 				nearestDistance = distance;
 				nearest = i;
@@ -132,9 +198,9 @@
 		// Arrows hang off the anchor point, and the compensation above slides that
 		// point down the chart by deltaY. Take the same off each source so the
 		// arrows stay where they are.
-		const arrows = d.arrows?.map((a, i) => ({
+		const arrows = d.arrows.map((a, i) => ({
 			...a,
-			source: { dx: resolveArrowSource(a).dx, dy: start.sourceDy[i] - deltaY }
+			source: { dx: a.source.dx, dy: start.sourceDy[i] - deltaY }
 		}));
 
 		modifyAnnotation(d.id, {
@@ -152,14 +218,14 @@
 	 */
 	function snapshot() {
 		return {
-			anchorX,
-			anchorY,
+			anchorX: d.anchorX,
+			anchorY: d.anchorY,
 			dx: d.dx,
 			dy: d.dy,
 			// The one measurement the config can't supply. Taken once per gesture:
 			// the box holds still while the anchor moves across it.
 			boxHeight: boxEl?.getBoundingClientRect().height ?? 0,
-			sourceDy: (d.arrows ?? []).map((a) => a.source?.dy ?? 0)
+			sourceDy: d.arrows.map((a) => a.source.dy)
 		};
 	}
 
@@ -170,13 +236,13 @@
 	let anchorDragStart = null;
 
 	function onclick(e) {
-		// Cmd+click: cycle text alignment
-		if (e.metaKey && !e.altKey) {
+		// Cmd+click (Ctrl+click on Windows and Linux): cycle text alignment, left → center → right → left
+		if (hasCmdOrCtrl(e) && !e.altKey) {
 			/** @type {Annotation['align']} */
 			let newAlignment;
-			if (alignment === 'left') {
+			if (d.align === 'left') {
 				newAlignment = 'center';
-			} else if (alignment === 'center') {
+			} else if (d.align === 'center') {
 				newAlignment = 'right';
 			} else {
 				newAlignment = 'left';
@@ -184,7 +250,7 @@
 			modifyAnnotation(d.id, { align: newAlignment });
 		}
 		// Option+click (Alt+click): cycle anchor position
-		else if (e.altKey && !e.metaKey) {
+		else if (e.altKey && !hasCmdOrCtrl(e)) {
 			const next = ANCHOR_PRESETS[(getCurrentAnchorIndex() + 1) % ANCHOR_PRESETS.length];
 			setAnchor(next.x, next.y);
 		}
@@ -192,47 +258,48 @@
 </script>
 
 {#if d}
-	<Draggable
-		id={d.id}
-		{left}
-		{top}
-		{ondrag}
-		{width}
+	<AnnotationBox
+		{d}
+		bind:el={boxEl}
+		class={['draggable', { canDrag, hovering: hovered }]}
+		{@attach dragBox}
+		{@attach measureHeight}
 		{onclick}
-		canDrag={!isEditable}
-		bind:boxEl
-		bind:boxHeight
-		{anchorX}
-		{anchorY}
+		{onmouseenter}
+		{onmouseleave}
+		onfocus={onmouseenter}
+		onblur={(e) => {
+			// Tabbing to the resize grabbers or the anchor handle moves focus to a
+			// child, which still counts as leaving this element. Stay hovered so those
+			// controls don't vanish as they're reached.
+			if (!boxEl?.contains(/** @type {Node | null} */ (e.relatedTarget))) onmouseleave();
+		}}
+		role="button"
+		tabindex={0}
+		aria-label="Annotation - drag to move, press Delete to remove"
 	>
-		<div class="layercake-annotation {d.class || ''}" style={d.style} data-id={d.id}>
+		{#snippet content()}
 			<EditableText
-				bind:text={d.text}
-				bind:isEditable
-				{alignment}
+				id={d.id}
+				text={d.text}
+				{isEditable}
 				onSave={(newText) => modifyAnnotation(d.id, { text: newText })}
 			/>
-		</div>
-		<ResizeHandles bind:width {ondrag} {anchorX} />
+		{/snippet}
+
+		<ResizeHandles left={edges.left} width={edges.width} {onresize} />
 		<AnchorHandle
 			id={d.id}
-			{anchorX}
-			{anchorY}
+			anchorX={d.anchorX}
+			anchorY={d.anchorY}
 			{boxEl}
 			onDragStart={() => (anchorDragStart = snapshot())}
 			onDrag={(x, y) => setAnchor(x, y, anchorDragStart)}
 			onDragEnd={() => (anchorDragStart = null)}
 		/>
-	</Draggable>
+	</AnnotationBox>
 
-	{#each arrowSides as side}
+	{#each arrowSides as side (side)}
 		<ArrowZone {d} {side} {boxHeight} />
 	{/each}
 {/if}
-
-<style>
-	.layercake-annotation {
-		width: 100%;
-		height: 100%;
-	}
-</style>

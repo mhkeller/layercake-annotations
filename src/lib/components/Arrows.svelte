@@ -5,7 +5,8 @@
   During drag, uses live pixel coordinates from dragState.
  -->
 <script>
-	/** @typedef {import('../types.js').Annotation} Annotation */
+	/** @typedef {import('../types.js').ResolvedAnnotation} ResolvedAnnotation */
+	/** @typedef {import('../types.js').ResolvedArrow} ResolvedArrow */
 	/** @typedef {import('../types.js').DragState} DragState */
 	/**
 	 * @template T
@@ -18,7 +19,7 @@
 	import { createArrowPath } from '../modules/arrowUtils.js';
 	import { getArrowSource, getArrowTarget } from '../modules/coordinates.js';
 
-	/** @type {{ annotations?: Annotation[], markerId: string }} */
+	/** @type {{ annotations?: ResolvedAnnotation[], markerId: string }} */
 	let { annotations = [], markerId } = $props();
 
 	const k = getLayerCakeContext();
@@ -28,13 +29,14 @@
 
 	/**
 	 * Compute the SVG path for a saved arrow
+	 * @param {ResolvedAnnotation} anno
+	 * @param {ResolvedArrow} arrow
 	 */
 	function getStaticPath(anno, arrow) {
 		const source = getArrowSource(anno, arrow, k);
 		const target = getArrowTarget(arrow, k);
-		const clockwise = arrow.clockwise !== undefined ? arrow.clockwise : true;
 
-		return createArrowPath(source, target, clockwise);
+		return createArrowPath(source, target, arrow.clockwise);
 	}
 
 	/**
@@ -56,11 +58,10 @@
 		if (!ds || ds.annotationId === null || ds.annotationId === undefined) return '';
 		if (ds.sourceX == null || ds.targetX == null) return '';
 
-		const clockwise = ds.clockwise !== undefined ? ds.clockwise : true;
 		return createArrowPath(
 			{ x: ds.sourceX, y: ds.sourceY },
 			{ x: ds.targetX, y: ds.targetY },
-			clockwise
+			ds.clockwise
 		);
 	});
 </script>
@@ -68,17 +69,15 @@
 <g class="swoops">
 	<!-- Render saved arrows (hide if this specific arrow is being dragged) -->
 	{#each annotations as anno}
-		{#if anno.arrows}
-			{#each anno.arrows as arrow}
-				{@const arrowKey = `${anno.id}_${arrow.side}`}
-				{@const isBeingDragged = draggingArrowKey === arrowKey}
-				{#if !isBeingDragged}
-					{@const pathD = getStaticPath(anno, arrow)}
-					<!-- Visible arrow -->
-					<path class="arrow-visible" marker-end="url(#{markerId})" d={pathD}></path>
-				{/if}
-			{/each}
-		{/if}
+		{#each anno.arrows as arrow}
+			{@const arrowKey = `${anno.id}_${arrow.side}`}
+			{@const isBeingDragged = draggingArrowKey === arrowKey}
+			{#if !isBeingDragged}
+				{@const pathD = getStaticPath(anno, arrow)}
+				<!-- Visible arrow -->
+				<path class="arrow-visible" marker-end="url(#{markerId})" d={pathD}></path>
+			{/if}
+		{/each}
 	{/each}
 
 	<!-- Arrow being dragged (new or existing) - rendered with live coordinates -->
