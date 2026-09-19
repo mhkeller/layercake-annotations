@@ -1,4 +1,5 @@
 <script>
+	/** @typedef {import('../types.js').Annotation} Annotation */
 	/** @typedef {import('../types.js').ModifyAnnotationFn} ModifyAnnotationFn */
 
 	import { getContext } from 'svelte';
@@ -171,6 +172,7 @@
 	function onclick(e) {
 		// Cmd+click: cycle text alignment
 		if (e.metaKey && !e.altKey) {
+			/** @type {Annotation['align']} */
 			let newAlignment;
 			if (alignment === 'left') {
 				newAlignment = 'center';
