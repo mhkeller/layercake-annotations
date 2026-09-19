@@ -9,6 +9,7 @@
 	import Area from './_components/Area.svelte';
 	import AxisX from './_components/AxisX.svelte';
 	import AxisY from './_components/AxisY.svelte';
+	import EditFrame from './_components/EditFrame.svelte';
 
 	// Column chart components
 	import Column from './ordinal/_components/Column.svelte';
@@ -33,7 +34,8 @@
 		d[colYKey] = +d[colYKey];
 	});
 
-	let editable = $state(true);
+	let lineEditable = $state(true);
+	let columnEditable = $state(true);
 
 	let lineAnnotations = $state([
 		{
@@ -94,13 +96,7 @@
 				Changes are logged to the browser console. You can paste that config object into your own
 				chart.
 			</p>
-			<div class="controls">
-				<label class="toggle">
-					<input type="checkbox" bind:checked={editable} />
-					Edit annotations
-				</label>
-				<a class="docs" href="https://github.com/mhkeller/layercake-annotations">Docs</a>
-			</div>
+			<a class="docs" href="https://github.com/mhkeller/layercake-annotations">Docs</a>
 		</div>
 	</header>
 
@@ -110,10 +106,10 @@
 		</h2>
 		<div class="chart-container line">
 			<LayerCake
-				padding={{ top: 28, right: 10, bottom: 20, left: 25 }}
+				padding={{ top: 4, right: 4, bottom: 24, left: 30 }}
 				x={lineXKey}
 				y={lineYKey}
-				yDomain={[0, null]}
+				yDomain={[0, 11]}
 				data={lineData}
 			>
 				<Svg>
@@ -122,13 +118,14 @@
 							<circle cx="4.5" cy="4.5" r="1.6" fill="#e2401c" />
 						</pattern>
 					</defs>
-					<AxisX />
-					<AxisY ticks={4} />
+					<AxisX dy={16} />
+					<AxisY ticks={4} dx={-6} />
 					<Line stroke="#141414" />
 					<Area fill="url(#dot-screen)" />
 				</Svg>
 
-				<Annotations bind:annotations={lineAnnotations} {editable} />
+				<Annotations bind:annotations={lineAnnotations} editable={lineEditable} />
+				<EditFrame bind:editable={lineEditable} />
 			</LayerCake>
 		</div>
 	</section>
@@ -137,20 +134,21 @@
 		<h2><span class="swatch square"></span>Column chart <span class="kind">ordinal scale</span></h2>
 		<div class="chart-container ordinal">
 			<LayerCake
-				padding={{ top: 0, right: 15, bottom: 20, left: 20 }}
+				padding={{ top: 4, right: 4, bottom: 24, left: 30 }}
 				x={colXKey}
 				y={colYKey}
 				xScale={scaleBand().paddingInner(0.02).round(true)}
 				xDomain={['1979', '1980', '1981', '1982', '1983']}
-				yDomain={[0, null]}
+				yDomain={[0, 22]}
 				data={columnData}
 			>
 				<Svg>
-					<OrdinalAxisX gridlines={false} />
-					<OrdinalAxisY snapBaselineLabel />
+					<OrdinalAxisX gridlines={false} dy={16} />
+					<OrdinalAxisY snapBaselineLabel dx={-6} />
 					<Column fill="#1f4e9c" />
 				</Svg>
-				<Annotations bind:annotations={columnAnnotations} {editable} />
+				<Annotations bind:annotations={columnAnnotations} editable={columnEditable} />
+				<EditFrame bind:editable={columnEditable} />
 			</LayerCake>
 		</div>
 	</section>
@@ -200,37 +198,6 @@
 		color: var(--muted);
 		max-width: 38em;
 	}
-	.controls {
-		display: flex;
-		align-items: center;
-		gap: 28px;
-	}
-
-	.toggle {
-		display: inline-flex;
-		align-items: center;
-		gap: 10px;
-		font-size: 15px;
-		line-height: 22px;
-		font-weight: 500;
-		cursor: pointer;
-		user-select: none;
-	}
-	.toggle input {
-		appearance: none;
-		margin: 0;
-		width: 20px;
-		height: 20px;
-		border: 2px solid var(--ink);
-		background: transparent;
-		cursor: pointer;
-	}
-	.toggle input:checked {
-		background: var(--yellow)
-			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3L13 4.5' fill='none' stroke='%23141414' stroke-width='2.5'/%3E%3C/svg%3E")
-			center / 14px no-repeat;
-	}
-	.toggle input:focus-visible,
 	.docs:focus-visible {
 		outline: 2px solid var(--blue);
 		outline-offset: 3px;
