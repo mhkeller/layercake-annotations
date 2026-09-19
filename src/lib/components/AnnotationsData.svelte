@@ -5,27 +5,34 @@
 <script>
 	/** @typedef {import('../types.js').Annotation} Annotation */
 
-	import { getContext } from 'svelte';
+	import { getLayerCakeContext } from 'layercake';
+	import { annotationWidth, getAnchorPoint } from '$lib/modules/coordinates.js';
 
-	const { xGet, yGet, percentRange } = getContext('LayerCake');
+	const k = getLayerCakeContext();
 
 	/** @type {{ annotations?: Annotation[], getText?: (d: Annotation) => string }} */
 	let { annotations = $bindable([]), getText = (d) => d.text } = $props();
-
-	let units = $derived($percentRange === true ? '%' : 'px');
 </script>
 
 <div class="layercake-annotations">
 	{#each annotations as d, i}
+		{@const anchor = getAnchorPoint(d, k)}
 		<!-- Wrapper mirrors Draggable structure -->
 		<div
 			class="static-wrapper"
 			data-id={i}
-			style:left={`calc(${$xGet(d.data)}${units} + ${d.dx || 0}%)`}
-			style:top={`calc(${$yGet(d.data)}${units} + ${d.dy || 0}%)`}
-			style:width={d.width}
+			style:left={`${anchor.x}px`}
+			style:top={`${anchor.y}px`}
+			style:width={`${annotationWidth(d)}px`}
+			style:translate={d.anchorX || d.anchorY
+				? `-${d.anchorX || 0}% -${d.anchorY || 0}%`
+				: undefined}
 		>
-			<div class="layercake-annotation {d.class || ''}" style={d.style} style:text-align={d.align || 'left'}>
+			<div
+				class="layercake-annotation {d.class || ''}"
+				style={d.style}
+				style:text-align={d.align || 'left'}
+			>
 				<pre>{getText(d)}</pre>
 			</div>
 		</div>

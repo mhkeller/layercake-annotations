@@ -3,9 +3,9 @@
   Generates an SVG line shape.
  -->
 <script>
-	import { getContext } from 'svelte';
+	import { getLayerCakeContext } from 'layercake';
 
-	const { data, xGet, yGet } = getContext('LayerCake');
+	const k = getLayerCakeContext();
 
 	/**
 	 * @typedef {Object} Props
@@ -17,9 +17,9 @@
 
 	let path = $derived(
 		'M' +
-			$data
+			k.data
 				.map((d) => {
-					return $xGet(d) + ',' + $yGet(d);
+					return k.xGet(d) + ',' + k.yGet(d);
 				})
 				.join('L')
 	);

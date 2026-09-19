@@ -29,4 +29,3 @@ export function createArrowPath(source, target, clockwise, angle = Math.PI / 2) 
 	// SVG arc command: M x,y a rx,ry rotation large-arc-flag,sweep-flag dx,dy
 	return `M ${source.x},${source.y} a ${radius},${radius} 0 0,${clockwise ? '1' : '0'} ${dx},${dy}`;
 }
-

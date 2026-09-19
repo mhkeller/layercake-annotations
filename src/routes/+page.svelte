@@ -12,8 +12,8 @@
 
 	// Column chart components
 	import Column from './ordinal/_components/Column.svelte';
-	import OrdinalAxisX from './ordinal/_components/AxisX.svelte';
-	import OrdinalAxisY from './ordinal/_components/AxisY.svelte';
+	import OrdinalAxisX from './_components/AxisX.svelte';
+	import OrdinalAxisY from './_components/AxisY.svelte';
 
 	// Data
 	import lineData from './_data/points.csv';
@@ -74,6 +74,24 @@
 	]);
 </script>
 
+<svelte:head>
+	<title>Layer Cake Annotations</title>
+</svelte:head>
+
+<header>
+	<h1>Layer Cake Annotations</h1>
+	<p>
+		Click a chart to add an annotation. Drag it to move it and double-click to edit its text. Hover
+		it to show its handles: drag a circle outward to draw an arrow, or drag the diamond to move its
+		anchor point. Changes are logged to the browser console as config you can paste into your own
+		chart.
+	</p>
+	<p>
+		<a href="https://github.com/mhkeller/layercake-annotations#readme">Docs and every control</a> ·
+		<a href="https://www.npmjs.com/package/@mhkeller/layercake-annotations">npm</a>
+	</p>
+</header>
+
 <label>
 	<input type="checkbox" bind:checked={editable} />
 	Edit annotations
@@ -120,9 +138,28 @@
 </div>
 
 <style>
+	header {
+		margin: 14px 14px 4px;
+		max-width: 48em;
+	}
+	/* Line heights in whole pixels keep the charts below on whole pixels too. */
+	h1 {
+		margin: 0 0 6px;
+		font-size: 20px;
+		line-height: 24px;
+	}
+	header p {
+		margin: 0 0 6px;
+		font-size: 14px;
+		line-height: 20px;
+		color: #444;
+	}
 	.chart-container {
 		width: 100%;
 		height: 220px;
+		/* The layout is a column the height of the window. Without this, a window
+		   shorter than the page squeezes the charts rather than scrolling. */
+		flex: none;
 	}
 	.chart-container.ordinal {
 		height: 280px;

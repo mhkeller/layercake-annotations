@@ -1,14 +1,24 @@
 /**
- * Shared coordinate calculation utilities for annotations and arrows.
+ * Where annotations and arrows sit, in pixels.
  *
- * Coordinate System:
- * - Annotations are positioned in DATA SPACE (using xScale/yScale)
- * - dx/dy offsets are PERCENTAGES of chart width/height
- * - Arrow source dx/dy are PIXEL offsets from annotation edge
- * - Arrow target is in DATA SPACE with optional percentage offsets
+ * The one rule everything here follows:
  *
- * For east arrows, source dx is relative to RIGHT edge of annotation.
- * For west arrows, source dx is relative to LEFT edge of annotation.
+ *   An annotation has exactly one point whose position is knowable from its
+ *   config: the anchor point. Width is stored, so the left and right edges are
+ *   knowable too. Height is not stored — it comes out of how the text wraps —
+ *   so no other vertical position can be worked out without measuring the DOM.
+ *
+ * So arrows are hung off what is knowable. `source.dx` is pixels from the near
+ * edge, and `source.dy` is pixels down from the anchor point. Nothing in here
+ * needs a measured height, which is what lets published charts draw arrows
+ * correctly without measuring anything.
+ *
+ * To put an arrow at the middle or the bottom of the box, move the anchor there
+ * with `anchorY` and leave `source.dy` at 0. The browser resolves `anchorY`
+ * against the real box, so that keeps working when the text re-wraps.
+ *
+ * dx/dy on the annotation itself are percentages of the chart. dx/dy on an
+ * arrow source are pixels. An arrow target is in data space.
  */
 
 /** Default annotation width in pixels when not explicitly set */
@@ -18,122 +28,136 @@ export const DEFAULT_ANNOTATION_WIDTH = 155;
 export const HANDLE_OFFSET_PX = 12;
 
 /**
- * Calculate annotation box position in pixels.
- *
- * @param {Object} anno - Annotation object with x/y data values and dx/dy percentage offsets
- * @param {Object} scales - Object containing LayerCake scales and accessors
- * @param {Function} scales.xScale - X scale function
- * @param {Function} scales.yScale - Y scale function
- * @param {Function} scales.x - X accessor function
- * @param {Function} scales.y - Y accessor function
- * @param {number} scales.width - Chart width in pixels
- * @param {number} scales.height - Chart height in pixels
- * @returns {{ left: number, top: number, width: number }}
+ * How wide the annotation is, in pixels. One predicate and one default, shared by
+ * the geometry and by the elements that draw the box, so the two cannot disagree
+ * about how wide it is.
+ * @param {Object} anno - The annotation.
+ * @returns {number}
  */
-export function getAnnotationBox(anno, scales) {
-	const { xScale, yScale, x, y, width, height } = scales;
-
-	// Convert percentage offsets to pixels
-	const offsetX = ((anno.dx ?? 0) / 100) * width;
-	const offsetY = ((anno.dy ?? 0) / 100) * height;
-
-	// Calculate top-left position (data values are nested in anno.data)
-	const left = xScale(x(anno.data)) + offsetX;
-	const top = yScale(y(anno.data)) + offsetY;
-
-	// Get width (stored as "150px" string or use default)
-	const annoWidth = anno.width ? parseInt(anno.width) : DEFAULT_ANNOTATION_WIDTH;
-
-	return { left, top, width: annoWidth };
+export function annotationWidth(anno) {
+	const parsed = typeof anno?.width === 'number' ? anno.width : parseInt(anno?.width);
+	return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_ANNOTATION_WIDTH;
 }
 
 /**
- * Calculate arrow source position in pixels.
- *
- * @param {Object} anno - Annotation object
- * @param {Object} arrow - Arrow object with side and source offset
- * @param {Object} scales - LayerCake scales
- * @param {number} [annoHeight] - Annotation height for vertical centering (optional)
- * @returns {{ x: number, y: number }}
+ * An arrow's source offsets with the defaults filled in: `dx` is pixels from the
+ * near edge, `dy` is pixels down from the anchor point. The read path and the two
+ * write paths all come through here, so an unset source means the same everywhere.
+ * @param {Object} arrow - The arrow, with a side and an optional source.
+ * @returns {{ dx: number, dy: number }}
  */
-export function getArrowSource(anno, arrow, scales, annoHeight = 0) {
-	const box = getAnnotationBox(anno, scales);
-
-	// Default offsets when no arrow source is specified
-	const defaultDx = arrow.side === 'west' ? -HANDLE_OFFSET_PX : HANDLE_OFFSET_PX;
-	const defaultDy = annoHeight / 2;
-
-	const dx = arrow.source?.dx ?? defaultDx;
-	const dy = arrow.source?.dy ?? defaultDy;
-
-	let x;
-	if (arrow.side === 'east') {
-		// East arrow: offset from right edge
-		x = box.left + box.width + dx;
-	} else {
-		// West arrow: offset from left edge
-		x = box.left + dx;
-	}
-
-	const y = box.top + dy;
-
-	return { x, y };
-}
-
-/**
- * Calculate arrow target position in pixels.
- *
- * @param {Object} arrow - Arrow object with target data values
- * @param {Object} scales - LayerCake scales
- * @returns {{ x: number, y: number }}
- */
-export function getArrowTarget(arrow, scales) {
-	const { xScale, yScale, x, y, width, height } = scales;
-
-	// Target is in data space (data values are nested in arrow.target.data)
-	const baseX = xScale(x(arrow.target.data));
-	const baseY = yScale(y(arrow.target.data));
-
-	// Add percentage offsets (used for ordinal scales)
-	const offsetX = ((arrow.target?.dx ?? 0) / 100) * width;
-	const offsetY = ((arrow.target?.dy ?? 0) / 100) * height;
-
+export function resolveArrowSource(arrow) {
 	return {
-		x: baseX + offsetX,
-		y: baseY + offsetY
+		dx: arrow.source?.dx ?? (arrow.side === 'west' ? -HANDLE_OFFSET_PX : HANDLE_OFFSET_PX),
+		dy: arrow.source?.dy ?? 0
 	};
 }
 
 /**
- * Calculate the source dx value to store when saving an arrow.
- * Converts pixel position back to offset from annotation edge.
+ * A scale's output in pixels.
  *
- * @param {number} pixelX - Current X position in pixels
- * @param {Object} anno - Annotation object
- * @param {string} side - 'east' or 'west'
- * @param {Object} scales - LayerCake scales
- * @returns {number} - The dx offset to store
+ * With `percentRange` the scales emit 0-100 instead of pixels, but everything
+ * drawn from them is measured in pixels: the SVG layer arrows live in carries no
+ * viewBox, and the box's `left` is a pixel offset. So the conversion belongs here,
+ * once. This is the mirror of what `invertScale` does on the way back in.
+ *
+ * @param {number} value - What the scale returned.
+ * @param {number} size - The chart's width or height, whichever matches the scale.
+ * @param {boolean} percentRange - Whether the chart's ranges are percentages.
+ * @returns {number}
  */
-export function calculateSourceDx(pixelX, anno, side, scales) {
-	const box = getAnnotationBox(anno, scales);
-
-	if (side === 'east') {
-		// dx is offset from right edge
-		return pixelX - (box.left + box.width);
-	}
-	// dx is offset from left edge
-	return pixelX - box.left;
+function toPixels(value, size, percentRange) {
+	return percentRange === true ? (value / 100) * size : value;
 }
 
 /**
- * Calculate the source dy value to store when saving an arrow.
- *
- * @param {number} pixelY - Current Y position in pixels
- * @param {Object} anno - Annotation object
- * @param {Object} scales - LayerCake scales
- * @returns {number} - The dy offset to store
+ * The annotation's anchor point — the spot that pins to the data point, and the
+ * only vertical position knowable without measuring.
+ * @param {Object} anno - The annotation.
+ * @param {Object} k - The Layer Cake context.
+ * @returns {{ x: number, y: number }}
  */
-export function calculateSourceDy(pixelY, anno, scales) {
-	const box = getAnnotationBox(anno, scales);
-	return pixelY - box.top;
+export function getAnchorPoint(anno, k) {
+	const { xScale, yScale, x, y, width, height, percentRange } = k;
+	return {
+		x: toPixels(xScale(x(anno.data)), width, percentRange) + ((anno.dx ?? 0) / 100) * width,
+		y: toPixels(yScale(y(anno.data)), height, percentRange) + ((anno.dy ?? 0) / 100) * height
+	};
+}
+
+/**
+ * The annotation's left and right edges. Deliberately no top or bottom: those
+ * would need the height, and the height needs the DOM.
+ * @param {Object} anno - The annotation.
+ * @param {Object} k - The Layer Cake context.
+ * @param {{ x: number, y: number }} [anchor] - The anchor point, if the caller already has it.
+ * @returns {{ left: number, right: number, width: number }}
+ */
+export function getBoxEdges(anno, k, anchor = getAnchorPoint(anno, k)) {
+	const annoWidth = annotationWidth(anno);
+
+	// The box hangs off the anchor point, shifted by the CSS translate.
+	const left = anchor.x - ((anno.anchorX ?? 0) / 100) * annoWidth;
+
+	return { left, right: left + annoWidth, width: annoWidth };
+}
+
+/**
+ * Where an arrow leaves its annotation.
+ * @param {Object} anno - The annotation.
+ * @param {Object} arrow - The arrow, with a side and an optional source offset.
+ * @param {Object} k - The Layer Cake context.
+ * @returns {{ x: number, y: number }}
+ */
+export function getArrowSource(anno, arrow, k) {
+	const anchor = getAnchorPoint(anno, k);
+	const { left, right } = getBoxEdges(anno, k, anchor);
+	const { dx, dy } = resolveArrowSource(arrow);
+
+	return {
+		x: (arrow.side === 'east' ? right : left) + dx,
+		y: anchor.y + dy
+	};
+}
+
+/**
+ * Where an arrow points to.
+ * @param {Object} arrow - The arrow, whose target is a data value plus optional percentage nudges.
+ * @param {Object} k - The Layer Cake context.
+ * @returns {{ x: number, y: number }}
+ */
+export function getArrowTarget(arrow, k) {
+	const { xScale, yScale, x, y, width, height, percentRange } = k;
+	return {
+		x:
+			toPixels(xScale(x(arrow.target.data)), width, percentRange) +
+			((arrow.target?.dx ?? 0) / 100) * width,
+		y:
+			toPixels(yScale(y(arrow.target.data)), height, percentRange) +
+			((arrow.target?.dy ?? 0) / 100) * height
+	};
+}
+
+/**
+ * The `source.dx` to store for an arrow dragged to this position.
+ * @param {number} pixelX - Where the handle ended up.
+ * @param {Object} anno - The annotation.
+ * @param {string} side - 'east' or 'west'.
+ * @param {Object} k - The Layer Cake context.
+ * @returns {number}
+ */
+export function calculateSourceDx(pixelX, anno, side, k) {
+	const { left, right } = getBoxEdges(anno, k);
+	return pixelX - (side === 'east' ? right : left);
+}
+
+/**
+ * The `source.dy` to store for an arrow dragged to this position.
+ * @param {number} pixelY - Where the handle ended up.
+ * @param {Object} anno - The annotation.
+ * @param {Object} k - The Layer Cake context.
+ * @returns {number}
+ */
+export function calculateSourceDy(pixelY, anno, k) {
+	return pixelY - getAnchorPoint(anno, k).y;
 }

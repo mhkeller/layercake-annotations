@@ -9,26 +9,27 @@
 	 * @typedef {import('./types.js').Ref<T>} Ref
 	 */
 
-	import { getContext, setContext } from 'svelte';
-	import { Svg, Html } from 'layercake';
-	import { debounce } from 'underscore';
+	import { getContext, setContext, onDestroy } from 'svelte';
+	import { Svg, Html, getLayerCakeContext } from 'layercake';
 
 	import AnnotationEditor from '$lib/components/AnnotationEditor.svelte';
 	import ArrowheadMarker from '$lib/components/ArrowheadMarker.svelte';
 	import Arrows from '$lib/components/Arrows.svelte';
 
+	import debounce from './modules/debounce.js';
+	import debounceLeading from './modules/debounceLeading.js';
 	import createRef from './modules/createRef.svelte.js';
 	import newAnnotation from './modules/newAnnotation.js';
 
 	const markerId = $props.id();
 
-	/** @type {{ annotations?: Annotation[], containerClass?: string }} */
-	let { annotations: annos = $bindable([]), containerClass } = $props();
+	/** @type {{ annotations?: Annotation[] }} */
+	let { annotations: annos = $bindable([]) } = $props();
 
 	/**
 	 * LayerCake context
 	 */
-	const { xScale, yScale, config } = getContext('LayerCake');
+	const k = getLayerCakeContext();
 
 	/** @type {SaveAnnotationConfigFn | undefined} */
 	const saveAnnotationConfig = getContext('saveAnnotationConfig');
@@ -66,19 +67,25 @@
 	setContext('previewArrow', previewArrow);
 
 	/**
-	 * Add a new annotation to the chart
+	 * Add a new annotation at a position in the chart area, in pixels
 	 */
-	function onclick(e) {
+	function addAnnotation(x, y) {
 		if (isEditing.value === true) return;
 
-		const annotation = newAnnotation(e, ++idCounter, {
-			xScale: $xScale,
-			yScale: $yScale,
-			config: $config
-		});
+		const annotation = newAnnotation(x, y, ++idCounter, k);
 		annos.push(annotation);
 		saveConfig_debounced(annos);
 	}
+
+	// One click makes one annotation. A double click on empty chart space sends two
+	// click events a few dozen milliseconds apart, so ignore the second.
+	const addAnnotation_debounced = debounceLeading(addAnnotation, 250);
+
+	// Annotations.svelte swaps this component out when `editable` goes false, so
+	// let a save that's already waiting land instead of losing it.
+	onDestroy(() => {
+		saveConfig_debounced.flush();
+	});
 
 	/**
 	 * Delete an annotation from the chart
@@ -188,9 +195,10 @@
 </Svg>
 
 <Html>
+	<!-- A click lands where the pointer is, Enter puts the note in the middle of the chart. -->
 	<div
-		onclick={debounce(onclick, 250, true)}
-		onkeydown={(e) => e.key === 'Enter' && onclick(e)}
+		onclick={(e) => addAnnotation_debounced(e.offsetX, e.offsetY)}
+		onkeydown={(e) => e.key === 'Enter' && addAnnotation_debounced(k.width / 2, k.height / 2)}
 		role="button"
 		tabindex="0"
 		aria-label="Click to add annotation"
@@ -199,7 +207,7 @@
 
 	<div class="layercake-annotations">
 		{#each annos as d (d.id)}
-			<AnnotationEditor {d} {containerClass} />
+			<AnnotationEditor {d} />
 		{/each}
 	</div>
 </Html>

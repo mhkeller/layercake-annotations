@@ -1,8 +1,15 @@
 import { defineConfig } from '@playwright/test';
 
+// The dev server port from .claude/launch.json, off Vite's shared default. Set
+// PORT to move the dev server and the tests together.
+const port = Number(process.env.PORT) || 5273;
+const baseURL = `http://localhost:${port}`;
+
 export default defineConfig({
 	testDir: './tests',
 	testMatch: '**/*.test.js',
+	// tests/unit runs under node, not a browser
+	testIgnore: '**/unit/**',
 
 	// Run tests in parallel
 	fullyParallel: true,
@@ -18,13 +25,13 @@ export default defineConfig({
 
 	use: {
 		// Base URL for navigation
-		baseURL: 'http://localhost:5173',
+		baseURL,
 
 		// Collect trace when retrying the failed test
 		trace: 'on-first-retry',
 
 		// Screenshot on failure
-		screenshot: 'only-on-failure',
+		screenshot: 'only-on-failure'
 	},
 
 	// Configure projects for major browsers
@@ -33,17 +40,20 @@ export default defineConfig({
 			name: 'chromium',
 			use: {
 				browserName: 'chromium',
-				viewport: { width: 1280, height: 720 },
-			},
-		},
+				// Tall enough to show the whole demo page without scrolling. Several
+				// tests hover an annotation and then screenshot it, and a scroll in
+				// between moves the annotation out from under the pointer.
+				viewport: { width: 1280, height: 900 }
+			}
+		}
 	],
 
 	// Run your local dev server before starting the tests
 	webServer: {
-		command: 'npm run dev',
-		url: 'http://localhost:5173',
+		command: `npm run dev -- --port ${port}`,
+		url: baseURL,
 		reuseExistingServer: !process.env.CI,
-		timeout: 120 * 1000,
+		timeout: 120 * 1000
 	},
 
 	// Snapshot options - omit platform from path so macOS and Linux use same snapshots
@@ -52,8 +62,7 @@ export default defineConfig({
 	expect: {
 		toHaveScreenshot: {
 			maxDiffPixels: 100,
-			stylePath: './tests/screenshot.css',
-		},
-	},
+			stylePath: './tests/screenshot.css'
+		}
+	}
 });
-

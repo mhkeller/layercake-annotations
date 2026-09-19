@@ -11,6 +11,7 @@
 
 	let { text = $bindable(), isEditable = $bindable(false), alignment, onSave } = $props();
 
+	/** @type {HTMLElement|null} The editing box, while there is one. */
 	let textarea = $state(null);
 
 	function selectAllTextInContentEditable(element) {
@@ -24,8 +25,6 @@
 	function endEdit() {
 		isEditable = false;
 		text = text.trim();
-		window.removeEventListener('keydown', handleKeydown);
-		document.removeEventListener('click', handleClickOutside);
 
 		// Save the text change
 		onSave?.(text);
@@ -36,13 +35,19 @@
 		}, 200);
 	}
 
-	function handleClickOutside(event) {
-		if (isEditable && textarea && !textarea.contains(event.target)) {
-			textarea.blur();
-		}
+	/**
+	 * Take focus and select what's there, the moment the editing box appears.
+	 * @type {import('svelte/attachments').Attachment<HTMLElement>}
+	 */
+	function takeFocus(node) {
+		node.focus();
+		selectAllTextInContentEditable(node);
 	}
 
-	function handleKeydown(e) {
+	/** @param {KeyboardEvent} e */
+	function onkeydown(e) {
+		if (!isEditable || !textarea) return;
+
 		if (e.key === 'Escape' || e.key === 'Tab') {
 			textarea.blur();
 		}
@@ -53,20 +58,20 @@
 		}
 	}
 
-	$effect(() => {
-		if (textarea && isEditable) {
-			textarea.focus();
-			selectAllTextInContentEditable(textarea);
-			window.addEventListener('keydown', handleKeydown);
-		}
-	});
+	/**
+	 * A click anywhere but inside the box ends the edit.
+	 * @param {MouseEvent} e
+	 */
+	function onclickoutside(e) {
+		if (!isEditable || !textarea) return;
+		if (!textarea.contains(/** @type {Node} */ (e.target))) textarea.blur();
+	}
 
 	function handleDoubleClick(e) {
-		// Don't enter edit mode if Cmd is held (used for alignment cycling)
-		if (e.metaKey) return;
+		// Don't enter edit mode if Cmd is held (alignment cycling) or Option is held (anchor cycling)
+		if (e?.metaKey || e?.altKey) return;
 		isEditable = true;
 		isEditing.value = true;
-		document.addEventListener('click', handleClickOutside);
 	}
 	function onclick(e) {
 		if (isEditable) {
@@ -86,6 +91,7 @@
 		aria-multiline="true"
 		tabindex="0"
 		bind:this={textarea}
+		{@attach takeFocus}
 		onblur={endEdit}
 		{onclick}
 		ondblclick={handleDoubleClick}
@@ -106,6 +112,9 @@
 		<pre>{text}</pre>
 	</div>
 {/if}
+
+<svelte:window {onkeydown} />
+<svelte:document onclick={onclickoutside} />
 
 <style>
 	.textarea[contenteditable] {

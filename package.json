@@ -1,6 +1,13 @@
 {
 	"name": "@mhkeller/layercake-annotations",
-	"version": "0.4.0",
+	"version": "1.0.0",
+	"description": "Interactive text annotations with swoopy arrows for Layer Cake charts",
+	"homepage": "https://mhkeller.github.io/layercake-annotations/",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/mhkeller/layercake-annotations.git"
+	},
+	"license": "MIT",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && pnpm package",
@@ -11,48 +18,51 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
 		"lint": "prettier --check .",
 		"format": "prettier --write .",
-		"test": "playwright test",
+		"test": "pnpm test:unit && pnpm test:e2e",
+		"test:unit": "node --test tests/unit/*.test.js",
+		"test:e2e": "playwright test",
 		"test:ui": "playwright test --ui",
 		"test:update": "playwright test --update-snapshots"
 	},
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"svelte": "./dist/index.js"
+			"svelte": "./dist/index.js",
+			"default": "./dist/index.js"
 		},
 		"./types": {
 			"types": "./dist/types.d.ts"
 		}
 	},
+	"sideEffects": false,
 	"files": [
 		"dist",
 		"!dist/**/*.test.*",
 		"!dist/**/*.spec.*"
 	],
 	"peerDependencies": {
-		"svelte": "^5.0.0"
+		"layercake": "^11.0.0",
+		"svelte": ">=5.40"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.57.0",
 		"@rollup/plugin-dsv": "^3.0.4",
-		"@sveltejs/adapter-auto": "^3.0.0",
-		"@sveltejs/kit": "^2.0.0",
-		"@sveltejs/package": "^2.0.0",
-		"@sveltejs/vite-plugin-svelte": "^4.0.0-next.6",
+		"@sveltejs/adapter-static": "^3.0.10",
+		"@sveltejs/kit": "^2.70.3",
+		"@sveltejs/package": "^2.5.8",
+		"@sveltejs/vite-plugin-svelte": "^7.3.0",
+		"@types/node": "^22.20.2",
 		"d3-scale": "^4.0.2",
+		"layercake": "^11.0.0",
 		"prettier": "^3.1.1",
 		"prettier-plugin-svelte": "^3.1.2",
-		"publint": "^0.2.0",
-		"svelte": "^5.46.1",
+		"publint": "^0.3.24",
+		"svelte": "^5.57.0",
 		"svelte-check": "^4.0.0",
 		"typescript": "^5.0.0",
-		"vite": "^5.0.11"
+		"vite": "^8.3.0"
 	},
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",
-	"type": "module",
-	"dependencies": {
-		"layercake": "^10.0.2",
-		"underscore": "^1.13.7"
-	}
+	"type": "module"
 }

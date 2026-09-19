@@ -23,3 +23,6 @@ vite.config.ts.timestamp-*
 playwright-report
 test-results
 docs/SVELTE.md
+
+# Claude Code
+/.claude

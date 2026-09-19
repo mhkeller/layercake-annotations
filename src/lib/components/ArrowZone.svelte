@@ -17,19 +17,22 @@
 	 */
 
 	import { getContext } from 'svelte';
+	import { getLayerCakeContext } from 'layercake';
 	import invertScale from '$lib/modules/invertScale.js';
 	import {
-		getAnnotationBox,
+		getAnchorPoint,
 		getArrowSource,
 		getArrowTarget,
+		getBoxEdges,
 		calculateSourceDx,
 		calculateSourceDy,
+		resolveArrowSource,
 		HANDLE_OFFSET_PX
 	} from '$lib/modules/coordinates.js';
 
-	const { xScale, yScale, x, y, config, width, height } = getContext('LayerCake');
+	const k = getLayerCakeContext();
 
-	let { d, side, noteDimensions } = $props();
+	let { d, side, boxHeight = 0 } = $props();
 
 	/** @type {Ref<HoverState | null>} */
 	const hovering = getContext('hovering');
@@ -37,8 +40,6 @@
 	const setArrow = getContext('setArrow');
 	/** @type {ModifyArrowFn} */
 	const modifyArrow = getContext('modifyArrow');
-	/** @type {ModifyAnnotationFn} */
-	const modifyAnnotation = getContext('modifyAnnotation');
 	/** @type {Ref<boolean>} */
 	const moving = getContext('moving');
 	/** @type {Ref<DragState | null>} */
@@ -61,52 +62,34 @@
 		arrow?.clockwise !== undefined ? arrow.clockwise : side === 'west' ? false : true
 	);
 
-	/** Build scales object for coordinate utilities */
-	function getScales() {
+	/**
+	 * Where a new arrow would leave from: the middle of the box's near edge. Not
+	 * the anchor point, which would slide the handle around every time the anchor
+	 * moved and read as the anchor dragging the arrows with it.
+	 */
+	function newArrowSource() {
+		const anchor = getAnchorPoint(d, k);
+		const { left, right } = getBoxEdges(d, k, anchor);
 		return {
-			xScale: $xScale,
-			yScale: $yScale,
-			x: $x,
-			y: $y,
-			width: $width,
-			height: $height
+			x: side === 'east' ? right + HANDLE_OFFSET_PX : left - HANDLE_OFFSET_PX,
+			y: anchor.y + boxHeight * (0.5 - (d.anchorY ?? 0) / 100)
 		};
 	}
 
-	/** Annotation box position and dimensions */
-	let annoBox = $derived(getAnnotationBox(d, getScales()));
-
-	/** Default source offsets */
-	let defaultSourceDx = $derived(side === 'west' ? -HANDLE_OFFSET_PX : HANDLE_OFFSET_PX);
-	let defaultSourceDy = $derived(noteDimensions[1] / 2);
-
-	/** Current source position in pixels */
-	let sourcePos = $derived.by(() => {
-		if (arrow) {
-			return getArrowSource(d, arrow, getScales(), noteDimensions[1]);
-		}
-		// Default position when no arrow exists
-		const dx = defaultSourceDx;
-		const dy = defaultSourceDy;
-		if (side === 'east') {
-			return { x: annoBox.left + annoBox.width + dx, y: annoBox.top + dy };
-		}
-		return { x: annoBox.left + dx, y: annoBox.top + dy };
-	});
+	/**
+	 * Current source position in pixels. An existing arrow goes through the same
+	 * function the renderer uses, so the handle and the drawn arrow can't drift
+	 * apart.
+	 */
+	let sourcePos = $derived(arrow ? getArrowSource(d, arrow, k) : newArrowSource());
 
 	let sourceX = $derived(sourcePos.x);
 	let sourceY = $derived(sourcePos.y);
 
-	/** Current target position in pixels (when arrow exists) */
-	let targetX = $derived.by(() => {
-		if (!arrow) return sourceX + (side === 'west' ? -50 : 50);
-		return getArrowTarget(arrow, getScales()).x;
-	});
-
-	let targetY = $derived.by(() => {
-		if (!arrow) return sourceY;
-		return getArrowTarget(arrow, getScales()).y;
-	});
+	/** Current target position in pixels, or where a new arrow would point */
+	let targetPos = $derived(arrow ? getArrowTarget(arrow, k) : null);
+	let targetX = $derived(targetPos ? targetPos.x : sourceX + (side === 'west' ? -50 : 50));
+	let targetY = $derived(targetPos ? targetPos.y : sourceY);
 
 	/**
 	 * Zone positions for display
@@ -164,44 +147,71 @@
 		modifyArrow(d.id, side, { clockwise: newClockwise });
 	}
 
+	/**
+	 * Capture routes every later move and the release to the handle that started
+	 * the drag, however far the pointer travels, and the browser hands it back when
+	 * the drag ends.
+	 * @param {PointerEvent & { currentTarget: Element }} e
+	 */
+	function capture(e) {
+		e.currentTarget.setPointerCapture(e.pointerId);
+	}
+
 	/** Start dragging source handle */
-	function onSourceMousedown() {
+	function onSourcePointerdown(e) {
+		capture(e);
 		moving.value = true;
 		draggingSource = true;
 		dragX = sourceX;
 		dragY = sourceY;
+		rememberGrab(e, sourceX, sourceY);
 		updateDragState();
 	}
 
 	/** Start dragging target handle (or create mode) */
-	function onTargetMousedown() {
+	function onTargetPointerdown(e) {
+		capture(e);
 		moving.value = true;
 		draggingTarget = true;
 		dragX = arrow ? targetX : sourceX;
 		dragY = arrow ? targetY : sourceY;
+		rememberGrab(e, dragX, dragY);
 		updateDragState();
 	}
 
-	/** Track mouse during drag */
-	function onmousemove(e) {
+	// Where the pointer sat relative to the handle when the drag started, so the
+	// handle doesn't jump under the cursor on the first move.
+	let grabX = 0;
+	let grabY = 0;
+
+	/** Track the pointer during a drag */
+	function onpointermove(e) {
 		if (!draggingSource && !draggingTarget) return;
 
-		dragX += e.movementX;
-		dragY += e.movementY;
+		// Absolute, rather than summing movementX: that drifts under page zoom and
+		// loses a frame's motion whenever the pointer leaves the window.
+		const [px, py] = k.pointer(e);
+		dragX = px - grabX;
+		dragY = py - grabY;
 		updateDragState();
+	}
+
+	/** @param {MouseEvent} e */
+	function rememberGrab(e, x, y) {
+		const [px, py] = k.pointer(e);
+		grabX = px - x;
+		grabY = py - y;
 	}
 
 	/** On release, save the arrow */
-	function onmouseup() {
+	function onpointerup() {
 		// Only process if we were actually dragging
 		if (!draggingSource && !draggingTarget) return;
 
-		const scales = getScales();
-
 		if (draggingSource && dragX !== null && dragY !== null) {
 			// Update source position using shared coordinate utils
-			const newSourceDx = calculateSourceDx(dragX, d, side, scales);
-			const newSourceDy = calculateSourceDy(dragY, d, scales);
+			const newSourceDx = calculateSourceDx(dragX, d, side, k);
+			const newSourceDy = calculateSourceDy(dragY, d, k);
 
 			if (arrow) {
 				modifyArrow(d.id, side, {
@@ -209,8 +219,18 @@
 				});
 			} else {
 				// Creating new arrow - need target too
-				const [targetDataX, targetOffsetX] = invertScale($xScale, targetX);
-				const [targetDataY, targetOffsetY] = invertScale($yScale, targetY);
+				const [targetDataX, targetOffsetX] = invertScale(
+					k.xScale,
+					targetX,
+					k.width,
+					k.percentRange
+				);
+				const [targetDataY, targetOffsetY] = invertScale(
+					k.yScale,
+					targetY,
+					k.height,
+					k.percentRange
+				);
 
 				setArrow(d.id, {
 					side,
@@ -218,8 +238,8 @@
 					source: { dx: newSourceDx, dy: newSourceDy },
 					target: {
 						data: {
-							[$config.x]: targetDataX,
-							[$config.y]: targetDataY
+							[k.config.x]: targetDataX,
+							[k.config.y]: targetDataY
 						},
 						dx: targetOffsetX,
 						dy: targetOffsetY
@@ -230,23 +250,24 @@
 
 		if (draggingTarget && dragX !== null && dragY !== null) {
 			// Update target position (convert to data space)
-			const [targetDataX, targetOffsetX] = invertScale($xScale, dragX);
-			const [targetDataY, targetOffsetY] = invertScale($yScale, dragY);
-
-			// Keep existing source or use defaults
-			const existingSourceDx = arrow?.source?.dx ?? defaultSourceDx;
+			const [targetDataX, targetOffsetX] = invertScale(k.xScale, dragX, k.width, k.percentRange);
+			const [targetDataY, targetOffsetY] = invertScale(k.yScale, dragY, k.height, k.percentRange);
 
 			setArrow(d.id, {
 				side,
 				clockwise,
-				source: {
-					dx: existingSourceDx,
-					dy: arrow?.source?.dy ?? defaultSourceDy
-				},
+				// A new arrow starts where its handle was sitting, which is not the
+				// anchor, so store the offsets rather than leaning on the defaults.
+				source: arrow
+					? resolveArrowSource(arrow)
+					: {
+							dx: calculateSourceDx(sourceX, d, side, k),
+							dy: calculateSourceDy(sourceY, d, k)
+						},
 				target: {
 					data: {
-						[$config.x]: targetDataX,
-						[$config.y]: targetDataY
+						[k.config.x]: targetDataX,
+						[k.config.y]: targetDataY
 					},
 					dx: targetOffsetX,
 					dy: targetOffsetY
@@ -281,7 +302,9 @@
 {#if arrow}
 	<!-- Source handle (when arrow exists) -->
 	<div
-		onmousedown={onSourceMousedown}
+		onpointerdown={onSourcePointerdown}
+		{onpointermove}
+		{onpointerup}
 		{onclick}
 		onkeydown={(e) => e.key === 'Enter' && onclick(e)}
 		onfocus={() => onmouseover('source')}
@@ -300,7 +323,9 @@
 
 	<!-- Target handle (when arrow exists) -->
 	<div
-		onmousedown={onTargetMousedown}
+		onpointerdown={onTargetPointerdown}
+		{onpointermove}
+		{onpointerup}
 		{onclick}
 		onkeydown={(e) => e.key === 'Enter' && onclick(e)}
 		onfocus={() => onmouseover('target')}
@@ -319,7 +344,9 @@
 {:else}
 	<!-- Create handle (no arrow yet) - drag to create -->
 	<div
-		onmousedown={onTargetMousedown}
+		onpointerdown={onTargetPointerdown}
+		{onpointermove}
+		{onpointerup}
 		onfocus={() => onmouseover('create')}
 		onblur={onmouseout}
 		onmouseover={() => onmouseover('create')}
@@ -334,8 +361,6 @@
 		style:top="{(draggingTarget ? dragY : sourceY) - diameterPx / 2}px"
 	></div>
 {/if}
-
-<svelte:window {onmouseup} {onmousemove} />
 
 <style>
 	.arrow-zone {
