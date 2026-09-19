@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
  * Test scenarios:
  * 1. One text annotation (with arrow already configured in data)
  * 2. An edited text annotation
- * 3. A resized text annotation (text wraps to multiple lines)
+ * 3. A resized text annotation (widened until its text fits on one line)
  *
  * Each scenario tested across:
  * - Linear chart (continuous scales) × Edit mode
@@ -107,38 +107,51 @@ for (const chartType of chartTypes) {
 }
 
 // =============================================================================
-// SCENARIO 3: Resized annotation (text wraps to multiple lines)
+// SCENARIO 3: Resized annotation
 // =============================================================================
+
+// Wide enough for "Annotation text" to fit on one line. At the demo's 100px it
+// already wraps onto two and can't wrap further, so narrowing would only push
+// the text out of the box.
+const RESIZED_WIDTH = 160;
 
 for (const chartType of chartTypes) {
 	for (const mode of modes) {
 		test(`resized annotation - ${chartType.name} - ${mode}`, async ({ page }) => {
-			// Start in edit mode to resize
+			// The resize happens in edit mode either way. The mode being tested is the
+			// one the screenshot is taken in.
 			await setEditMode(page, true);
 
 			const chart = getChart(page, chartType.name);
 			const draggable = chart.locator('.draggable').first();
 
-			// Hover to show resize handles
+			// Hover to show the resize handles
 			await draggable.hover({ force: true });
-			await page.waitForTimeout(200);
 
-			// Find the east (right) resize handle
 			const grabber = chart.locator('.grabber.east').first();
 			const grabberBox = await grabber.boundingBox();
+			const width = await draggable.evaluate((el) => el.getBoundingClientRect().width);
+			const x = grabberBox.x + grabberBox.width / 2;
+			const y = grabberBox.y + grabberBox.height / 2;
 
-			// Drag the grabber left to make the annotation narrower (force text to wrap)
-			await page.mouse.move(
-				grabberBox.x + grabberBox.width / 2,
-				grabberBox.y + grabberBox.height / 2
-			);
+			// Drag the east edge out by exactly the difference. A move that asks for
+			// less than the 50px minimum is ignored outright, so the distance has to
+			// come from the box rather than being a fixed guess.
+			await page.mouse.move(x, y);
 			await page.mouse.down();
-			await page.mouse.move(grabberBox.x - 70, grabberBox.y);
+			await page.mouse.move(x + RESIZED_WIDTH - width, y);
 			await page.mouse.up();
-			await page.waitForTimeout(200);
 
-			// Switch to target mode if needed
+			// A drag that doesn't land has to fail here, not pass by matching an
+			// unresized screenshot.
+			await expect(draggable).toHaveCSS('width', `${RESIZED_WIDTH}px`);
+
 			await setEditMode(page, mode === 'edit');
+
+			// Static mode draws its own box, from the width the resize stored.
+			await expect(
+				chart.locator(mode === 'edit' ? '.draggable' : '.static-wrapper').first()
+			).toHaveCSS('width', `${RESIZED_WIDTH}px`);
 
 			await expect(chart).toHaveScreenshot(`3-resized-${chartType.name}-${mode}.png`);
 		});
