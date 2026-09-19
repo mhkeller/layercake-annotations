@@ -37,7 +37,7 @@ Requires Layer Cake 11 and Svelte 5.40 or newer. `layercake` is a peer dependenc
 - Double-click to edit
 - Enter to save
 - Shift+Enter for line breaks
-- Escape to cancel
+- Escape, Tab or a click elsewhere also save
 
 **Formatting:**
 
@@ -54,7 +54,7 @@ Requires Layer Cake 11 and Svelte 5.40 or newer. `layercake` is a peer dependenc
 
 - Hover over annotation to reveal handles on west/east edges
 - Drag a handle outward to create an arrow
-- Cmd+click arrow to cycle through: curved clockwise → straight → curved counter-clockwise
+- Cmd+click an arrow's handle to cycle it: curved → straight → curved the other way
 
 ## Props
 
