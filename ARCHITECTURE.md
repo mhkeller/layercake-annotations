@@ -13,10 +13,10 @@ Annotations.svelte          # Entry point - switches based on `editable` prop
 ├── Editor.svelte           # Edit mode: state management, context providers
 │   ├── Arrows.svelte       # SVG arrow rendering
 │   └── AnnotationEditor.svelte (×N)
-│       ├── AnchorHandle.svelte   # drag the anchor point
 │       ├── Draggable.svelte
 │       │   ├── EditableText.svelte
-│       │   └── ResizeHandles.svelte
+│       │   ├── ResizeHandles.svelte
+│       │   └── AnchorHandle.svelte   # drag the anchor point
 │       └── ArrowZone.svelte (×2: west, east)
 │
 └── Static.svelte           # Read-only mode
@@ -34,7 +34,7 @@ That is why `source.dx` is pixels from the near edge while `source.dy` is pixels
 
 To put an arrow at the middle or bottom of the box, move the anchor there with `anchorY` and leave `source.dy` at 0. The browser resolves `anchorY` against the real box, so that survives the text re-wrapping.
 
-Grep for `getBoundingClientRect` to check the rule still holds. Every hit should be in `Draggable`, `ResizeHandles`, `AnchorHandle` or `AnnotationEditor`'s `setAnchor` — all of which run while the user is dragging something. A hit in `Arrows.svelte` or `AnnotationsData.svelte` means the rule has been broken, and published charts will be wrong in a way the screenshot tests won't show.
+Grep for `getBoundingClientRect` to check the rule still holds. Every hit should be in `Draggable`, `ResizeHandles`, `AnchorHandle` or `AnnotationEditor`'s `snapshot` — all of which run while the user is dragging something. A hit in `Arrows.svelte` or `AnnotationsData.svelte` means the rule has been broken, and published charts will be wrong in a way the screenshot tests won't show.
 
 One measurement runs outside a gesture: `Draggable` reports the box's height through `bind:offsetHeight`, so the handle that starts a new arrow can sit at the middle of the box's edge rather than at the anchor. The arrow that handle creates stores its own `source.dy`, so nothing measured here reaches a saved arrow. The dimension bindings count as measurement too, so grep for `bind:offset` and `bind:client` as well — a hit outside `Draggable` means the rule has slipped.
 
@@ -91,6 +91,10 @@ hovering.value = { annotationId: 0, type: 'arrow' };
 | `setArrow`         | `function`           | Create or update an arrow                |
 | `modifyArrow`      | `function`           | Modify specific arrow properties         |
 
+### Reading the Layer Cake context
+
+`getLayerCakeContext()` returns an object whose fields are getters. Don't destructure it at the top of a component: that reads each getter once, so the chart draws its first frame and then ignores every resize. Read `k.xScale` where it's used, or inside `$derived`.
+
 ## Design Decisions
 
 ### Why `previewArrow` instead of directly modifying arrows?
@@ -133,6 +137,29 @@ Annotations often need to be positioned _near_ a data point but not exactly on i
 1. **Bundle size**: Static mode doesn't need drag handlers, context, etc.
 2. **Simplicity**: Static rendering is just a loop with positioning
 3. **Security**: No edit functionality exposed in read-only mode
+
+### One anchor point, shared
+
+The anchor point does two jobs: it pins the annotation to its data point, and arrows hang off it. There is one per annotation. So an annotation pinned by its top-left corner, with an arrow leaving from the middle of its right edge, can't be drawn without measuring the box. That is the one layout this design gives up.
+
+Don't work around it with a percentage such as `source: { dy: '50%' }`. Half the box's height needs the height, which the measurement rule keeps out of drawing. It would either break the rule, or be worked out once and stop following the text as it re-wraps.
+
+### Designs considered and rejected
+
+| Design                                                  | Why not                                                                                                                                                         |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Measuring `dx` from the anchor as well as `dy`          | Gains nothing. Width is in the config, so the edges are already known                                                                                           |
+| A registry of measured boxes                            | The only design that stays right through every re-wrap, but it needs measuring machinery for good, and moving `<Arrows>` out of `Editor` loses the drag preview |
+| Arrows drawn inside each annotation                     | A zero-size wrapper becomes the box's containing block, and `percentRange` stops working                                                                        |
+| Pure CSS anchoring                                      | `d: shape()` isn't in any browser yet, WebKit doesn't support `d: path()`, and browsers disagree about `anchor()` once the anchored element has a transform     |
+| Storing a measured height                               | A cached layout result. It depends on width, text, font and browser, and goes stale with nothing to say so                                                      |
+| A height the author sets, with a vertical resize handle | Not stale, since it's an input like `width`. But text is edited in place, so a fixed height would clip it while typing                                          |
+
+### Deliberately not done
+
+- **More than two arrows per annotation.** An arrow is looked up by its `side`, so an annotation has at most one west arrow and one east arrow. Changing that changes the data model, and is worth doing the day a third arrow is wanted.
+- **Rules for styling `.layercake-annotation`.** Arrows attach to the edges of the box around it, so margin, padding or a transform on it can move the text away from where the arrows meet it. Nothing documents or prevents that yet. It needs a real stylesheet to design against.
+- **A clickable arrow line.** The layer that turns clicks into new annotations covers the whole chart. Giving arrows their own click area would leave a strip along every arrow where clicking no longer makes an annotation, so arrows are edited through their handles.
 
 ## Key Modules
 
@@ -181,13 +208,13 @@ createArrowPath(source, target, clockwise, angle)
 ```
 Click on chart
     ↓
-Editor.onclick() creates annotation object
+addAnnotation() builds it with newAnnotation()
     ↓
 Push to annotations array (reactive)
     ↓
 AnnotationEditor renders at click position
     ↓
-saveAnnotationConfig_debounced() persists
+saveConfig_debounced() saves it a second later
 ```
 
 ### Creating an arrow
@@ -195,7 +222,7 @@ saveAnnotationConfig_debounced() persists
 ```
 Hover annotation → ArrowZone handles appear
     ↓
-Drag handle → onTargetMousedown()
+Drag handle → onTargetPointerdown() captures the pointer
     ↓
 pointermove updates previewArrow (pixels)
     ↓
@@ -223,7 +250,7 @@ Arrow re-renders with new curve
 Three layers, because screenshots alone can't catch a misplaced arrow:
 
 - `tests/unit/` - the pure geometry, run under node
-- `tests/geometry.test.js` - arrow coordinates at a non-zero anchor, asserted numerically
+- `tests/geometry.test.js` - where arrows and handles sit at non-zero anchors, and when handles show
 - `tests/annotations.test.js` - screenshots, linear and ordinal charts
 
 The screenshots alone can't catch arrow misplacement: every scenario they cover sits at `anchorY` 0, where the anchor term drops out and wrong maths still looks right. That is what `tests/geometry.test.js` is for.
