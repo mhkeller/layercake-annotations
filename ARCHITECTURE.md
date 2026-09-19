@@ -104,7 +104,7 @@ hovering.value = { annotationId: 0, type: 'arrow' };
 Who writes what:
 
 - `editing` is set by `EditableText` when an edit starts and cleared when it ends. `AnnotationEditor` turns it into one flag, `isEditable = editing.value === d.id`, and passes that down as a plain prop. The layer that adds notes reads it too: a click that ended an edit adds nothing.
-- `hovering` is set by `AnnotationEditor` for the box and by `ArrowZone` for its handles. `Editor` clears it after a delete, and an `AnnotationEditor` that is destroyed while hovered clears it on the way out, so the Delete key never finds a hover pointing at a note that is gone.
+- `hovering` is set by `AnnotationEditor` for the box and by `ArrowZone` for its handles. Something is hovered once it has been pointed at: the mouse moved over it, or focus reached it. A `mousemove` sets it rather than a `mouseenter`, because the browser also reports an enter when the page changes under a mouse that is holding still, like a deleted note uncovering the one beneath it. `Editor` clears it after a delete, and an `AnnotationEditor` that is destroyed while hovered clears it on the way out, so the Delete key never finds a hover pointing at a note that is gone.
 - `moving` is written only by `drag.js`. Hover handlers do nothing while it is true, so the hover holds for the whole drag.
 
 `Editor` also reads one key it doesn't set: `saveAnnotationConfig`, a save function an app can put in context above the chart. See Saving below.
@@ -283,7 +283,7 @@ invertPoint(pixelX, pixelY, k) // { data, dx, dy } for an anchor point or an arr
 
 Every one of these is a pure function of the config and the scales. None takes a measured dimension, which is what keeps published charts correct without a measurement pass. The geometry functions take resolved annotations and arrows (see Defaults are filled in once).
 
-`invertPoint` leaves out an axis passed as null, so the caller's own value for it stands. A resize uses that to move only x. Callers merge what comes back over the data they have, `{ ...d.data, ...point.data }`, and skip the write when it is null.
+`invertPoint` leaves out an axis passed as null, so the caller's own value for it stands. A resize uses that to move only x. `AnnotationEditor` merges what comes back over the note's own data, `{ ...d.data, ...point.data }`. A new note and an arrow target pass both axes and store the result whole. Every caller skips the write when it is null.
 
 ### `invertScale.js`
 
@@ -397,7 +397,7 @@ Arrow re-renders with new curve
 ### Deleting
 
 ```
-Hover a note or an arrow handle → hovering.value says which
+Move the mouse over a note or an arrow handle, or focus it → hovering.value says which
     ↓
 Delete or Backspace reaches Editor's onkeydown() on the window
     ↓
@@ -408,14 +408,14 @@ Hovering the box → deleteAnnotation(id)
 Hovering a source or target handle → deleteArrow(id, side)
 Hovering the create handle → nothing
     ↓
-hovering.value = null
+hovering.value = null, until the mouse moves or focus lands again
 ```
 
 ## Testing
 
 Four layers, because screenshots alone can't catch a misplaced arrow or a key that deletes the wrong thing:
 
-- `tests/unit/` - the pure modules, run under node: geometry and defaults, band scale inversion, note text, the shortcut key
+- `tests/unit/` - the pure modules, run under node: geometry and defaults, band scale inversion, a new note, note text, the shortcut key
 - `tests/geometry.test.js` - where arrows and handles sit at non-zero anchors, and when handles show
 - `tests/interaction.test.js` - sequences of presses, keys and drags, and what is on the chart afterwards
 - `tests/annotations.test.js` - screenshots, linear and ordinal charts

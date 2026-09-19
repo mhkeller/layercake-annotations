@@ -295,7 +295,7 @@ Edits change whichever set is showing. To place the narrow set, narrow the windo
 ## TypeScript
 
 ```ts
-import type { Annotation, Arrow } from '@mhkeller/layercake-annotations';
+import type { Annotation, Arrow, SaveAnnotationConfigFn } from '@mhkeller/layercake-annotations';
 ```
 
 ## Components

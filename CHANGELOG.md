@@ -14,7 +14,7 @@ Fixes:
 
 - Starting to edit a second note straight after the first, then pressing Backspace while typing, deleted the second note. The key now stays in the text.
 - Backspace or Delete typed into an input, textarea, select or editable element anywhere on the page no longer deletes the hovered note.
-- After Backspace removed a hovered arrow, a second press, or holding the key down, deleted the whole note. Only the arrow goes, and a held key deletes nothing more.
+- After Backspace removed a hovered arrow, a second press, or holding the key down, deleted the whole note. Deleting a note that sat on top of another did the same to the one underneath. A note or handle is hovered once the mouse has moved over it or focus has reached it, so what turns up under a mouse that is holding still is left alone, and a held key deletes nothing more.
 - Ending a text edit with a slow click on empty chart space no longer adds a new note as well.
 - Hovering stopped working until a reload after a drag whose release never arrived: a note deleted mid-press, a cancelled pointer, an error while saving an arrow. Every drag ends, whatever ends it.
 - On a band scale, a note or arrow target dragged ahead of the first band stored `null` as its data value, which froze the note and broke its arrows. It now takes the nearest band. A band scale whose range is reversed gives the right band too. The stored offset within a band is a share of the chart's size, which is what drawing reads it as, so a band scale with a custom range keeps its notes where they were dropped.
