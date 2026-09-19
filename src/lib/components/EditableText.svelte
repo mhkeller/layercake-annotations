@@ -101,13 +101,10 @@
 		startEdit();
 	}
 
+	// A click in the edit box belongs to the text, so the note's click shortcuts don't hear it.
+	/** @param {MouseEvent} e */
 	function onclick(e) {
-		if (isEditable) {
-			e.stopPropagation();
-			// If we are inside a contenteditable element, don't propagate the click event
-			e.preventDefault();
-			return false;
-		}
+		e.stopPropagation();
 	}
 </script>
 

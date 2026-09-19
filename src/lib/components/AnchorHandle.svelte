@@ -25,9 +25,9 @@
 		/** Annotation ID */
 		id,
 		/** Current anchor X position (0-100%) */
-		anchorX = 0,
+		anchorX,
 		/** Current anchor Y position (0-100%) */
-		anchorY = 0,
+		anchorY,
 		/** The annotation box, which the anchor is measured against */
 		boxEl,
 		/** Runs when a drag starts, so the parent can note where the annotation sat */
@@ -128,9 +128,8 @@
 		}[event.key];
 		if (!nudge) return;
 
-		// The annotation deletes itself on some keys, so don't let this one bubble.
+		// The arrow keys would otherwise scroll the page.
 		event.preventDefault();
-		event.stopPropagation();
 
 		onDragStart?.();
 		onDrag?.(

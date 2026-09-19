@@ -18,9 +18,9 @@ export interface ArrowSource {
 export interface ArrowTarget {
 	/** User data values (x/y keys match LayerCake config) */
 	data: Record<string, unknown>;
-	/** Percentage offset for ordinal X scales (0-100) */
+	/** Percentage of chart width added to the band's start, for ordinal X scales. Negative ahead of the first band. Default 0. */
 	dx?: number;
-	/** Percentage offset for ordinal Y scales (0-100) */
+	/** Percentage of chart height added to the band's start, for ordinal Y scales. Negative ahead of the first band. Default 0. */
 	dy?: number;
 }
 

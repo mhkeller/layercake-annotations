@@ -112,8 +112,9 @@
 		const skip = endedEdit;
 		endedEdit = false;
 
-		// One click makes one annotation. `detail` counts the clicks in a row, so the
-		// second click of a double click on empty chart space is passed over.
+		// One click makes one annotation. `detail` counts the clicks in a row. When
+		// the first click of a double click ended an edit, the second one still lands
+		// here, and it is passed over.
 		if (skip || e.detail > 1) return;
 
 		addAnnotation(e.offsetX, e.offsetY);
@@ -140,17 +141,13 @@
 	}
 
 	/**
-	 * Modify the annotation's coordinates on drag
+	 * Merge new props into an annotation, by id. Every write to a note comes through here.
 	 */
 	function modifyAnnotation(id, newProps) {
-		annos.forEach((d, i) => {
-			if (d.id === id) {
-				annos[i] = {
-					...d,
-					...newProps
-				};
-			}
-		});
+		const i = annos.findIndex((d) => d.id === id);
+		if (i === -1) return;
+
+		annos[i] = { ...annos[i], ...newProps };
 		save();
 	}
 
@@ -205,18 +202,6 @@
 		);
 	}
 
-	// Whether the key may delete a note. Deleting an arrow takes its handle out from
-	// under the pointer, and a handle that sat over the note leaves the pointer
-	// resting on the note itself. The browser reports that as a hover, though the
-	// note was never pointed at. So the key leaves notes alone until the pointer or
-	// the focus moves.
-	let canDeleteNote = true;
-
-	// The pointer or the focus moved, so what is hovered from here on was pointed at.
-	function onpointed() {
-		canDeleteNote = true;
-	}
-
 	/**
 	 * If we press the delete key while hovering, delete the annotation or arrow
 	 * @param {KeyboardEvent} e
@@ -233,17 +218,16 @@
 		if (!hover || !annos.some((d) => d.id === hover.annotationId)) return;
 
 		if (hover.type === 'body') {
-			if (!canDeleteNote) return;
 			deleteAnnotation(hover.annotationId);
 		} else if (hover.type === 'arrow' && (hover.handle === 'source' || hover.handle === 'target')) {
 			deleteArrow(hover.annotationId, hover.side);
-			canDeleteNote = false;
 		} else {
 			// The handle that starts a new arrow has nothing to delete.
 			return;
 		}
 
-		// What was hovered is gone.
+		// What was hovered is gone. Whatever sits under the pointer in its place
+		// counts as hovered once the pointer moves onto it or focus reaches it.
 		hovering.value = null;
 	}
 
@@ -282,7 +266,7 @@
 	</div>
 </Html>
 
-<svelte:window {onkeydown} onpointermove={onpointed} onfocusin={onpointed} />
+<svelte:window {onkeydown} />
 
 <style>
 	.note-listener {

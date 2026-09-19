@@ -237,8 +237,14 @@
 		});
 	}
 
-	function onmouseover(handle) {
+	// A handle is hovered once it has been pointed at: the mouse moved over it, or
+	// focus reached it. A handle that appears under a mouse holding still, like the
+	// one that takes a deleted arrow's place, has not been.
+	/** @param {'source' | 'target' | 'create'} handle */
+	function onpoint(handle) {
 		if (moving.value) return;
+		const hover = hovering.value;
+		if (hover?.annotationId === d.id && hover.side === side && hover.handle === handle) return;
 		hovering.value = { annotationId: d.id, type: 'arrow', side, handle };
 	}
 
@@ -258,9 +264,9 @@
 		{@attach dragSource}
 		{onclick}
 		onkeydown={(e) => e.key === 'Enter' && onclick(e)}
-		onfocus={() => onmouseover('source')}
+		onfocus={() => onpoint('source')}
 		onblur={onmouseout}
-		onmouseover={() => onmouseover('source')}
+		onmousemove={() => onpoint('source')}
 		{onmouseout}
 		role="button"
 		tabindex="0"
@@ -277,9 +283,9 @@
 		{@attach dragTarget}
 		{onclick}
 		onkeydown={(e) => e.key === 'Enter' && onclick(e)}
-		onfocus={() => onmouseover('target')}
+		onfocus={() => onpoint('target')}
 		onblur={onmouseout}
-		onmouseover={() => onmouseover('target')}
+		onmousemove={() => onpoint('target')}
 		{onmouseout}
 		role="button"
 		tabindex="0"
@@ -294,9 +300,9 @@
 	<!-- Create handle (no arrow yet) - drag to create -->
 	<div
 		{@attach dragTarget}
-		onfocus={() => onmouseover('create')}
+		onfocus={() => onpoint('create')}
 		onblur={onmouseout}
-		onmouseover={() => onmouseover('create')}
+		onmousemove={() => onpoint('create')}
 		{onmouseout}
 		role="button"
 		tabindex="0"

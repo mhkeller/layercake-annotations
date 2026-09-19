@@ -100,12 +100,15 @@
 		modifyAnnotation(d.id, { ...point, data: { ...d.data, ...point.data } });
 	}
 
-	// A press on the box drags the whole note by its anchor point.
+	// A press on the box drags the whole note by its anchor point. `canDrag` is
+	// asked again on every move: an edit can open while the button is still down.
 	const dragBox = drag({
 		moving,
 		pointer: k.pointer,
 		onstart: () => (canDrag ? anchor : null),
-		onmove: ondrag
+		onmove: (pos) => {
+			if (canDrag) ondrag(pos);
+		}
 	});
 
 	/**
@@ -125,13 +128,18 @@
 		return () => observer.disconnect();
 	}
 
-	// enter/leave rather than over/out: the box has children that take the mouse
-	// themselves, like the resize grabbers and the anchor handle, and over/out
-	// count a move onto a child as leaving the box.
-	function onmouseenter() {
+	// A note is hovered once it has been pointed at: the mouse moved over it, or
+	// focus reached it. The browser also reports an enter when the page changes
+	// under a mouse that is holding still, like a deleted note uncovering the one
+	// beneath it, and that one was never pointed at. A move only comes from the mouse.
+	function onpoint() {
 		if (moving.value) return;
+		if (hovering.value?.annotationId === d.id && hovering.value.type === 'body') return;
 		hovering.value = { annotationId: d.id, type: 'body' };
 	}
+	// leave rather than out: the box has children that take the mouse themselves,
+	// like the resize grabbers and the anchor handle, and out counts a move onto a
+	// child as leaving the box.
 	function onmouseleave() {
 		if (moving.value) return;
 		hovering.value = null;
@@ -257,49 +265,47 @@
 	}
 </script>
 
-{#if d}
-	<AnnotationBox
-		{d}
-		bind:el={boxEl}
-		class={['draggable', { canDrag, hovering: hovered }]}
-		{@attach dragBox}
-		{@attach measureHeight}
-		{onclick}
-		{onmouseenter}
-		{onmouseleave}
-		onfocus={onmouseenter}
-		onblur={(e) => {
-			// Tabbing to the resize grabbers or the anchor handle moves focus to a
-			// child, which still counts as leaving this element. Stay hovered so those
-			// controls don't vanish as they're reached.
-			if (!boxEl?.contains(/** @type {Node | null} */ (e.relatedTarget))) onmouseleave();
-		}}
-		role="button"
-		tabindex={0}
-		aria-label="Annotation - drag to move, press Delete to remove"
-	>
-		{#snippet content()}
-			<EditableText
-				id={d.id}
-				text={d.text}
-				{isEditable}
-				onSave={(newText) => modifyAnnotation(d.id, { text: newText })}
-			/>
-		{/snippet}
-
-		<ResizeHandles left={edges.left} width={edges.width} {onresize} />
-		<AnchorHandle
+<AnnotationBox
+	{d}
+	bind:el={boxEl}
+	class={['draggable', { canDrag, hovering: hovered }]}
+	{@attach dragBox}
+	{@attach measureHeight}
+	{onclick}
+	onmousemove={onpoint}
+	{onmouseleave}
+	onfocusin={onpoint}
+	onblur={(e) => {
+		// Tabbing to the resize grabbers or the anchor handle moves focus to a
+		// child, which still counts as leaving this element. Stay hovered so those
+		// controls don't vanish as they're reached.
+		if (!boxEl?.contains(/** @type {Node | null} */ (e.relatedTarget))) onmouseleave();
+	}}
+	role="button"
+	tabindex={0}
+	aria-label="Annotation - drag to move, press Delete to remove"
+>
+	{#snippet content()}
+		<EditableText
 			id={d.id}
-			anchorX={d.anchorX}
-			anchorY={d.anchorY}
-			{boxEl}
-			onDragStart={() => (anchorDragStart = snapshot())}
-			onDrag={(x, y) => setAnchor(x, y, anchorDragStart)}
-			onDragEnd={() => (anchorDragStart = null)}
+			text={d.text}
+			{isEditable}
+			onSave={(newText) => modifyAnnotation(d.id, { text: newText })}
 		/>
-	</AnnotationBox>
+	{/snippet}
 
-	{#each arrowSides as side (side)}
-		<ArrowZone {d} {side} {boxHeight} />
-	{/each}
-{/if}
+	<ResizeHandles left={edges.left} width={edges.width} {onresize} />
+	<AnchorHandle
+		id={d.id}
+		anchorX={d.anchorX}
+		anchorY={d.anchorY}
+		{boxEl}
+		onDragStart={() => (anchorDragStart = snapshot())}
+		onDrag={(x, y) => setAnchor(x, y, anchorDragStart)}
+		onDragEnd={() => (anchorDragStart = null)}
+	/>
+</AnnotationBox>
+
+{#each arrowSides as side (side)}
+	<ArrowZone {d} {side} {boxHeight} />
+{/each}

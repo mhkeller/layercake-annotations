@@ -53,10 +53,9 @@
 	 * Reactive drag path - renders arrow being dragged (new or existing)
 	 */
 	let dragPath = $derived.by(() => {
-		if (!dragStateRef) return '';
-		const ds = dragStateRef.value;
-		if (!ds || ds.annotationId === null || ds.annotationId === undefined) return '';
-		if (ds.sourceX == null || ds.targetX == null) return '';
+		// Static mode sets no preview context, so there is no ref there at all.
+		const ds = dragStateRef?.value;
+		if (!ds) return '';
 
 		return createArrowPath(
 			{ x: ds.sourceX, y: ds.sourceY },
@@ -87,11 +86,6 @@
 </g>
 
 <style>
-	.swoops {
-		position: absolute;
-		max-width: 200px;
-		line-height: 14px;
-	}
 	.arrow-visible {
 		fill: none;
 		stroke: #000;

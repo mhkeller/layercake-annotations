@@ -193,10 +193,32 @@ test('deleting a note in the middle of a press leaves hovering working on the ot
 	await pressAt(page, await centre(a));
 	await page.keyboard.press('Backspace');
 	await expect(a).toHaveCount(0);
-	await page.mouse.up();
 
+	// The button is still down. The press went with the note, so nothing is left to wait for a release.
 	await b.hover({ force: true });
 	await expect(b).toHaveClass(/hovering/);
+	await page.mouse.up();
+});
+
+test('a note whose text opens for editing in the middle of a press stays where it is', async ({
+	page
+}) => {
+	const chart = await editableChart(page, LINE);
+	const box = chart.locator('.draggable').first();
+	const before = await box.boundingBox();
+
+	// The press focuses the text, and Enter opens it with the button still down.
+	const text = await centre(chart.locator('.text-display pre').first());
+	await pressAt(page, text);
+	await page.keyboard.press('Enter');
+	await expect(chart.locator('.textarea')).toHaveCount(1);
+
+	await page.mouse.move(text.x + 20, text.y + 10, { steps: 4 });
+	await page.mouse.up();
+
+	const after = await box.boundingBox();
+	expect(Math.round(after.x - before.x)).toBe(0);
+	expect(Math.round(after.y - before.y)).toBe(0);
 });
 
 test('a right-button press and move leaves the note where it was', async ({ page }) => {
@@ -270,7 +292,7 @@ const sourceHandles = [
 	{ where: 'beside the note', selector: COLUMN, side: 'west', notes: 2, arrows: 2 }
 ];
 
-// Two ways to send the key twice: two presses, and one press held until it repeats.
+// Two ways to send the key twice: two presses, and a second key-down with the first still held.
 const secondPresses = [
 	{ name: 'pressed twice', held: false },
 	{ name: 'held down', held: true }
@@ -297,10 +319,11 @@ for (const { where, selector, side, notes, arrows } of sourceHandles) {
 			if (!held) await page.keyboard.up('Backspace');
 			await expect(paths).toHaveCount(arrows - 1);
 
-			// The pointer hasn't moved, and the browser works out what it rests on with
-			// the handle gone. Whatever that is belongs to this note, which shows as
-			// hovered again. That is the moment a second key press would be dangerous.
-			await expect(box).toHaveClass(/hovering/);
+			// The pointer hasn't moved. The browser still works out what it rests on
+			// with the handle gone and reports an enter, a moment later. Give that
+			// moment time to pass: nothing was pointed at, so nothing is hovered.
+			await page.waitForTimeout(150);
+			await expect(box).not.toHaveClass(/hovering/);
 
 			// With the key still down, a second down is a key repeat.
 			await page.keyboard.down('Backspace');
@@ -327,10 +350,12 @@ test('once the pointer moves, Backspace deletes the note whose arrow it deleted 
 	await page.keyboard.press('Backspace');
 	await expect(chart.locator('path.arrow-visible')).toHaveCount(0);
 
-	// This handle sat over the note, so the pointer rests on the note. A move
-	// within it is the pointer saying so.
-	await expect(box).toHaveClass(/hovering/);
+	// This handle sat over the note, so the pointer rests on the note. The note
+	// is hovered once the pointer says so with a move.
+	await page.waitForTimeout(150);
+	await expect(box).not.toHaveClass(/hovering/);
 	await page.mouse.move(grip.x - 2, grip.y);
+	await expect(box).toHaveClass(/hovering/);
 
 	await page.keyboard.press('Backspace');
 	await expect(chart.locator('.draggable')).toHaveCount(0);
@@ -350,6 +375,56 @@ test('from the keyboard, Delete takes a focused arrow and then the focused note'
 	await box.focus();
 	await page.keyboard.press('Delete');
 	await expect(chart.locator('.draggable')).toHaveCount(0);
+});
+
+test('deleting a note that sits on another leaves the one underneath alone', async ({ page }) => {
+	const chart = await editableChart(page, COLUMN);
+	const notes = chart.locator('.draggable');
+	const under = note(chart, 0);
+
+	// Put note 1 on top of note 0 and leave the pointer where it is.
+	const from = await centre(note(chart, 1));
+	const to = await centre(under);
+	await pressAt(page, from);
+	await page.mouse.move(to.x, to.y, { steps: 5 });
+	await page.mouse.up();
+	await expect(note(chart, 1)).toHaveClass(/hovering/);
+
+	await page.keyboard.press('Backspace');
+	await expect(notes).toHaveCount(1);
+
+	// The note underneath is uncovered, and it was never pointed at.
+	await page.waitForTimeout(150);
+	await expect(under).not.toHaveClass(/hovering/);
+	await page.keyboard.press('Backspace');
+	await expect(notes).toHaveCount(1);
+
+	// A move onto it is what makes it the hovered one.
+	await page.mouse.move(to.x - 2, to.y);
+	await expect(under).toHaveClass(/hovering/);
+	await page.keyboard.press('Backspace');
+	await expect(notes).toHaveCount(0);
+});
+
+test('a held Backspace deletes one thing, however far the pointer travels', async ({ page }) => {
+	const chart = await editableChart(page, COLUMN);
+	const notes = chart.locator('.draggable');
+	const b = note(chart, 1);
+
+	await note(chart, 0).hover({ force: true });
+	await page.keyboard.down('Backspace');
+	await expect(notes).toHaveCount(1);
+
+	// The key is still down, so this second down is a repeat, with the pointer on the other note.
+	await b.hover({ force: true });
+	await expect(b).toHaveClass(/hovering/);
+	await page.keyboard.down('Backspace');
+	await expect(notes).toHaveCount(1);
+	await page.keyboard.up('Backspace');
+
+	// A fresh press does delete it.
+	await page.keyboard.press('Backspace');
+	await expect(notes).toHaveCount(0);
 });
 
 test('a note dragged well past the left edge of a band chart still draws and drags back', async ({
@@ -466,6 +541,35 @@ test('a double click on empty chart space adds exactly one note', async ({ page 
 
 	await expect(notes).toHaveCount(2);
 	await expect(chart.locator('.layercake-annotation').last()).toHaveText('New note...');
+});
+
+test('a double click on empty chart space that ends an edit adds no note', async ({ page }) => {
+	const chart = await editableChart(page, LINE);
+	const notes = chart.locator('.draggable');
+
+	await chart.locator('.text-display').first().dblclick();
+	await expect(chart.locator('.textarea')).toHaveCount(1);
+
+	// The first click ends the edit. The second still reaches the layer that adds notes.
+	const spot = await emptySpot(page, chart);
+	await page.mouse.dblclick(spot.x, spot.y);
+
+	await expect(chart.locator('.textarea')).toHaveCount(0);
+	await expect(notes).toHaveCount(1);
+});
+
+test('Enter held down on the focused chart adds one note', async ({ page }) => {
+	const chart = await editableChart(page, LINE);
+	const notes = chart.locator('.draggable');
+	await expect(notes).toHaveCount(1);
+
+	await chart.locator('.note-listener').focus();
+	await page.keyboard.down('Enter');
+	await page.keyboard.down('Enter');
+	await page.keyboard.down('Enter');
+	await page.keyboard.up('Enter');
+
+	await expect(notes).toHaveCount(2);
 });
 
 test('resizing with the arrow keys holds the left edge still, at a non-zero anchor', async ({
@@ -588,6 +692,41 @@ test('a pointercancel in the middle of a drag ends it', async ({ page }) => {
 	await page.evaluate(() => {
 		const pointerId = Number(document.body.dataset.pointerId);
 		window.dispatchEvent(new PointerEvent('pointercancel', { pointerId, bubbles: true }));
+	});
+
+	// The button is still down, and the note has stopped following.
+	await page.mouse.move(start.x + 60, start.y);
+	expect(Math.round((await a.boundingBox()).x - before.x)).toBe(20);
+	await page.mouse.up();
+
+	await b.hover({ force: true });
+	await expect(b).toHaveClass(/hovering/);
+});
+
+test('a context menu in the middle of a mouse drag ends it', async ({ page }) => {
+	const chart = await editableChart(page, COLUMN);
+	const a = note(chart, 0);
+	const b = note(chart, 1);
+	const before = await a.boundingBox();
+	const start = await centre(a);
+
+	// The press says which pointer it is, so the menu can name the same one.
+	await page.evaluate(() => {
+		window.addEventListener(
+			'pointerdown',
+			(e) => (document.body.dataset.pointerId = String(e.pointerId)),
+			{ capture: true, once: true }
+		);
+	});
+
+	await pressAt(page, start);
+	await page.mouse.move(start.x + 20, start.y);
+	await expect.poll(async () => Math.round((await a.boundingBox()).x - before.x)).toBe(20);
+
+	// A menu swallows the release that would have ended the drag, as Ctrl+press does on macOS.
+	await page.evaluate(() => {
+		const pointerId = Number(document.body.dataset.pointerId);
+		window.dispatchEvent(new PointerEvent('contextmenu', { pointerId, bubbles: true }));
 	});
 
 	// The button is still down, and the note has stopped following.
