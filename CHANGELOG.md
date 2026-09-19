@@ -1,5 +1,43 @@
 # Changelog
 
+# 1.0.1
+
+> 2026-09-19
+
+**New**: an `onsave` prop on `<Annotations>` and `<AnnotationsEditor>`. It is called a second after the last edit with a plain copy of the annotations. Without it the config is logged to the console for copy-paste. A `saveAnnotationConfig` function set in context still works, and `onsave` wins when both are there.
+
+**New**: Ctrl works wherever Cmd does, for Windows and Linux. Ctrl+click an annotation to cycle its alignment, and Ctrl+click an arrow's handle to cycle its curve. Alt+click is the same key as Option+click and steps the anchor through its presets.
+
+**New**: more of the config can be left out. `dx`, `dy` and `arrows` on an annotation, and `clockwise`, `source` and each offset in `source` on an arrow, are optional in the types, and a note written without them can be edited. It used to store `NaN` or throw. Editing may write the defaults out in full, which draws the same.
+
+Fixes:
+
+- Starting to edit a second note straight after the first, then pressing Backspace while typing, deleted the second note. The key now stays in the text.
+- Backspace or Delete typed into an input, textarea, select or editable element anywhere on the page no longer deletes the hovered note.
+- After Backspace removed a hovered arrow, a second press, or holding the key down, deleted the whole note. Only the arrow goes, and a held key deletes nothing more.
+- Ending a text edit with a slow click on empty chart space no longer adds a new note as well.
+- Hovering stopped working until a reload after a drag whose release never arrived: a note deleted mid-press, a cancelled pointer, an error while saving an arrow. Every drag ends, whatever ends it.
+- On a band scale, a note or arrow target dragged ahead of the first band stored `null` as its data value, which froze the note and broke its arrows. It now takes the nearest band. A band scale whose range is reversed gives the right band too. The stored offset within a band is a share of the chart's size, which is what drawing reads it as, so a band scale with a custom range keeps its notes where they were dropped.
+- A plain click on the handle that starts an arrow no longer saves an arrow of no length.
+- Only the primary mouse button drags. A right-click leaves the note where it is.
+- A press has to travel 3 pixels before it counts as a drag, so a click doesn't nudge a note.
+- New notes no longer reuse an id after the parent replaces the `annotations` array. A new id is the next one up from the ids in the array.
+- An arrow with no `clockwise` draws clockwise, and its handles in the editor agree. They used to treat one on the west side as counter-clockwise.
+- Resizing with the arrow keys holds the left edge still when the anchor isn't on it, the way a drag does.
+- Enter that picks a candidate in an IME no longer ends the edit.
+- Typing in a note no longer logs Svelte's `ownership_invalid_mutation` warning.
+- A chart whose `x` or `y` accessor is a function or an array of keys logs one clear error in edit mode, rather than adding notes with `NaN` positions. Edit mode needs key accessors, like `x="date"`.
+
+Also in this release:
+
+- A note left empty gets the default text, `New note...`. To get an arrow with no label, type a space: a note holding only whitespace is kept as typed.
+- An edit that leaves the text as it was saves nothing.
+- The save hook is handed a plain snapshot rather than the live state, read when the save fires. The console log only runs when there is no save hook.
+- On a touch screen, dragging a note or one of its handles in edit mode moves it rather than scrolling the page. Published charts still scroll under a finger.
+- In static mode, `data-id` holds the annotation's `id` and sits on the `.layercake-annotation` element, as it does in edit mode. It used to hold the index, on `.static-wrapper`.
+- Both modes draw the annotation box with one component, so the box carries an `annotation-box` class next to `static-wrapper` or `draggable`.
+- Removed three types nothing used: `AnnotationBox`, `LayerCakeScales` and `Point`. Added `ResolvedAnnotation` and `ResolvedArrow`, an annotation and an arrow with every default filled in.
+
 # 1.0.0
 
 > 2026-09-19
