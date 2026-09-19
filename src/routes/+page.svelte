@@ -78,100 +78,246 @@
 	<title>Layer Cake Annotations</title>
 </svelte:head>
 
-<header>
-	<h1>Layer Cake Annotations</h1>
-	<p>
-		Click a chart to add an annotation. Drag it to move it and double-click to edit its text. Hover
-		it to show its handles: drag a circle outward to draw an arrow, or drag the diamond to move its
-		anchor point. Changes are logged to the browser console as config you can paste into your own
-		chart.
-	</p>
-	<p>
-		<a href="https://github.com/mhkeller/layercake-annotations#readme">Docs and every control</a> ·
-		<a href="https://www.npmjs.com/package/@mhkeller/layercake-annotations">npm</a>
-	</p>
-</header>
+<div class="page">
+	<header>
+		<div class="masthead">
+			<img class="logo" src="favicon.png" alt="" width="64" height="64" />
+			<h1>Layer Cake <br />annotations</h1>
+		</div>
+		<div class="intro">
+			<p>
+				Click a chart to add an annotation. Drag it to move it and double-click to edit its text.
+				Hover it to show its handles: drag a circle outward to draw an arrow, or drag the diamond to
+				move its anchor point. Command-click an arrow's control point to change its swoopiness.
+			</p>
+			<p>
+				Changes are logged to the browser console. You can paste that config object into your own
+				chart.
+			</p>
+			<div class="controls">
+				<label class="toggle">
+					<input type="checkbox" bind:checked={editable} />
+					Edit annotations
+				</label>
+				<a class="docs" href="https://github.com/mhkeller/layercake-annotations">Docs</a>
+			</div>
+		</div>
+	</header>
 
-<label>
-	<input type="checkbox" bind:checked={editable} />
-	Edit annotations
-</label>
+	<section>
+		<h2>
+			<span class="swatch circle"></span>Line chart <span class="kind">continuous scales</span>
+		</h2>
+		<div class="chart-container line">
+			<LayerCake
+				padding={{ top: 28, right: 10, bottom: 20, left: 25 }}
+				x={lineXKey}
+				y={lineYKey}
+				yDomain={[0, null]}
+				data={lineData}
+			>
+				<Svg>
+					<defs>
+						<pattern id="dot-screen" width="9" height="9" patternUnits="userSpaceOnUse">
+							<circle cx="4.5" cy="4.5" r="1.6" fill="#e2401c" />
+						</pattern>
+					</defs>
+					<AxisX />
+					<AxisY ticks={4} />
+					<Line stroke="#141414" />
+					<Area fill="url(#dot-screen)" />
+				</Svg>
 
-<h3>Line Chart (continuous scales)</h3>
-<div class="chart-container line">
-	<LayerCake
-		padding={{ top: 28, right: 10, bottom: 20, left: 25 }}
-		x={lineXKey}
-		y={lineYKey}
-		yDomain={[0, null]}
-		data={lineData}
-	>
-		<Svg>
-			<AxisX />
-			<AxisY ticks={4} />
-			<Line />
-			<Area />
-		</Svg>
+				<Annotations bind:annotations={lineAnnotations} {editable} />
+			</LayerCake>
+		</div>
+	</section>
 
-		<Annotations bind:annotations={lineAnnotations} {editable} />
-	</LayerCake>
-</div>
-
-<h3>Column Chart (ordinal scale)</h3>
-<div class="chart-container ordinal">
-	<LayerCake
-		padding={{ top: 0, right: 15, bottom: 20, left: 20 }}
-		x={colXKey}
-		y={colYKey}
-		xScale={scaleBand().paddingInner(0.02).round(true)}
-		xDomain={['1979', '1980', '1981', '1982', '1983']}
-		yDomain={[0, null]}
-		data={columnData}
-	>
-		<Svg>
-			<OrdinalAxisX gridlines={false} />
-			<OrdinalAxisY snapBaselineLabel />
-			<Column />
-		</Svg>
-		<Annotations bind:annotations={columnAnnotations} {editable} />
-	</LayerCake>
+	<section>
+		<h2><span class="swatch square"></span>Column chart <span class="kind">ordinal scale</span></h2>
+		<div class="chart-container ordinal">
+			<LayerCake
+				padding={{ top: 0, right: 15, bottom: 20, left: 20 }}
+				x={colXKey}
+				y={colYKey}
+				xScale={scaleBand().paddingInner(0.02).round(true)}
+				xDomain={['1979', '1980', '1981', '1982', '1983']}
+				yDomain={[0, null]}
+				data={columnData}
+			>
+				<Svg>
+					<OrdinalAxisX gridlines={false} />
+					<OrdinalAxisY snapBaselineLabel />
+					<Column fill="#1f4e9c" />
+				</Svg>
+				<Annotations bind:annotations={columnAnnotations} {editable} />
+			</LayerCake>
+		</div>
+	</section>
 </div>
 
 <style>
-	header {
-		margin: 14px 14px 4px;
-		max-width: 48em;
-	}
-	/* Line heights in whole pixels keep the charts below on whole pixels too. */
-	h1 {
-		margin: 0 0 6px;
-		font-size: 20px;
-		line-height: 24px;
-	}
-	header p {
-		margin: 0 0 6px;
-		font-size: 14px;
-		line-height: 20px;
-		color: #444;
-	}
-	.chart-container {
-		width: 100%;
-		height: 220px;
+	.page {
+		padding: 28px 32px 24px;
 		/* The layout is a column the height of the window. Without this, a window
 		   shorter than the page squeezes the charts rather than scrolling. */
 		flex: none;
+		/* On a narrow screen a wide annotation can run past the chart. Cut it off at
+		   the edge rather than letting the page scroll sideways. */
+		overflow-x: clip;
+	}
+
+	/* Line heights in whole pixels keep the charts below on whole pixels too. */
+	header {
+		display: grid;
+		grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+		gap: 20px 48px;
+		align-items: end;
+		padding-bottom: 20px;
+		border-bottom: 6px solid var(--ink);
+	}
+	.masthead {
+		display: flex;
+		align-items: flex-end;
+		gap: 16px;
+	}
+	.logo {
+		display: block;
+		flex: none;
+	}
+	/* The Layer Cake site's wordmark font. SignPainter ships with macOS. */
+	h1 {
+		margin: 0;
+		font-family: 'SignPainter', 'SignPainter-HouseScript', Helvetica, sans-serif;
+		font-weight: 400;
+		font-size: 54px;
+		line-height: 44px;
+	}
+	.intro p {
+		margin: 0 0 14px;
+		font-size: 15px;
+		line-height: 22px;
+		color: var(--muted);
+		max-width: 38em;
+	}
+	.controls {
+		display: flex;
+		align-items: center;
+		gap: 28px;
+	}
+
+	.toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		font-size: 15px;
+		line-height: 22px;
+		font-weight: 500;
+		cursor: pointer;
+		user-select: none;
+	}
+	.toggle input {
+		appearance: none;
+		margin: 0;
+		width: 20px;
+		height: 20px;
+		border: 2px solid var(--ink);
+		background: transparent;
+		cursor: pointer;
+	}
+	.toggle input:checked {
+		background: var(--yellow)
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3L13 4.5' fill='none' stroke='%23141414' stroke-width='2.5'/%3E%3C/svg%3E")
+			center / 14px no-repeat;
+	}
+	.toggle input:focus-visible,
+	.docs:focus-visible {
+		outline: 2px solid var(--blue);
+		outline-offset: 3px;
+	}
+
+	.docs {
+		font-size: 15px;
+		line-height: 22px;
+		font-weight: 500;
+		color: var(--ink);
+		text-decoration: none;
+		border-bottom: 3px solid var(--yellow);
+	}
+	.docs::after {
+		content: ' →';
+	}
+	.docs:hover {
+		background: var(--yellow);
+	}
+
+	section {
+		margin-top: 20px;
+	}
+	h2 {
+		font-family: var(--display);
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 2px 10px;
+		margin: 0 0 6px;
+		/* On a narrow screen, wrap between phrases rather than inside them. */
+		white-space: nowrap;
+		font-size: 13px;
+		line-height: 18px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+	.kind {
+		font-weight: 400;
+		color: var(--muted);
+	}
+	.swatch {
+		width: 12px;
+		height: 12px;
+	}
+	.swatch.circle {
+		border-radius: 50%;
+		background: var(--red);
+	}
+	.swatch.square {
+		background: var(--blue);
+	}
+
+	.chart-container {
+		width: 100%;
+		height: 220px;
+		/* Annotation text size. The notes' box widths are set to wrap 15px text where they do. */
+		font-size: 15px;
 	}
 	.chart-container.ordinal {
 		height: 280px;
 	}
-	label {
-		margin: 14px;
-		cursor: pointer;
-		user-select: none;
+	.chart-container :global(.axis .tick text) {
+		fill: var(--muted);
 	}
-	h3 {
-		margin: 20px 14px 5px;
-		font-size: 14px;
-		color: #666;
+	.chart-container :global(.axis .tick line) {
+		stroke: #bdb5a6;
+	}
+	.chart-container :global(.path-line) {
+		stroke-width: 3;
+	}
+
+	@media (max-width: 760px) {
+		.page {
+			padding: 20px 16px 24px;
+		}
+		header {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		h1 {
+			font-size: 42px;
+			line-height: 34px;
+		}
+		.logo {
+			width: 52px;
+			height: 52px;
+		}
 	}
 </style>
