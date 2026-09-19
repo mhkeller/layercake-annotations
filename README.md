@@ -2,6 +2,8 @@
 
 Add interactive text annotations with swoopy arrows to [LayerCake](https://layercake.graphics) charts.
 
+**[Try the demo](https://mhkeller.github.io/layercake-annotations/)**
+
 ## Installation
 
 ```sh

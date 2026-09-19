@@ -1,0 +1,63 @@
+name: Deploy demo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build the demo
+        env:
+          BASE_PATH: '/${{ github.event.repository.name }}'
+        run: pnpm exec vite build
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: build/
+
+  deploy:
+    # Pull requests only check that the demo builds.
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+
+    # One deploy at a time, and a running one finishes rather than being cut off.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5

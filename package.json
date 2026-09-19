@@ -2,7 +2,7 @@
 	"name": "@mhkeller/layercake-annotations",
 	"version": "1.0.0",
 	"description": "Interactive text annotations with swoopy arrows for Layer Cake charts",
-	"homepage": "https://github.com/mhkeller/layercake-annotations",
+	"homepage": "https://mhkeller.github.io/layercake-annotations/",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/mhkeller/layercake-annotations.git"
@@ -47,7 +47,7 @@
 	"devDependencies": {
 		"@playwright/test": "^1.57.0",
 		"@rollup/plugin-dsv": "^3.0.4",
-		"@sveltejs/adapter-auto": "^7.0.1",
+		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.70.3",
 		"@sveltejs/package": "^2.5.8",
 		"@sveltejs/vite-plugin-svelte": "^7.3.0",
