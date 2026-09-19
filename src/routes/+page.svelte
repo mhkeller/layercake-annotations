@@ -5,6 +5,8 @@
 
 	import { Annotations } from '$lib/index.js';
 
+	/** @typedef {import('$lib/index.js').Annotation} Annotation */
+
 	// Line chart components
 	import Line from './_components/Line.svelte';
 	import Area from './_components/Area.svelte';
@@ -43,6 +45,7 @@
 	// showing, and that's the set logged to the console.
 	const narrow = new MediaQuery('max-width: 799px');
 
+	/** @type {Annotation[]} */
 	let lineAnnotations = $state([
 		{
 			id: 0,
@@ -66,6 +69,7 @@
 		}
 	]);
 
+	/** @type {Annotation[]} */
 	let lineAnnotationsNarrow = $state([
 		{
 			id: 0,
@@ -93,6 +97,7 @@
 		}
 	]);
 
+	/** @type {Annotation[]} */
 	let columnAnnotations = $state([
 		{
 			id: 0,
@@ -133,6 +138,7 @@
 		}
 	]);
 
+	/** @type {Annotation[]} */
 	let columnAnnotationsNarrow = $state([
 		{
 			id: 0,
