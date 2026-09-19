@@ -2,7 +2,7 @@
 
 # 1.0.0
 
-> Not yet released
+> 2026-09-19
 
 First stable release. It moves the library to Layer Cake 11, measures arrows from the annotation's anchor point, and adds an MIT license.
 
