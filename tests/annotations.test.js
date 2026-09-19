@@ -172,9 +172,9 @@ for (const mode of modes) {
 		const annotation = chart.locator('.layercake-annotation').first();
 		await expect(annotation).toBeVisible();
 
-		// This lands on the annotation rather than on bare chart, so it hovers it
-		// instead of making a second one. The hover is part of the baseline.
-		await chart.click({ position: { x: 600, y: 100 } });
+		// Click the annotation itself: a click on bare chart would make a second one.
+		// The click leaves it hovered, and the hover is part of the baseline.
+		await annotation.click({ force: true });
 		await expect(chart.locator('.anchor-indicator')).toBeVisible();
 
 		await annotation.evaluate((el) => {
