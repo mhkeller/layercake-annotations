@@ -152,9 +152,7 @@ The endpoint writes what it is sent into a file your dev server then runs, which
 
 #### Saving from an app that hosts the chart
 
-`onsave` is handed a second argument: `annotations`, a plain copy of the same config as data, where a date is a real `Date`. It is for an app that wants to check the config or write it out itself.
-
-Such an app often doesn't render `<Annotations>`. It mounts a chart someone else wrote, so it has no prop to pass. It can put the same function in context instead, under the key `saveAnnotationConfig`, and any editor below picks it up. `onsave` wins when both are there.
+An app that mounts a chart someone else wrote doesn't render `<Annotations>`, so it has no prop to pass. It can put a function in context instead, under the key `saveAnnotationConfig`, and any editor below picks it up. It is called at the same moments as `onsave`, and `onsave` wins when both are there.
 
 ```js
 import { mount } from 'svelte';
@@ -164,13 +162,15 @@ mount(Chart, {
 	context: new Map([
 		[
 			'saveAnnotationConfig',
-			(source, annotations) => {
+			(annotations) => {
 				// Check the data, then write it out on your server.
 			}
 		]
 	])
 });
 ```
+
+It is handed `annotations` alone: a plain copy of the config as data, where a date is a real `Date`. An app like this checks what it is sent and writes the file itself, so data is what it wants. `onsave` gets the same copy as its second argument, after `source`.
 
 If you store the config as JSON, a date comes back as a string, and a time scale can't place a string. Turn those strings back into `Date` objects when you load the config, the same way you do for your chart's data.
 
@@ -362,7 +362,7 @@ Edits change whichever set is showing. To place the narrow set, narrow the windo
 ## TypeScript
 
 ```ts
-import type { Annotation, Arrow, SaveAnnotationConfigFn } from '@mhkeller/layercake-annotations';
+import type { Annotation, Arrow, OnSaveFn } from '@mhkeller/layercake-annotations';
 ```
 
 ## Components

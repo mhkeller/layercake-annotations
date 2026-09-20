@@ -8,5 +8,6 @@ export { default as AnnotationsStatic } from './Static.svelte';
  * @typedef {import('./types.js').Arrow} Arrow
  * @typedef {import('./types.js').ArrowSource} ArrowSource
  * @typedef {import('./types.js').ArrowTarget} ArrowTarget
+ * @typedef {import('./types.js').OnSaveFn} OnSaveFn
  * @typedef {import('./types.js').SaveAnnotationConfigFn} SaveAnnotationConfigFn
  */

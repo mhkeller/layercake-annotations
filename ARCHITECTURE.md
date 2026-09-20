@@ -117,7 +117,7 @@ A new note's id is the next one up from the ids in the array at that moment, so 
 
 ### Saving
 
-Every one of those writes ends in `save()`, which waits until a second has passed with no further writes. When it fires it takes `$state.snapshot(annos)`, a plain copy rather than the live state, and writes it out as JavaScript text with `toSource`. The text goes first and the copy second, to the first of these that exists: the `onsave` prop, the `saveAnnotationConfig` function from context, or `logConfig`, which logs the text to the console. `Editor` runs a waiting save straight away when it is destroyed, which is what happens when `editable` goes false.
+Every one of those writes ends in `save()`, which waits until a second has passed with no further writes. When it fires it takes `$state.snapshot(annos)`, a plain copy rather than the live state, and sends it to the first of three places. The `onsave` prop is handed the config as JavaScript text from `toSource`, then the copy. The `saveAnnotationConfig` function from context is handed the copy alone: it belongs to an app that mounts a chart it didn't write, and that app checks the data and writes it out itself. With neither, the text is logged to the console. `Editor` runs a waiting save straight away when it is destroyed, which is what happens when `editable` goes false.
 
 ### Reading the Layer Cake context
 

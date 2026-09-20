@@ -3,6 +3,7 @@
 	/** @typedef {import('./types.js').Arrow} Arrow */
 	/** @typedef {import('./types.js').HoverState} HoverState */
 	/** @typedef {import('./types.js').DragState} DragState */
+	/** @typedef {import('./types.js').OnSaveFn} OnSaveFn */
 	/** @typedef {import('./types.js').SaveAnnotationConfigFn} SaveAnnotationConfigFn */
 	/**
 	 * @template T
@@ -24,7 +25,7 @@
 
 	const markerId = $props.id();
 
-	/** @type {{ annotations?: Annotation[], onsave?: SaveAnnotationConfigFn }} */
+	/** @type {{ annotations?: Annotation[], onsave?: OnSaveFn }} */
 	let { annotations: annos = $bindable([]), onsave } = $props();
 
 	/**
@@ -50,21 +51,21 @@
 	const saveFromContext = getContext('saveAnnotationConfig');
 
 	/**
-	 * Log the config for easy copy-paste
-	 * @type {SaveAnnotationConfigFn}
-	 */
-	function logConfig(source) {
-		console.log('Annotations config:', source);
-	}
-
-	/**
-	 * Save the config: to `onsave`, or to the `saveAnnotationConfig` context, or to
-	 * the console. It reads the annotations when it fires and hands over the config
-	 * as JavaScript text, followed by a plain copy of the annotations themselves.
+	 * Save the config, to the first of three places. It reads the annotations when
+	 * it fires, as a plain copy.
+	 *
+	 * A page passes `onsave` and is handed the config as JavaScript text, then the
+	 * copy. An app that mounts a chart it didn't write has no prop to pass, so it
+	 * puts a function in context under `saveAnnotationConfig`. That one is handed
+	 * the copy alone: such an app checks the data and writes it out itself. With
+	 * neither, the text is logged to the console for copy-paste.
 	 */
 	const save = debounce(() => {
 		const config = $state.snapshot(annos);
-		(onsave ?? saveFromContext ?? logConfig)(toSource(config), config);
+
+		if (onsave) onsave(toSource(config), config);
+		else if (saveFromContext) saveFromContext(config);
+		else console.log('Annotations config:', toSource(config));
 	}, 1_000);
 
 	/**

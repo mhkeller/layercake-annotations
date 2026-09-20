@@ -6,7 +6,7 @@
 
 **New**: an `onsave` prop on `<Annotations>` and `<AnnotationsEditor>`. It is called a second after the last edit with the config as JavaScript text, ready to paste into a chart or write to a `.js` file. A second argument holds a plain copy of the annotations as data. Without `onsave` the text is logged to the console for copy-paste.
 
-**Changed**: a `saveAnnotationConfig` function set in context is now documented, for an app that mounts a chart it didn't write. It is called the same way as `onsave`: the text first, then the annotations. It used to be handed the annotations alone. A function written for 1.0.0 needs a change: the annotations are now its second argument. `onsave` wins when both are there.
+**New**: a `saveAnnotationConfig` function set in context is documented, for an app that mounts a chart it didn't write and so has no prop to pass. It is handed the annotations, as it was in 1.0.0, and they arrive as a plain copy rather than the live state. `onsave` wins when both are there.
 
 **New**: Ctrl works wherever Cmd does, for Windows and Linux. Ctrl+click an annotation to cycle its alignment, and Ctrl+click an arrow's handle to cycle its curve. Alt+click is the same key as Option+click and steps the anchor through its presets.
 
