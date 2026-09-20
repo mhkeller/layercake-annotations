@@ -2,7 +2,7 @@
 
 # 1.1.0
 
-> 2026-09-19
+> 2026-09-20
 
 **New**: an `onsave` prop on `<Annotations>` and `<AnnotationsEditor>`. It is called a second after the last edit with the config as JavaScript text, ready to paste into a chart or write to a `.js` file. A second argument holds a plain copy of the annotations as data. Without `onsave` the text is logged to the console for copy-paste.
 
