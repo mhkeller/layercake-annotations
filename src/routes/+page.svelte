@@ -194,7 +194,8 @@
 			<p>
 				Click a chart to add an annotation. Drag it to move it and double-click to edit its text.
 				Hover it to show its handles: drag a circle outward to draw an arrow, or drag the diamond to
-				move its anchor point. Command-click an arrow's control point to change its swoopiness.
+				move its anchor point. Cmd+click (Ctrl+click on Windows and Linux) an arrow's control point
+				to change its swoopiness.
 			</p>
 			<p>
 				Changes are logged to the browser console. You can paste that config object into your own

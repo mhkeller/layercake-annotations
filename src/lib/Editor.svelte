@@ -3,13 +3,14 @@
 	/** @typedef {import('./types.js').Arrow} Arrow */
 	/** @typedef {import('./types.js').HoverState} HoverState */
 	/** @typedef {import('./types.js').DragState} DragState */
+	/** @typedef {import('./types.js').OnSaveFn} OnSaveFn */
 	/** @typedef {import('./types.js').SaveAnnotationConfigFn} SaveAnnotationConfigFn */
 	/**
 	 * @template T
 	 * @typedef {import('./types.js').Ref<T>} Ref
 	 */
 
-	import { getContext, setContext, onDestroy } from 'svelte';
+	import { getContext, setContext, onDestroy, onMount } from 'svelte';
 	import { Svg, Html, getLayerCakeContext } from 'layercake';
 
 	import AnnotationEditor from '$lib/components/AnnotationEditor.svelte';
@@ -17,40 +18,61 @@
 	import Arrows from '$lib/components/Arrows.svelte';
 
 	import debounce from './modules/debounce.js';
-	import debounceLeading from './modules/debounceLeading.js';
 	import createRef from './modules/createRef.svelte.js';
 	import newAnnotation from './modules/newAnnotation.js';
+	import toSource from './modules/configSource.js';
+	import { dataKeys, resolveAnnotation } from './modules/coordinates.js';
 
 	const markerId = $props.id();
 
-	/** @type {{ annotations?: Annotation[] }} */
-	let { annotations: annos = $bindable([]) } = $props();
+	/** @type {{ annotations?: Annotation[], onsave?: OnSaveFn }} */
+	let { annotations: annos = $bindable([]), onsave } = $props();
 
 	/**
 	 * LayerCake context
 	 */
 	const k = getLayerCakeContext();
 
+	// A position is stored in `data` under the chart's x and y keys, so edit mode
+	// needs accessors that are keys. The chart still draws without them.
+	onMount(() => {
+		if (dataKeys(k) === null) {
+			console.error(
+				'[layercake-annotations] Edit mode needs key accessors, like x="date" and y="value". A function or an array of keys gives a position nowhere to be stored, so annotations can\'t be added or moved.'
+			);
+		}
+	});
+
+	// Every default filled in, once, for everything below that draws or edits.
+	// Writes go the other way: by id, into `annos`.
+	let resolved = $derived(annos.map(resolveAnnotation));
+
 	/** @type {SaveAnnotationConfigFn | undefined} */
-	const saveAnnotationConfig = getContext('saveAnnotationConfig');
+	const saveFromContext = getContext('saveAnnotationConfig');
 
 	/**
-	 * Save the config and log it for easy copy-paste
+	 * Save the config, to the first of three places. It reads the annotations when
+	 * it fires, as a plain copy.
+	 *
+	 * A page passes `onsave` and is handed the config as JavaScript text, then the
+	 * copy. An app that mounts a chart it didn't write has no prop to pass, so it
+	 * puts a function in context under `saveAnnotationConfig`. That one is handed
+	 * the copy alone: such an app checks the data and writes it out itself. With
+	 * neither, the text is logged to the console for copy-paste.
 	 */
-	const saveConfig_debounced = debounce((annos) => {
-		console.log('Annotations config:', JSON.stringify(annos, null, 2));
-		if (saveAnnotationConfig) {
-			saveAnnotationConfig(annos);
-		}
+	const save = debounce(() => {
+		const config = $state.snapshot(annos);
+
+		if (onsave) onsave(toSource(config), config);
+		else if (saveFromContext) saveFromContext(config);
+		else console.log('Annotations config:', toSource(config));
 	}, 1_000);
 
 	/**
 	 * State vars
 	 */
-	let idCounter = Math.max(...annos.map((d) => d.id), -1);
-
-	/** @type {Ref<boolean>} */
-	const isEditing = createRef(false);
+	/** @type {Ref<number | null>} - The id of the note whose text is being edited */
+	const editing = createRef(null);
 
 	/** @type {Ref<HoverState | null>} */
 	const hovering = createRef(null);
@@ -61,7 +83,7 @@
 	/** @type {Ref<DragState | null>} - Preview arrow shown during drag */
 	const previewArrow = createRef(null);
 
-	setContext('isEditing', isEditing);
+	setContext('editing', editing);
 	setContext('hovering', hovering);
 	setContext('moving', moving);
 	setContext('previewArrow', previewArrow);
@@ -70,112 +92,146 @@
 	 * Add a new annotation at a position in the chart area, in pixels
 	 */
 	function addAnnotation(x, y) {
-		if (isEditing.value === true) return;
+		// The next id up from the ones in the array right now.
+		const ids = annos.map((d) => d.id).filter(Number.isFinite);
+		const annotation = newAnnotation(x, y, Math.max(-1, ...ids) + 1, k);
+		if (annotation === null) return;
 
-		const annotation = newAnnotation(x, y, ++idCounter, k);
 		annos.push(annotation);
-		saveConfig_debounced(annos);
+		save();
 	}
 
-	// One click makes one annotation. A double click on empty chart space sends two
-	// click events a few dozen milliseconds apart, so ignore the second.
-	const addAnnotation_debounced = debounceLeading(addAnnotation, 250);
+	// Whether the press behind a click also ended a text edit. That click has done
+	// its job, so it adds nothing.
+	let endedEdit = false;
+
+	function onListenerPointerdown() {
+		// pointerdown comes before the blur that ends the edit.
+		endedEdit = editing.value !== null;
+	}
+
+	/** @param {MouseEvent} e */
+	function onListenerClick(e) {
+		const skip = endedEdit;
+		endedEdit = false;
+
+		// One click makes one annotation. `detail` counts the clicks in a row. When
+		// the first click of a double click ended an edit, the second one still lands
+		// here, and it is passed over.
+		if (skip || e.detail > 1) return;
+
+		addAnnotation(e.offsetX, e.offsetY);
+	}
+
+	/** @param {KeyboardEvent} e */
+	function onListenerKeydown(e) {
+		if (e.key === 'Enter' && !e.repeat) addAnnotation(k.width / 2, k.height / 2);
+	}
 
 	// Annotations.svelte swaps this component out when `editable` goes false, so
 	// let a save that's already waiting land instead of losing it.
 	onDestroy(() => {
-		saveConfig_debounced.flush();
+		save.flush();
 	});
 
 	/**
 	 * Delete an annotation from the chart
 	 */
-	async function deleteAnnotation(id) {
+	function deleteAnnotation(id) {
 		// Reassign annos (the bindable prop) so deletion propagates to parent
 		annos = annos.filter((d) => d.id !== id);
-		saveConfig_debounced(annos);
+		save();
 	}
 
 	/**
-	 * Modify the annotation's coordinates on drag
+	 * Merge new props into an annotation, by id. Every write to a note comes through here.
 	 */
 	function modifyAnnotation(id, newProps) {
-		annos.forEach((d, i) => {
-			if (d.id === id) {
-				annos[i] = {
-					...d,
-					...newProps
-				};
-			}
-		});
-		saveConfig_debounced(annos);
+		const i = annos.findIndex((d) => d.id === id);
+		if (i === -1) return;
+
+		annos[i] = { ...annos[i], ...newProps };
+		save();
+	}
+
+	/**
+	 * Replace an annotation's arrows with what `fn` makes of them. Every arrow
+	 * write comes through here.
+	 * @param {number} id
+	 * @param {(arrows: Arrow[]) => Arrow[]} fn
+	 */
+	function updateArrows(id, fn) {
+		const annotation = annos.find((d) => d.id === id);
+		if (!annotation) return;
+
+		modifyAnnotation(id, { arrows: fn(annotation.arrows ?? []) });
 	}
 
 	/**
 	 * Set or update an arrow on an annotation
-	 * Arrow structure: { side, clockwise, source: { dx, dy }, target: { [xKey], [yKey] } }
+	 * Arrow structure: { side, clockwise, source: { dx, dy }, target: { data, dx, dy } }
 	 */
 	function setArrow(id, arrow) {
-		const annotation = annos.find((d) => d.id === id);
-		if (!annotation) return;
-
-		const existingIndex = annotation.arrows.findIndex((a) => a.side === arrow.side);
-
-		if (existingIndex >= 0) {
-			annotation.arrows[existingIndex] = arrow;
-		} else {
-			annotation.arrows.push(arrow);
-		}
-
-		saveConfig_debounced(annos);
+		// Replace the arrow on that side where it sits, so the order holds. Add it if there isn't one.
+		updateArrows(id, (arrows) =>
+			arrows.some((a) => a.side === arrow.side)
+				? arrows.map((a) => (a.side === arrow.side ? arrow : a))
+				: [...arrows, arrow]
+		);
 	}
 
 	/**
 	 * Modify an arrow's properties (e.g., clockwise)
 	 */
 	function modifyArrow(id, side, attrs) {
-		const annotation = annos.find((d) => d.id === id);
-		if (!annotation) return;
-
-		const arrow = annotation.arrows.find((a) => a.side === side);
-		if (!arrow) return;
-
-		Object.assign(arrow, attrs);
-		saveConfig_debounced(annos);
+		updateArrows(id, (arrows) => arrows.map((a) => (a.side === side ? { ...a, ...attrs } : a)));
 	}
 
 	/**
 	 * Delete an arrow from an annotation
 	 */
 	function deleteArrow(id, side) {
-		const annotation = annos.find((d) => d.id === id);
-		if (!annotation) return;
+		updateArrows(id, (arrows) => arrows.filter((a) => a.side !== side));
+	}
 
-		const len = annotation.arrows.length;
-		annotation.arrows = annotation.arrows.filter((a) => a.side !== side);
-
-		// If we were hovering over an empty arrow zone, delete the annotation
-		if (len === annotation.arrows.length) {
-			deleteAnnotation(annotation.id);
-		}
-		saveConfig_debounced(annos);
+	/**
+	 * Whether a key press lands in something that takes typing
+	 * @param {EventTarget | undefined} target
+	 */
+	function takesTyping(target) {
+		return (
+			target instanceof HTMLElement &&
+			(target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+		);
 	}
 
 	/**
 	 * If we press the delete key while hovering, delete the annotation or arrow
+	 * @param {KeyboardEvent} e
 	 */
 	function onkeydown(e) {
-		const hover = hovering.value;
-		if (!hover || isEditing.value === true) return;
+		if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+		if (e.repeat) return;
 
-		if (e.key === 'Delete' || e.key === 'Backspace') {
-			if (hover.type === 'body') {
-				deleteAnnotation(hover.annotationId);
-			} else if (hover.type === 'arrow' && hover.side) {
-				deleteArrow(hover.annotationId, hover.side);
-			}
-			saveConfig_debounced(annos);
+		// The key belongs to whatever is being typed into, anywhere on the page. The
+		// first entry of the composed path is the real target, even inside a shadow root.
+		if (takesTyping(e.composedPath()[0])) return;
+
+		const hover = hovering.value;
+		if (!hover || !annos.some((d) => d.id === hover.annotationId)) return;
+
+		if (hover.type === 'body') {
+			deleteAnnotation(hover.annotationId);
+		} else if (hover.type === 'arrow' && (hover.handle === 'source' || hover.handle === 'target')) {
+			deleteArrow(hover.annotationId, hover.side);
+		} else {
+			// The handle that starts a new arrow has nothing to delete.
+			return;
 		}
+
+		// What was hovered is gone. Whatever sits under the pointer in its place
+		// counts as hovered once the pointer moves onto it or focus reaches it.
+		hovering.value = null;
 	}
 
 	/**
@@ -191,14 +247,15 @@
 {/snippet}
 
 <Svg {defs}>
-	<Arrows annotations={annos} {markerId} />
+	<Arrows annotations={resolved} {markerId} />
 </Svg>
 
 <Html>
 	<!-- A click lands where the pointer is, Enter puts the note in the middle of the chart. -->
 	<div
-		onclick={(e) => addAnnotation_debounced(e.offsetX, e.offsetY)}
-		onkeydown={(e) => e.key === 'Enter' && addAnnotation_debounced(k.width / 2, k.height / 2)}
+		onpointerdown={onListenerPointerdown}
+		onclick={onListenerClick}
+		onkeydown={onListenerKeydown}
 		role="button"
 		tabindex="0"
 		aria-label="Click to add annotation"
@@ -206,7 +263,7 @@
 	></div>
 
 	<div class="layercake-annotations">
-		{#each annos as d (d.id)}
+		{#each resolved as d (d.id)}
 			<AnnotationEditor {d} />
 		{/each}
 	</div>
@@ -235,5 +292,17 @@
 	.layercake-annotations :global(.draggable),
 	.layercake-annotations :global(.arrow-zone) {
 		pointer-events: auto;
+	}
+	.layercake-annotations :global(.draggable.hovering) {
+		border-color: red;
+	}
+	.layercake-annotations :global(.draggable.canDrag) {
+		user-select: none;
+		cursor: move;
+		/* A touch drag moves the note rather than scrolling the page */
+		touch-action: none;
+	}
+	.layercake-annotations :global(.draggable.hovering .grabber) {
+		opacity: 1;
 	}
 </style>

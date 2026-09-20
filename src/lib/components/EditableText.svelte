@@ -5,14 +5,20 @@
 	 */
 
 	import { getContext } from 'svelte';
+	import { on } from 'svelte/events';
 
-	/** @type {Ref<boolean>} */
-	const isEditing = getContext('isEditing');
+	import { finalText } from '$lib/modules/noteText.js';
+	import { hasCmdOrCtrl } from '$lib/modules/modifierKeys.js';
 
-	let { text = $bindable(), isEditable = $bindable(false), alignment, onSave } = $props();
+	/** @type {Ref<number | null>} The id of the note being edited, shared across the editor. */
+	const editing = getContext('editing');
 
-	/** @type {HTMLElement|null} The editing box, while there is one. */
-	let textarea = $state(null);
+	/** @type {{ id: number, text: string, isEditable: boolean, onSave: (text: string) => void }} */
+	let { id, text, isEditable, onSave } = $props();
+
+	// What the edit box holds. The note's own text stays as it is until the edit
+	// ends, and then changes through `onSave`.
+	let draft = $state('');
 
 	function selectAllTextInContentEditable(element) {
 		const selection = window.getSelection();
@@ -22,99 +28,111 @@
 		selection.addRange(range);
 	}
 
-	function endEdit() {
-		isEditable = false;
-		text = text.trim();
-
-		// Save the text change
-		onSave?.(text);
-
-		// Wait for the click event to propagate before setting isEditing to false
-		setTimeout(() => {
-			isEditing.value = false;
-		}, 200);
+	function startEdit() {
+		draft = text;
+		editing.value = id;
 	}
 
 	/**
-	 * Take focus and select what's there, the moment the editing box appears.
-	 * @type {import('svelte/attachments').Attachment<HTMLElement>}
+	 * Safe to call more than once: only the note being edited has an edit to end.
 	 */
-	function takeFocus(node) {
-		node.focus();
-		selectAllTextInContentEditable(node);
+	function endEdit() {
+		if (editing.value !== id) return;
+		editing.value = null;
+
+		// Save the text change
+		const final = finalText(draft);
+		if (final !== text) onSave(final);
 	}
 
-	/** @param {KeyboardEvent} e */
+	/**
+	 * One edit, from the moment the editing box appears until it goes: take focus
+	 * and select what's there, and end the edit on a click anywhere but inside the box.
+	 *
+	 * Nothing reactive is read in here, so the box is set up once and the selection
+	 * is left alone while typing. The listener reads what it needs when a click comes.
+	 * @type {import('svelte/attachments').Attachment<HTMLElement>}
+	 */
+	function editSession(node) {
+		node.focus();
+		selectAllTextInContentEditable(node);
+
+		const off = on(document, 'click', (e) => {
+			if (!node.contains(/** @type {Node} */ (e.target))) node.blur();
+		});
+
+		return () => {
+			off();
+			// Firefox and Safari send no blur when a focused element is removed.
+			endEdit();
+		};
+	}
+
+	/** @param {KeyboardEvent & { currentTarget: HTMLElement }} e */
 	function onkeydown(e) {
-		if (!isEditable || !textarea) return;
+		// While an IME is composing, Enter picks a candidate. keyCode 229 is how
+		// some browsers mark those keys.
+		if (e.isComposing || e.keyCode === 229) return;
 
 		if (e.key === 'Escape' || e.key === 'Tab') {
-			textarea.blur();
+			e.currentTarget.blur();
 		}
 		// Enter without shift saves, shift+enter allows line break
 		if (e.key === 'Enter' && !e.shiftKey) {
 			e.preventDefault();
-			textarea.blur();
+			e.currentTarget.blur();
 		}
 	}
 
-	/**
-	 * A click anywhere but inside the box ends the edit.
-	 * @param {MouseEvent} e
-	 */
-	function onclickoutside(e) {
-		if (!isEditable || !textarea) return;
-		if (!textarea.contains(/** @type {Node} */ (e.target))) textarea.blur();
+	/** @param {MouseEvent} e */
+	function ondblclick(e) {
+		// Don't enter edit mode if Cmd or Ctrl is held (alignment cycling) or Option is held (anchor cycling)
+		if (hasCmdOrCtrl(e) || e.altKey) return;
+		startEdit();
 	}
 
-	function handleDoubleClick(e) {
-		// Don't enter edit mode if Cmd is held (alignment cycling) or Option is held (anchor cycling)
-		if (e?.metaKey || e?.altKey) return;
-		isEditable = true;
-		isEditing.value = true;
+	/** @param {KeyboardEvent} e */
+	function onDisplayKeydown(e) {
+		if (e.key !== 'Enter') return;
+
+		// Without this the same Enter carries on into the editing box, which by then
+		// has focus and all its text selected, and replaces the text with a line break.
+		e.preventDefault();
+		startEdit();
 	}
+
+	// A click in the edit box belongs to the text, so the note's click shortcuts don't hear it.
+	/** @param {MouseEvent} e */
 	function onclick(e) {
-		if (isEditable) {
-			e.stopPropagation();
-			// If we are inside a contenteditable element, don't propagate the click event
-			e.preventDefault();
-			return false;
-		}
+		e.stopPropagation();
 	}
 </script>
 
 {#if isEditable}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="textarea"
 		role="textbox"
 		aria-multiline="true"
 		tabindex="0"
-		bind:this={textarea}
-		{@attach takeFocus}
+		{@attach editSession}
 		onblur={endEdit}
+		{onkeydown}
 		{onclick}
-		ondblclick={handleDoubleClick}
 		contenteditable
-		bind:innerText={text}
-		style:text-align={alignment}
+		bind:innerText={draft}
 	></div>
 {:else}
 	<div
 		class="text-display"
-		ondblclick={handleDoubleClick}
-		onkeydown={(e) => e.key === 'Enter' && handleDoubleClick()}
+		{ondblclick}
+		onkeydown={onDisplayKeydown}
 		role="button"
 		tabindex="0"
 		aria-label="Double-click or press Enter to edit"
-		style:text-align={alignment}
 	>
 		<pre>{text}</pre>
 	</div>
 {/if}
-
-<svelte:window {onkeydown} />
-<svelte:document onclick={onclickoutside} />
 
 <style>
 	.textarea[contenteditable] {
@@ -133,11 +151,5 @@
 		border-radius: 3px;
 		border: 2px solid #007bff;
 		box-shadow: 0 0 5px #007bff50;
-	}
-	pre {
-		margin: 0;
-		font-family: inherit;
-		white-space: pre-wrap;
-		word-wrap: break-word;
 	}
 </style>

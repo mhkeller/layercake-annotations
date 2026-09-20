@@ -17,5 +17,9 @@ import ordinalInvert from './ordinalInvert.js';
  */
 export default function invertScale(scale, pos, size, percentRange) {
 	const p = percentRange === true && size ? (pos / size) * 100 : pos;
-	return scale.invert ? [scale.invert(p), 0] : ordinalInvert(scale, p);
+	if (scale.invert) return [scale.invert(p), 0];
+
+	// The offset is stored as a percentage of the chart, so it is measured against
+	// the chart's full length in whatever units the scale's range is in.
+	return ordinalInvert(scale, p, percentRange === true ? 100 : size);
 }

@@ -210,7 +210,7 @@ test('the anchor handle goes when the hover goes, even after a press', async ({ 
 	await expect(handle).toBeVisible();
 
 	// A press focuses the handle so the arrow keys work straight after a drag.
-	// That focus used to hold the diamond on screen after the pointer had gone.
+	// Focus alone must not hold the diamond on screen once the pointer has gone.
 	await handle.click({ force: true });
 	await expect(handle).toBeVisible();
 

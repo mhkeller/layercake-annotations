@@ -18,9 +18,9 @@ export interface ArrowSource {
 export interface ArrowTarget {
 	/** User data values (x/y keys match LayerCake config) */
 	data: Record<string, unknown>;
-	/** Percentage offset for ordinal X scales (0-100) */
+	/** Percentage of chart width added to the band's start, for ordinal X scales. Negative ahead of the first band. Default 0. */
 	dx?: number;
-	/** Percentage offset for ordinal Y scales (0-100) */
+	/** Percentage of chart height added to the band's start, for ordinal Y scales. Negative ahead of the first band. Default 0. */
 	dy?: number;
 }
 
@@ -30,10 +30,10 @@ export interface ArrowTarget {
 export interface Arrow {
 	/** Which side of annotation: 'west' or 'east' */
 	side: 'west' | 'east';
-	/** Arc direction: true=clockwise, false=counter-clockwise, null=straight line */
-	clockwise: boolean | null;
-	/** Where the arrow leaves the annotation, in pixels */
-	source: ArrowSource;
+	/** Arc direction: true=clockwise, false=counter-clockwise, null=straight line. Default true. */
+	clockwise?: boolean | null;
+	/** Where the arrow leaves the annotation, in pixels. Default: level with the anchor point, one handle out from the near edge. */
+	source?: Partial<ArrowSource>;
 	/** Target position (data coordinates) */
 	target: ArrowTarget;
 }
@@ -46,10 +46,10 @@ export interface Annotation {
 	id: number;
 	/** User data values (x/y keys match LayerCake config) */
 	data: Record<string, unknown>;
-	/** Percentage offset from data point in X direction */
-	dx: number;
-	/** Percentage offset from data point in Y direction */
-	dy: number;
+	/** Percentage offset from data point in X direction. Default 0. */
+	dx?: number;
+	/** Percentage offset from data point in Y direction. Default 0. */
+	dy?: number;
 	/** Annotation text content */
 	text: string;
 	/** Width of annotation box (e.g., "150px") */
@@ -65,7 +65,40 @@ export interface Annotation {
 	/** Anchor Y position as percentage (0-100) of annotation height. Arrow sources measure down from here. Default 0 (top edge). */
 	anchorY?: number;
 	/** Arrows attached to this annotation */
-	arrows: Arrow[];
+	arrows?: Arrow[];
+}
+
+/**
+ * An arrow with every default filled in, as `resolveArrow` returns it
+ */
+export interface ResolvedArrow extends Arrow {
+	/** Arc direction: true=clockwise, false=counter-clockwise, null=straight line */
+	clockwise: boolean | null;
+	/** Where the arrow leaves the annotation, in pixels */
+	source: ArrowSource;
+	/** Target position (data coordinates), with both percentage offsets present */
+	target: ArrowTarget & { dx: number; dy: number };
+}
+
+/**
+ * An annotation with every default filled in, as `resolveAnnotation` returns it.
+ * Width is the exception: it stays a CSS string and is parsed where it is used.
+ */
+export interface ResolvedAnnotation extends Annotation {
+	/** Percentage offset from data point in X direction */
+	dx: number;
+	/** Percentage offset from data point in Y direction */
+	dy: number;
+	/** Annotation text content */
+	text: string;
+	/** Text alignment: 'left', 'center', or 'right' */
+	align: 'left' | 'center' | 'right';
+	/** Anchor X position as percentage (0-100) of annotation width */
+	anchorX: number;
+	/** Anchor Y position as percentage (0-100) of annotation height */
+	anchorY: number;
+	/** Arrows attached to this annotation, each with its defaults filled in */
+	arrows: ResolvedArrow[];
 }
 
 /**
@@ -103,44 +136,6 @@ export interface DragState {
 }
 
 /**
- * LayerCake scales object passed to coordinate utilities
- */
-export interface LayerCakeScales {
-	/** X scale function (data -> pixels) */
-	xScale: (value: unknown) => number;
-	/** Y scale function (data -> pixels) */
-	yScale: (value: unknown) => number;
-	/** X accessor function */
-	x: (d: unknown) => unknown;
-	/** Y accessor function */
-	y: (d: unknown) => unknown;
-	/** Chart width in pixels */
-	width: number;
-	/** Chart height in pixels */
-	height: number;
-}
-
-/**
- * Annotation box position and dimensions
- */
-export interface AnnotationBox {
-	/** Left edge position in pixels */
-	left: number;
-	/** Top edge position in pixels */
-	top: number;
-	/** Width in pixels */
-	width: number;
-}
-
-/**
- * Point coordinates
- */
-export interface Point {
-	x: number;
-	y: number;
-}
-
-/**
  * Reactive reference wrapper (from createRef)
  */
 export interface Ref<T> {
@@ -163,6 +158,17 @@ export type SetArrowFn = (id: number, arrow: Arrow) => void;
 export type ModifyArrowFn = (id: number, side: 'west' | 'east', attrs: Partial<Arrow>) => void;
 
 /**
- * Function to save annotation config (provided by parent)
+ * The `onsave` prop, for a page that renders the chart.
+ *
+ * `source` is the config as JavaScript text: what `JSON.stringify(annotations, null, 2)`
+ * gives, with each `Date` written as `new Date("…")`, ready to paste into a chart
+ * or write to a `.js` file. `annotations` is a plain copy of the same config as data.
+ */
+export type OnSaveFn = (source: string, annotations: Annotation[]) => void;
+
+/**
+ * The function an app puts in context under `saveAnnotationConfig`, when it
+ * mounts a chart it didn't write and so has no prop to pass. It is handed a plain
+ * copy of the annotations, to check and write out itself.
  */
 export type SaveAnnotationConfigFn = (annotations: Annotation[]) => void;
