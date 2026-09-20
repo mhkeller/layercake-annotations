@@ -77,11 +77,11 @@ Some desktops take Alt+click for themselves, as some Linux window managers do to
 
 ## Props
 
-| Prop          | Type                                  | Default             | Description                                                               |
-| ------------- | ------------------------------------- | ------------------- | ------------------------------------------------------------------------- |
-| `annotations` | `Annotation[]`                        | `[]`                | Array of annotation objects (bindable)                                    |
-| `editable`    | `boolean`                             | `true`              | Enable editing. Set `false` for read-only display                         |
-| `onsave`      | `(annotations: Annotation[]) => void` | Logs to the console | Called a second after the last edit, with a plain copy of the annotations |
+| Prop          | Type                                                  | Default             | Description                                                                           |
+| ------------- | ----------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------- |
+| `annotations` | `Annotation[]`                                        | `[]`                | Array of annotation objects (bindable)                                                |
+| `editable`    | `boolean`                                             | `true`              | Enable editing. Set `false` for read-only display                                     |
+| `onsave`      | `(source: string, annotations: Annotation[]) => void` | Logs to the console | Called a second after the last edit, with the config as JavaScript text, then as data |
 
 **Note:** The `annotations` prop uses Svelte 5's `$bindable` for two-way binding. For edits to persist, the parent component must store annotations in a `$state` variable:
 
@@ -93,19 +93,86 @@ import annotations from 'annotations.js'  // ✗ edits won't persist
 
 ### Saving
 
-Pass `onsave` to do something with the config whenever it changes. It runs one second after the last edit, or straight away if edit mode is switched off while a save is waiting. It is handed a plain copy of the annotations, safe to store or send.
+Pass `onsave` to do something with the config whenever it changes. It runs one second after the last edit, or straight away if edit mode is switched off while a save is waiting.
+
+It is handed `source`: the config as JavaScript text, ready to paste into a chart or write to a `.js` file. It reads like `JSON.stringify(annotations, null, 2)`, with each date written as `new Date("2024-03-15T00:00:00.000Z")`. With no dates in the config it is exactly that JSON.
+
+Without `onsave`, `source` is logged to the browser console, ready to copy into your chart.
+
+While you work on a chart, you can keep the config in a file the chart imports. Start the file like this:
+
+```js
+// src/routes/annotations.js
+export default [];
+
+if (import.meta.hot) import.meta.hot.accept();
+```
+
+The page starts from the file and posts `source` to an endpoint, which writes it back:
 
 ```svelte
+<!-- src/routes/+page.svelte -->
 <script>
-	function onsave(annotations) {
-		fetch('/api/annotations', { method: 'POST', body: JSON.stringify(annotations) });
+	import saved from './annotations.js';
+
+	let annotations = $state(saved);
+
+	function onsave(source) {
+		fetch('/api/annotations', { method: 'POST', body: source });
 	}
 </script>
 
 <Annotations bind:annotations {onsave} />
 ```
 
-Without `onsave`, the config is logged to the browser console as JSON, ready to copy into your chart. JSON has no dates, so a `Date` comes out of the log as an ISO string like `"2024-03-15T00:00:00.000Z"`. Wrap it in `new Date(...)` when you paste it back.
+```js
+// src/routes/api/annotations/+server.js
+import { writeFile } from 'node:fs/promises';
+import { error } from '@sveltejs/kit';
+import { dev } from '$app/environment';
+
+export async function POST({ request, url }) {
+	// Only in dev, and only from the chart's own page.
+	if (!dev || request.headers.get('origin') !== url.origin) error(403);
+
+	const source = await request.text();
+	await writeFile(
+		'src/routes/annotations.js',
+		`export default ${source};\n\nif (import.meta.hot) import.meta.hot.accept();\n`
+	);
+	return new Response(null, { status: 204 });
+}
+```
+
+The `import.meta.hot` line tells Vite to take the new file quietly. Without it, Vite rebuilds the page each time the file is written, which closes a note you are typing in. The chart reads the file when the page loads, so a reload shows what was saved. A build leaves the line out.
+
+The endpoint writes what it is sent into a file your dev server then runs, which is why it answers only in dev and only to the chart's own page.
+
+`source` is JavaScript, so it is read by importing the file, not with `JSON.parse`.
+
+#### Saving from an app that hosts the chart
+
+`onsave` is handed a second argument: `annotations`, a plain copy of the same config as data, where a date is a real `Date`. It is for an app that wants to check the config or write it out itself.
+
+Such an app often doesn't render `<Annotations>`. It mounts a chart someone else wrote, so it has no prop to pass. It can put the same function in context instead, under the key `saveAnnotationConfig`, and any editor below picks it up. `onsave` wins when both are there.
+
+```js
+import { mount } from 'svelte';
+
+mount(Chart, {
+	target,
+	context: new Map([
+		[
+			'saveAnnotationConfig',
+			(source, annotations) => {
+				// Check the data, then write it out on your server.
+			}
+		]
+	])
+});
+```
+
+If you store the config as JSON, a date comes back as a string, and a time scale can't place a string. Turn those strings back into `Date` objects when you load the config, the same way you do for your chart's data.
 
 ## Annotation Data Structure
 
@@ -336,6 +403,7 @@ src/lib/
 ├── modules/
 │   ├── anchorPresets.js      # The nine anchor positions Option+click steps through
 │   ├── arrowUtils.js         # SVG arc path generation
+│   ├── configSource.js       # The config as JavaScript text, with dates written as new Date(...)
 │   ├── coordinates.js        # Position calculations, and the defaults for fields left out
 │   ├── createRef.svelte.js   # State reference shared between components
 │   ├── debounce.js           # Run once the calls stop coming

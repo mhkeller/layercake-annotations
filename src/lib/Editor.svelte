@@ -19,6 +19,7 @@
 	import debounce from './modules/debounce.js';
 	import createRef from './modules/createRef.svelte.js';
 	import newAnnotation from './modules/newAnnotation.js';
+	import toSource from './modules/configSource.js';
 	import { dataKeys, resolveAnnotation } from './modules/coordinates.js';
 
 	const markerId = $props.id();
@@ -52,18 +53,19 @@
 	 * Log the config for easy copy-paste
 	 * @type {SaveAnnotationConfigFn}
 	 */
-	function logConfig(annotations) {
-		console.log('Annotations config:', JSON.stringify(annotations, null, 2));
+	function logConfig(source) {
+		console.log('Annotations config:', source);
 	}
 
 	/**
 	 * Save the config: to `onsave`, or to the `saveAnnotationConfig` context, or to
-	 * the console. It reads the annotations when it fires and hands over a plain copy.
+	 * the console. It reads the annotations when it fires and hands over the config
+	 * as JavaScript text, followed by a plain copy of the annotations themselves.
 	 */
-	const save = debounce(
-		() => (onsave ?? saveFromContext ?? logConfig)($state.snapshot(annos)),
-		1_000
-	);
+	const save = debounce(() => {
+		const config = $state.snapshot(annos);
+		(onsave ?? saveFromContext ?? logConfig)(toSource(config), config);
+	}, 1_000);
 
 	/**
 	 * State vars

@@ -117,7 +117,7 @@ A new note's id is the next one up from the ids in the array at that moment, so 
 
 ### Saving
 
-Every one of those writes ends in `save()`, which waits until a second has passed with no further writes. When it fires it takes `$state.snapshot(annos)`, a plain copy rather than the live state, and hands it to the first of these that exists: the `onsave` prop, the `saveAnnotationConfig` function from context, or `logConfig`, which logs the config to the console as JSON. `Editor` runs a waiting save straight away when it is destroyed, which is what happens when `editable` goes false.
+Every one of those writes ends in `save()`, which waits until a second has passed with no further writes. When it fires it takes `$state.snapshot(annos)`, a plain copy rather than the live state, and writes it out as JavaScript text with `toSource`. The text goes first and the copy second, to the first of these that exists: the `onsave` prop, the `saveAnnotationConfig` function from context, or `logConfig`, which logs the text to the console. `Editor` runs a waiting save straight away when it is destroyed, which is what happens when `editable` goes false.
 
 ### Reading the Layer Cake context
 
@@ -306,6 +306,10 @@ A band or point scale has no `invert`, so this finds the domain value whose band
 
 The press-move-release every handle shares. See One drag lifecycle.
 
+### `configSource.js`
+
+`toSource(config)` writes the config as JavaScript text. It follows `JSON.stringify(config, null, 2)` for the plain objects, arrays, strings, numbers, booleans and nulls a config holds, and with no dates in the config the two are the same text. The one difference is a `Date`: JSON turns it into a string, and a time scale can't place a string, so it is written as `new Date("…")`. That makes the text something to paste into a chart or import from a `.js` file, not something to `JSON.parse`.
+
 ### `noteText.js`
 
 `DEFAULT_TEXT` is what a new note starts with. `finalText(draft)` is the text to store when an edit ends: an emptied note gets `DEFAULT_TEXT`, text that is only whitespace is kept as typed, which is how an arrow gets no label, and anything else is trimmed.
@@ -415,7 +419,7 @@ hovering.value = null, until the mouse moves or focus lands again
 
 Four layers, because screenshots alone can't catch a misplaced arrow or a key that deletes the wrong thing:
 
-- `tests/unit/` - the pure modules, run under node: geometry and defaults, band scale inversion, a new note, note text, the shortcut key
+- `tests/unit/` - the pure modules, run under node: geometry and defaults, band scale inversion, a new note, note text, the shortcut key, the config as JavaScript text
 - `tests/geometry.test.js` - where arrows and handles sit at non-zero anchors, and when handles show
 - `tests/interaction.test.js` - sequences of presses, keys and drags, and what is on the chart afterwards
 - `tests/annotations.test.js` - screenshots, linear and ordinal charts

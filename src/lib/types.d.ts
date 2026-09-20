@@ -158,7 +158,12 @@ export type SetArrowFn = (id: number, arrow: Arrow) => void;
 export type ModifyArrowFn = (id: number, side: 'west' | 'east', attrs: Partial<Arrow>) => void;
 
 /**
- * Function to save annotation config (the `onsave` prop). It is handed a plain
- * copy of the annotations.
+ * Function to save annotation config: the `onsave` prop, or the function an app
+ * puts in context under `saveAnnotationConfig`.
+ *
+ * `source` is the config as JavaScript text: what `JSON.stringify(annotations, null, 2)`
+ * gives, with each `Date` written as `new Date("…")`, ready to paste into a chart
+ * or write to a `.js` file. `annotations` is a plain copy of the same config as
+ * data, for an app that checks it or writes it out itself.
  */
-export type SaveAnnotationConfigFn = (annotations: Annotation[]) => void;
+export type SaveAnnotationConfigFn = (source: string, annotations: Annotation[]) => void;

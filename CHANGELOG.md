@@ -4,7 +4,9 @@
 
 > 2026-09-19
 
-**New**: an `onsave` prop on `<Annotations>` and `<AnnotationsEditor>`. It is called a second after the last edit with a plain copy of the annotations. Without it the config is logged to the console for copy-paste. A `saveAnnotationConfig` function set in context still works, and `onsave` wins when both are there.
+**New**: an `onsave` prop on `<Annotations>` and `<AnnotationsEditor>`. It is called a second after the last edit with the config as JavaScript text, ready to paste into a chart or write to a `.js` file. A second argument holds a plain copy of the annotations as data. Without `onsave` the text is logged to the console for copy-paste.
+
+**Changed**: a `saveAnnotationConfig` function set in context is now documented, for an app that mounts a chart it didn't write. It is called the same way as `onsave`: the text first, then the annotations. It used to be handed the annotations alone. A function written for 1.0.0 needs a change: the annotations are now its second argument. `onsave` wins when both are there.
 
 **New**: Ctrl works wherever Cmd does, for Windows and Linux. Ctrl+click an annotation to cycle its alignment, and Ctrl+click an arrow's handle to cycle its curve. Alt+click is the same key as Option+click and steps the anchor through its presets.
 
@@ -32,7 +34,8 @@ Also in this release:
 
 - A note left empty gets the default text, `New note...`. To get an arrow with no label, type a space: a note holding only whitespace is kept as typed.
 - An edit that leaves the text as it was saves nothing.
-- The save hook is handed a plain snapshot rather than the live state, read when the save fires. The console log only runs when there is no save hook.
+- The config logged to the console writes each date as `new Date("…")`. It used to come out as a string, which a time scale can't place, so a pasted config lost its notes. A config with no dates is logged as the same JSON as before.
+- The annotations handed to the save hook are a plain copy rather than the live state, read when the save fires. The console log only runs when there is no save hook.
 - On a touch screen, dragging a note or one of its handles in edit mode moves it rather than scrolling the page. Published charts still scroll under a finger.
 - In static mode, `data-id` holds the annotation's `id` and sits on the `.layercake-annotation` element, as it does in edit mode. It used to hold the index, on `.static-wrapper`.
 - Both modes draw the annotation box with one component, so the box carries an `annotation-box` class next to `static-wrapper` or `draggable`.
