@@ -156,7 +156,7 @@ test('resolveArrow keeps the target offsets that are set', () => {
 	assert.deepEqual(arrow.target, { data: { myX: 'b', myY: 4 }, dx: 2.5, dy: 0 });
 });
 
-test('resolveArrow curves a missing clockwise clockwise, on either side', () => {
+test('resolveArrow gives an arrow with no clockwise value a clockwise curve, on either side', () => {
 	const target = { data: { myX: 0, myY: 0 } };
 	assert.equal(resolveArrow({ side: 'east', target }).clockwise, true);
 	assert.equal(resolveArrow({ side: 'west', target }).clockwise, true);

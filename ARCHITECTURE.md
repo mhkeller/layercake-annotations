@@ -417,11 +417,12 @@ hovering.value = null, until the mouse moves or focus lands again
 
 ## Testing
 
-Four layers, because screenshots alone can't catch a misplaced arrow or a key that deletes the wrong thing:
+Five layers, because screenshots alone can't catch a misplaced arrow, a key that deletes the wrong thing, or a save that goes to the wrong place:
 
 - `tests/unit/` - the pure modules, run under node: geometry and defaults, band scale inversion, a new note, note text, the shortcut key, the config as JavaScript text
 - `tests/geometry.test.js` - where arrows and handles sit at non-zero anchors, and when handles show
 - `tests/interaction.test.js` - sequences of presses, keys and drags, and what is on the chart afterwards
+- `tests/save.test.js` - who is told about a save, what they are handed, and when. It runs on a page of its own, `src/routes/fixtures/save`, which mounts a chart the way a host app would and takes its case from the query string
 - `tests/annotations.test.js` - screenshots, linear and ordinal charts
 
 `drag.js` needs a browser, so the interaction tests cover it rather than the unit tests.
