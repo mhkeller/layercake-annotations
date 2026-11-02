@@ -52,6 +52,23 @@ test('posts the file and the source to the plugin, and says nothing when it is s
 	assert.deepEqual(errors, []);
 });
 
+test('asks for keepalive, so a save sent as the page leaves lands, unless the config is too big for it', async () => {
+	/** @type {RequestInit[]} */
+	const inits = [];
+	globalThis.fetch = /** @type {any} */ (
+		async (_url, init) => {
+			inits.push(init);
+			return new Response(null, { status: 204 });
+		}
+	);
+
+	await saveTo('src/routes/annotations.js')('[]', []);
+	await saveTo('src/routes/annotations.js')(`["${'é'.repeat(40_000)}"]`, []);
+
+	assert.equal(inits[0].keepalive, true);
+	assert.equal(inits[1].keepalive, false);
+});
+
 test('a 404 from something other than the plugin asks whether the plugin is installed', async () => {
 	const { errors } = await saveWith(async () => new Response('Not Found', { status: 404 }));
 

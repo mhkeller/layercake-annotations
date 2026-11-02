@@ -180,14 +180,14 @@ Some notes about its reload behavior:
 
 * Each save rewrites the file as `export default [...];`, so any other changes will be overwritten.
 * The page doesn't reload when the file changes, so a note you are typing in won't get clobbered.
-* A reload reads the file.
+* A reload reads the file. An edit still waiting to be saved is sent as the page goes.
 * Edit the file by hand and the page updates as usual.
 
 The plugin only runs on the dev server. A build doesn't include it and so a published chart can't write anything. Because the file is code your dev server runs, the plugin turns a save down unless:
 
 - it comes from a page on the dev server itself;
 - the file is inside your project, and its name ends in `annotations.js`, like `annotations.js` or `gdp.annotations.js`;
-- the file already exists. The plugin won't create one.
+- the file already exists, and holds a config and nothing else, like the `export default [];` you start it with. The plugin won't create a file, or replace one that holds code.
 
 It also turns down a config that contains anything but data: arrays, objects, strings, numbers, `true`, `false`, `null` and `new Date("…")`, which is all the editor writes. So nothing that reaches the dev server can put code in the file.
 

@@ -11,6 +11,9 @@ import { drag, positionOf } from './helpers.js';
 
 const file = 'src/routes/fixtures/file/notes.annotations.js';
 
+// Every test writes the same file, and a write reaches every page that has it open.
+test.describe.configure({ mode: 'serial' });
+
 /** @type {string} */
 let original;
 
@@ -52,4 +55,18 @@ test('an edit is written to the file without reloading the page, and a reload sh
 	await page.reload();
 	await expect(box).not.toHaveAttribute('data-same-element');
 	await expect.poll(() => positionOf(box)).toEqual(moved);
+});
+
+test('an edit still waiting to be saved is written when the page reloads', async ({ page }) => {
+	await page.goto('/fixtures/file');
+	const box = page.locator('.draggable').first();
+	await expect(box).toBeAttached();
+
+	await drag(page, box, 60, 30);
+	await page.reload();
+
+	await expect
+		.poll(() => readFile(file, 'utf8'), { intervals: [100], timeout: 5000 })
+		.not.toBe(original);
+	expect(await readFile(file, 'utf8')).not.toContain('"x": 5,');
 });

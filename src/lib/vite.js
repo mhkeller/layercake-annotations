@@ -1,4 +1,5 @@
-import { stat, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createFilter, normalizePath, parseAst } from 'vite';
 
@@ -89,15 +90,23 @@ export function annotations({
 					);
 				}
 
-				let found;
+				let current;
 				try {
-					found = await stat(target);
+					current = await readFile(target, 'utf8');
 				} catch (error) {
 					const { code, message } = /** @type {NodeJS.ErrnoException} */ (error);
-					if (code !== 'ENOENT') return reply(500, `Couldn't read ${file}: ${message}`);
+					if (code === 'ENOENT' || code === 'EISDIR') {
+						return reply(404, `${file} doesn't exist. Create it with export default []; first.`);
+					}
+					return reply(500, `Couldn't read ${file}: ${message}`);
 				}
-				if (!found?.isFile()) {
-					return reply(404, `${file} doesn't exist. Create it with export default []; first.`);
+				// Only a config replaces a config, so a wrong path or a broad include can't
+				// overwrite a module that happens to have a matching name.
+				if (!onlyData(current)) {
+					return reply(
+						409,
+						`${file} holds more than an annotations config, so the editor won't replace it. A config file is export default [...]; and nothing else.`
+					);
 				}
 
 				const contents = `export default ${source};\n`;
@@ -107,9 +116,19 @@ export function annotations({
 						'The config may only hold arrays, objects, strings, numbers, true, false, null and new Date("…").'
 					);
 				}
+
+				// Written beside the file and renamed over it, so the watcher never sees it
+				// half-written: on Linux it reports the truncation, and drops the later
+				// events as a burst. Nothing imports the temporary file, so it updates nothing.
+				const temp = path.join(
+					path.dirname(target),
+					`.${path.basename(target)}.${randomUUID()}.tmp`
+				);
 				try {
-					await writeFile(target, contents);
+					await writeFile(temp, contents);
+					await rename(temp, target);
 				} catch (error) {
+					await rm(temp, { force: true });
 					return reply(500, `Couldn't write ${file}: ${/** @type {Error} */ (error).message}`);
 				}
 				// The watcher reports the change in a later turn, so this is in place by then.

@@ -289,7 +289,8 @@
 	</div>
 </Html>
 
-<svelte:window {onkeydown} />
+<!-- A reload or a closed tab destroys no component, so a save still waiting goes out as the page leaves. -->
+<svelte:window {onkeydown} onpagehide={() => send.flush()} />
 
 <style>
 	.note-listener {

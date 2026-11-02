@@ -1,6 +1,6 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createServer } from 'vite';
@@ -202,6 +202,24 @@ test('refuses a config that holds code, and leaves the file as it was', async ()
 		assert.equal(response.status, 400, source);
 	}
 	assert.equal(await read('src/annotations.js'), before);
+});
+
+test("won't replace a file that holds more than a config, even with a matching name", async () => {
+	const module = 'import { x } from "./other.js";\nexport default [x];\n';
+	await writeFile(path.join(root, 'src/code.annotations.js'), module);
+
+	const response = await post({ file: 'code.annotations.js', source: '[]' });
+	assert.equal(response.status, 409);
+	assert.equal(await read('src/code.annotations.js'), module);
+});
+
+test('leaves nothing beside the file it writes', async () => {
+	await post({ file: 'annotations.js', source: '[]' });
+	const names = await readdir(path.join(root, 'src'));
+	assert.deepEqual(
+		names.filter((name) => name.endsWith('.tmp')),
+		[]
+	);
 });
 
 test("won't create a file that isn't there", async () => {
