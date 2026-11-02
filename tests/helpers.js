@@ -78,3 +78,9 @@ export async function drag(page, box, dx, dy) {
 
 	await expect.poll(async () => Math.round((await box.boundingBox()).x - b.x)).toBe(dx);
 }
+
+/** Where a note is, not its size: the frame's font can still be loading, which changes the height. */
+export async function positionOf(box) {
+	const { x, y } = await box.boundingBox();
+	return { x, y };
+}

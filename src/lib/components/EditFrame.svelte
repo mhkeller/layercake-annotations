@@ -12,10 +12,12 @@
 	/** @type {{ editable?: boolean, annotations?: Annotation[] }} */
 	let { editable = $bindable(true), annotations = [] } = $props();
 
+	/** @typedef {{ label: string, status: string, title?: string }} Outcome */
+
 	/**
 	 * What a press of Copy can end in: what the button says, and what a screen
 	 * reader hears.
-	 * @type {Record<'copied' | 'logged', { label: string, status: string, title?: string }>}
+	 * @type {Record<'copied' | 'logged', Outcome>}
 	 */
 	const OUTCOMES = {
 		copied: { label: 'Copied', status: 'Config copied to the clipboard' },
@@ -29,18 +31,20 @@
 
 	/**
 	 * The last press of Copy: the text it copied, and how it ended. Null until the
-	 * first press.
-	 * @type {{ text: string, outcome: keyof typeof OUTCOMES } | null}
+	 * first press, and again after the next edit.
+	 * @type {{ text: string, outcome: Outcome } | null}
 	 */
 	let last = $state.raw(null);
 
-	// The button reports the last press while the config is still what it copied,
-	// so the next edit sets it back to Copy. Nothing is compared until a press.
-	let outcome = $derived(
-		last !== null && last.text === serializeAnnotations($state.snapshot(annotations))
-			? OUTCOMES[last.outcome]
-			: null
-	);
+	// The button reports the last press until the config changes. Clearing it then
+	// stops the comparison, so edits aren't serialized while the button says Copy.
+	$effect(() => {
+		if (last !== null && last.text !== serializeAnnotations($state.snapshot(annotations))) {
+			last = null;
+		}
+	});
+
+	let outcome = $derived(last?.outcome ?? null);
 
 	async function copy() {
 		// Read before anything waits, so the text is the config at the press.
@@ -48,13 +52,13 @@
 
 		try {
 			await navigator.clipboard.writeText(text);
-			last = { text, outcome: 'copied' };
+			last = { text, outcome: OUTCOMES.copied };
 		} catch {
 			// A page that isn't a secure context, like a dev server opened on a LAN
 			// address, has no clipboard, and a browser can refuse the write. The
 			// console always takes it.
 			console.log('Annotations config:', text);
-			last = { text, outcome: 'logged' };
+			last = { text, outcome: OUTCOMES.logged };
 		}
 	}
 </script>

@@ -16,22 +16,20 @@ export const PLUGIN_HEADER = 'x-layercake-annotations';
  */
 export default function saveTo(file) {
 	return async (source) => {
-		let reason;
-		try {
-			const response = await fetch(SAVE_ROUTE, {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ file, source })
-			});
-			if (response.ok) return;
-			reason =
-				response.status === 404 && !response.headers.has(PLUGIN_HEADER)
+		// fetch only rejects when the request never got an answer.
+		const response = await fetch(SAVE_ROUTE, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ file, source })
+		}).catch(() => null);
+		if (response?.ok) return;
+
+		const reason =
+			response === null
+				? 'Is the dev server running?'
+				: response.status === 404 && !response.headers.has(PLUGIN_HEADER)
 					? 'Is the annotations() plugin in your vite.config.js?'
 					: await response.text();
-		} catch {
-			// fetch only rejects when the request never got an answer.
-			reason = 'Is the dev server running?';
-		}
 		console.error(`[layercake-annotations] Couldn't save ${file}. ${reason}`);
 	};
 }

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { drag } from './helpers.js';
+import { drag, positionOf } from './helpers.js';
 
 /**
  * `Annotations` on the dev server, where the tests run: the framed editor, or
@@ -26,14 +26,8 @@ test('hideTools shows the static notes, and turning it off brings the editor bac
 	const box = page.locator('.draggable').first();
 	await expect(box).toBeAttached();
 
-	// Where the note is, not its size, which a font still loading can change.
-	const position = async () => {
-		const { x, y } = await box.boundingBox();
-		return { x, y };
-	};
-
 	await drag(page, box, 60, 30);
-	const moved = await position();
+	const moved = await positionOf(box);
 
 	await page.getByLabel('Hide tools').check();
 	await expect(page.locator('.static-wrapper')).toBeAttached();
@@ -43,5 +37,5 @@ test('hideTools shows the static notes, and turning it off brings the editor bac
 	await page.getByLabel('Hide tools').uncheck();
 	await expect(page.locator('.layercake-annotations-frame')).toBeVisible();
 	await expect(page.locator('.static-wrapper')).toHaveCount(0);
-	await expect.poll(position).toEqual(moved);
+	await expect.poll(() => positionOf(box)).toEqual(moved);
 });

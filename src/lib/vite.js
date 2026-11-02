@@ -89,7 +89,13 @@ export function annotations({
 					);
 				}
 
-				const found = await stat(target).catch(() => null);
+				let found;
+				try {
+					found = await stat(target);
+				} catch (error) {
+					const { code, message } = /** @type {NodeJS.ErrnoException} */ (error);
+					if (code !== 'ENOENT') return reply(500, `Couldn't read ${file}: ${message}`);
+				}
 				if (!found?.isFile()) {
 					return reply(404, `${file} doesn't exist. Create it with export default []; first.`);
 				}

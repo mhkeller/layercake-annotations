@@ -178,11 +178,9 @@
 	 * with it. Shifting dx and dy by the same distance cancels that out.
 	 * @param {number} newAnchorX - The new anchor X, 0-100.
 	 * @param {number} newAnchorY - The new anchor Y, 0-100.
-	 * @param {ReturnType<typeof snapshot>} [from] - Where the move started from. Defaults to where the annotation is now.
+	 * @param {ReturnType<typeof snapshot>} start - Where the move started from.
 	 */
-	function setAnchor(newAnchorX, newAnchorY, from) {
-		const start = from ?? snapshot();
-
+	function setAnchor(newAnchorX, newAnchorY, start) {
 		const deltaX = ((newAnchorX - start.anchorX) / 100) * annotationWidth(d);
 		const deltaY = ((newAnchorY - start.anchorY) / 100) * start.boxHeight;
 
@@ -279,7 +277,7 @@
 		anchorY={d.anchorY}
 		{boxEl}
 		onDragStart={() => (anchorDragStart = snapshot())}
-		onDrag={(x, y) => setAnchor(x, y, anchorDragStart)}
+		onDrag={(x, y) => anchorDragStart && setAnchor(x, y, anchorDragStart)}
 		onDragEnd={() => (anchorDragStart = null)}
 	/>
 </AnnotationBox>

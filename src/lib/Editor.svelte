@@ -3,11 +3,9 @@
   Exported as `AnnotationsEditorPlain`: the editor with no UI of its own. Bring your own switch and Copy button, or use `AnnotationsEditor` for the framed one.
  -->
 <script>
-	/** @typedef {import('./types.js').Annotation} Annotation */
 	/** @typedef {import('./types.js').Arrow} Arrow */
 	/** @typedef {import('./types.js').HoverState} HoverState */
 	/** @typedef {import('./types.js').DragState} DragState */
-	/** @typedef {import('./types.js').OnSaveFn} OnSaveFn */
 	/** @typedef {import('./types.js').SaveAnnotationConfigFn} SaveAnnotationConfigFn */
 	/**
 	 * @template T

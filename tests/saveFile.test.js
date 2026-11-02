@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { drag } from './helpers.js';
+import { drag, positionOf } from './helpers.js';
 
 /**
  * Saving into a file in the project, with `saveTo` and the Vite plugin in this
@@ -33,14 +33,8 @@ test('an edit is written to the file without reloading the page, and a reload sh
 	// in. A new chart is new elements, and so is a reload, so neither keeps this mark.
 	await box.evaluate((el) => el.setAttribute('data-same-element', ''));
 
-	// Where the note is, not its size: the frame's font can still be loading, which changes the height.
-	const position = async () => {
-		const { x, y } = await box.boundingBox();
-		return { x, y };
-	};
-
 	await drag(page, box, 60, 30);
-	const moved = await position();
+	const moved = await positionOf(box);
 
 	// The editor saves a second after the drag, so check often from then on.
 	await expect
@@ -53,9 +47,9 @@ test('an edit is written to the file without reloading the page, and a reload sh
 	// Long enough for a hot update from the write to have arrived, had one been sent.
 	await page.waitForTimeout(500);
 	await expect(box).toHaveAttribute('data-same-element');
-	expect(await position()).toEqual(moved);
+	expect(await positionOf(box)).toEqual(moved);
 
 	await page.reload();
 	await expect(box).not.toHaveAttribute('data-same-element');
-	await expect.poll(position).toEqual(moved);
+	await expect.poll(() => positionOf(box)).toEqual(moved);
 });
