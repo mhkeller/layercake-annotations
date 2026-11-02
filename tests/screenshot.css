@@ -9,7 +9,7 @@
 .layercake-annotation,
 .layercake-annotations,
 .axis text,
-.edit-tab,
+.layercake-annotations-tab,
 text {
 	filter: blur(1.5px);
 }

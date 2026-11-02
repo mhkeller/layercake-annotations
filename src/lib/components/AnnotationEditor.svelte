@@ -23,7 +23,6 @@
 		getBoxEdges,
 		invertPoint
 	} from '$lib/modules/coordinates.js';
-	import { ANCHOR_PRESETS } from '$lib/modules/anchorPresets.js';
 	import { drag } from '$lib/modules/drag.js';
 	import { hasCmdOrCtrl } from '$lib/modules/modifierKeys.js';
 
@@ -174,22 +173,6 @@
 	}
 
 	/**
-	 * Index of the preset nearest the current anchor.
-	 */
-	function getCurrentAnchorIndex() {
-		let nearest = 0;
-		let nearestDistance = Infinity;
-		ANCHOR_PRESETS.forEach((pos, i) => {
-			const distance = (pos.x - d.anchorX) ** 2 + (pos.y - d.anchorY) ** 2;
-			if (distance < nearestDistance) {
-				nearestDistance = distance;
-				nearest = i;
-			}
-		});
-		return nearest;
-	}
-
-	/**
 	 * Move the anchor point and leave the annotation where it is on screen. The
 	 * box hangs off the anchor, so moving the anchor would drag the box along
 	 * with it. Shifting dx and dy by the same distance cancels that out.
@@ -245,23 +228,18 @@
 
 	function onclick(e) {
 		// Cmd+click (Ctrl+click on Windows and Linux): cycle text alignment, left → center → right → left
-		if (hasCmdOrCtrl(e) && !e.altKey) {
-			/** @type {Annotation['align']} */
-			let newAlignment;
-			if (d.align === 'left') {
-				newAlignment = 'center';
-			} else if (d.align === 'center') {
-				newAlignment = 'right';
-			} else {
-				newAlignment = 'left';
-			}
-			modifyAnnotation(d.id, { align: newAlignment });
+		if (!hasCmdOrCtrl(e)) return;
+
+		/** @type {Annotation['align']} */
+		let newAlignment;
+		if (d.align === 'left') {
+			newAlignment = 'center';
+		} else if (d.align === 'center') {
+			newAlignment = 'right';
+		} else {
+			newAlignment = 'left';
 		}
-		// Option+click (Alt+click): cycle anchor position
-		else if (e.altKey && !hasCmdOrCtrl(e)) {
-			const next = ANCHOR_PRESETS[(getCurrentAnchorIndex() + 1) % ANCHOR_PRESETS.length];
-			setAnchor(next.x, next.y);
-		}
+		modifyAnnotation(d.id, { align: newAlignment });
 	}
 </script>
 

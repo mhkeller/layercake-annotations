@@ -1,5 +1,5 @@
 <script>
-	/** @typedef {import('./types.js').Annotation} Annotation */
+	/** @typedef {import('./types.js').AnnotationsStaticProps} AnnotationsStaticProps */
 
 	import { Svg, Html } from 'layercake';
 
@@ -9,7 +9,7 @@
 
 	import { resolveAnnotation } from './modules/coordinates.js';
 
-	/** @type {{ annotations?: Annotation[] }} */
+	/** @type {AnnotationsStaticProps} */
 	let { annotations = [] } = $props();
 
 	const markerId = $props.id();

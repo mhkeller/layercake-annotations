@@ -2,3 +2,7 @@
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+
+# Written by the editor, in the shape serializeAnnotations gives
+src/routes/fixtures/file/notes.annotations.js
+src/routes/save-to-file/chart.annotations.js

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import toSource from '../../src/lib/modules/configSource.js';
+import serializeAnnotations from '../../src/lib/modules/serializeAnnotations.js';
 
 /** Run the text as JavaScript, the way a chart that imports it would. */
 function run(source) {
@@ -29,12 +29,12 @@ test('a config with no dates comes out exactly as JSON would write it', () => {
 		{ id: 1, data: { year: '1980', value: 14.5 }, text: ' ', arrows: [] }
 	];
 
-	assert.equal(toSource(config), JSON.stringify(config, null, 2));
+	assert.equal(serializeAnnotations(config), JSON.stringify(config, null, 2));
 });
 
 test('empty arrays and objects, at any depth, match JSON', () => {
 	for (const value of [[], {}, [[]], [{}], { a: [] }, { a: {} }, [[], {}, [{ b: [] }]]]) {
-		assert.equal(toSource(value), JSON.stringify(value, null, 2));
+		assert.equal(serializeAnnotations(value), JSON.stringify(value, null, 2));
 	}
 });
 
@@ -48,7 +48,7 @@ test('what JSON leaves out is left out the same way', () => {
 		sparse: [1, , 3]
 	};
 
-	assert.equal(toSource(value), JSON.stringify(value, null, 2));
+	assert.equal(serializeAnnotations(value), JSON.stringify(value, null, 2));
 });
 
 test('a date is written as new Date, in a note and in an arrow target', () => {
@@ -65,7 +65,7 @@ test('a date is written as new Date, in a note and in an arrow target', () => {
 			]
 		}
 	];
-	const source = toSource(config);
+	const source = serializeAnnotations(config);
 
 	assert.ok(source.includes('"date": new Date("2024-03-15T00:00:00.000Z")'));
 	assert.ok(source.includes('"date": new Date("2024-06-01T12:30:00.000Z")'));
@@ -75,14 +75,14 @@ test('a date is written as new Date, in a note and in an arrow target', () => {
 
 test('text that looks like a date stays text', () => {
 	const config = [{ id: 0, data: { x: 1 }, text: 'new Date("2024-03-15T00:00:00.000Z")' }];
-	const source = toSource(config);
+	const source = serializeAnnotations(config);
 
 	assert.equal(source, JSON.stringify(config, null, 2));
 	assert.equal(run(source)[0].text, config[0].text);
 });
 
 test('a date that is not a real date is written as one that is not', () => {
-	const back = run(toSource({ when: new Date('nonsense') }));
+	const back = run(serializeAnnotations({ when: new Date('nonsense') }));
 
 	assert.ok(back.when instanceof Date);
 	assert.ok(Number.isNaN(back.when.getTime()));
@@ -142,7 +142,7 @@ test('a thousand random shapes with no dates all match JSON', () => {
 	const next = random(1);
 	for (let i = 0; i < 1000; i++) {
 		const value = shape(next, 0, false);
-		assert.equal(toSource(value), JSON.stringify(value, null, 2));
+		assert.equal(serializeAnnotations(value), JSON.stringify(value, null, 2));
 	}
 });
 
@@ -150,6 +150,6 @@ test('a thousand random shapes with dates all come back the same when run', () =
 	const next = random(2);
 	for (let i = 0; i < 1000; i++) {
 		const value = shape(next, 0, true);
-		assert.deepEqual(run(toSource(value)), value);
+		assert.deepEqual(run(serializeAnnotations(value)), value);
 	}
 });

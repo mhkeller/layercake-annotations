@@ -2,8 +2,9 @@
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleBand } from 'd3-scale';
 	import { MediaQuery } from 'svelte/reactivity';
+	import { resolve } from '$app/paths';
 
-	import { Annotations } from '$lib/index.js';
+	import { AnnotationsEditor } from '$lib/index.js';
 
 	/** @typedef {import('$lib/index.js').Annotation} Annotation */
 
@@ -12,7 +13,6 @@
 	import Area from './_components/Area.svelte';
 	import AxisX from './_components/AxisX.svelte';
 	import AxisY from './_components/AxisY.svelte';
-	import EditFrame from './_components/EditFrame.svelte';
 
 	// Column chart components
 	import Column from './ordinal/_components/Column.svelte';
@@ -42,7 +42,8 @@
 
 	// Annotations are placed by eye, so each chart has a second set placed for narrow
 	// screens, where the wide set crowds the data. Edits change whichever set is
-	// showing, and that's the set logged to the console.
+	// showing, and that's the set the Copy button copies. The switch's state lives
+	// here, so it holds when the breakpoint swaps one set for the other.
 	const narrow = new MediaQuery('max-width: 799px');
 
 	/** @type {Annotation[]} */
@@ -198,8 +199,8 @@
 				to change its swoopiness.
 			</p>
 			<p>
-				Changes are logged to the browser console. You can paste that config object into your own
-				chart.
+				Press Copy in a chart's corner to copy its config, then paste it into your own chart. Or
+				<a href={resolve('/save-to-file')}>save it to a file</a> as you edit.
 			</p>
 			<a class="docs" href="https://github.com/mhkeller/layercake-annotations">Docs</a>
 		</div>
@@ -230,11 +231,13 @@
 				</Svg>
 
 				{#if narrow.current}
-					<Annotations bind:annotations={lineAnnotationsNarrow} editable={lineEditable} />
+					<AnnotationsEditor
+						bind:annotations={lineAnnotationsNarrow}
+						bind:editable={lineEditable}
+					/>
 				{:else}
-					<Annotations bind:annotations={lineAnnotations} editable={lineEditable} />
+					<AnnotationsEditor bind:annotations={lineAnnotations} bind:editable={lineEditable} />
 				{/if}
-				<EditFrame bind:editable={lineEditable} />
 			</LayerCake>
 		</div>
 	</section>
@@ -257,11 +260,13 @@
 					<Column fill="#1f4e9c" />
 				</Svg>
 				{#if narrow.current}
-					<Annotations bind:annotations={columnAnnotationsNarrow} editable={columnEditable} />
+					<AnnotationsEditor
+						bind:annotations={columnAnnotationsNarrow}
+						bind:editable={columnEditable}
+					/>
 				{:else}
-					<Annotations bind:annotations={columnAnnotations} editable={columnEditable} />
+					<AnnotationsEditor bind:annotations={columnAnnotations} bind:editable={columnEditable} />
 				{/if}
-				<EditFrame bind:editable={columnEditable} />
 			</LayerCake>
 		</div>
 	</section>
@@ -315,6 +320,9 @@
 		line-height: 22px;
 		color: var(--muted);
 		max-width: 38em;
+	}
+	.intro p a {
+		color: var(--ink);
 	}
 	.docs:focus-visible {
 		outline: 2px solid var(--blue);

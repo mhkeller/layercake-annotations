@@ -1,16 +1,22 @@
-<!-- The chart the save fixture mounts, for tests/save.test.js: one note, on a linear or a time x scale. -->
+<!--
+	The chart the save fixture mounts, for tests/save.test.js and tests/frame.test.js:
+	one note, on a linear or a time x scale. `ui` picks how editing is switched: a
+	checkbox of the page's own that swaps `AnnotationsEditorPlain` and
+	`AnnotationsStatic`, or the switch in
+	`AnnotationsEditor`'s frame. Either way the page has one checkbox.
+-->
 <script>
 	import { onMount } from 'svelte';
 	import { LayerCake } from 'layercake';
 	import { scaleLinear, scaleTime } from 'd3-scale';
 
-	import { Annotations } from '$lib/index.js';
+	import { AnnotationsEditor, AnnotationsEditorPlain, AnnotationsStatic } from '$lib/index.js';
 
 	/** @typedef {import('$lib/index.js').Annotation} Annotation */
 	/** @typedef {import('$lib/types.js').OnSaveFn} OnSaveFn */
 
-	/** @type {{ scale?: 'linear' | 'time', onsave?: OnSaveFn }} */
-	let { scale = 'linear', onsave } = $props();
+	/** @type {{ scale?: 'linear' | 'time', ui?: 'own' | 'frame', onsave?: OnSaveFn }} */
+	let { scale = 'linear', ui = 'own', onsave } = $props();
 
 	const time = $derived(scale === 'time');
 
@@ -61,14 +67,22 @@
 	});
 </script>
 
-<label>
-	<input type="checkbox" bind:checked={editable} />
-	Editable
-</label>
+{#if ui === 'own'}
+	<label>
+		<input type="checkbox" bind:checked={editable} />
+		Editable
+	</label>
+{/if}
 
 <div class="chart-container">
 	<LayerCake {data} x={time ? 'date' : 'x'} y="y" xScale={time ? scaleTime() : scaleLinear()}>
-		<Annotations bind:annotations {editable} {onsave} />
+		{#if ui === 'frame'}
+			<AnnotationsEditor bind:annotations bind:editable {onsave} />
+		{:else if editable}
+			<AnnotationsEditorPlain bind:annotations {onsave} />
+		{:else}
+			<AnnotationsStatic {annotations} />
+		{/if}
 	</LayerCake>
 </div>
 
