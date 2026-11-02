@@ -49,6 +49,10 @@
 	 * One edit, from the moment the editing box appears until it goes: take focus
 	 * and select what's there, and end the edit on a click anywhere but inside the box.
 	 *
+	 * The click is heard in the capture phase, before any handler on the page, so a
+	 * button that reads the annotations gets the typed text. In Safari and Firefox on
+	 * macOS a clicked button takes no focus, so no blur has ended the edit by then.
+	 *
 	 * Nothing reactive is read in here, so the box is set up once and the selection
 	 * is left alone while typing. The listener reads what it needs when a click comes.
 	 * @type {import('svelte/attachments').Attachment<HTMLElement>}
@@ -57,9 +61,14 @@
 		node.focus();
 		selectAllTextInContentEditable(node);
 
-		const off = on(document, 'click', (e) => {
-			if (!node.contains(/** @type {Node} */ (e.target))) node.blur();
-		});
+		const off = on(
+			document,
+			'click',
+			(e) => {
+				if (!node.contains(/** @type {Node} */ (e.target))) node.blur();
+			},
+			{ capture: true }
+		);
 
 		return () => {
 			off();
@@ -86,8 +95,8 @@
 
 	/** @param {MouseEvent} e */
 	function ondblclick(e) {
-		// Don't enter edit mode if Cmd or Ctrl is held (alignment cycling) or Option is held (anchor cycling)
-		if (hasCmdOrCtrl(e) || e.altKey) return;
+		// Don't enter edit mode if Cmd or Ctrl is held (alignment cycling)
+		if (hasCmdOrCtrl(e)) return;
 		startEdit();
 	}
 

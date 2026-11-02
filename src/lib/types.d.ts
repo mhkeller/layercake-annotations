@@ -172,3 +172,37 @@ export type OnSaveFn = (source: string, annotations: Annotation[]) => void;
  * copy of the annotations, to check and write out itself.
  */
 export type SaveAnnotationConfigFn = (annotations: Annotation[]) => void;
+
+/**
+ * Props for `AnnotationsEditorPlain`: the editor with no UI of its own.
+ */
+export interface AnnotationsEditorPlainProps {
+	/** The annotations to draw. Bind it, from a `$state` variable, to keep the edits. Default `[]`. */
+	annotations?: Annotation[];
+	/** Called a second after the last edit, with the config as JavaScript text, then as data. Default: nothing is saved. */
+	onsave?: OnSaveFn;
+}
+
+/**
+ * Props for `AnnotationsEditor`: the editor, in a frame with a switch and a Copy button.
+ */
+export interface AnnotationsEditorProps extends AnnotationsEditorPlainProps {
+	/** Whether the annotations can be edited. The frame's switch sets it, so bind it to keep the switch's state across a remount, or pass `false` to start with editing off. Default `true`. */
+	editable?: boolean;
+}
+
+/**
+ * Props for `Annotations`: `AnnotationsEditor` while you work, `AnnotationsStatic` in a production build.
+ */
+export interface AnnotationsProps extends AnnotationsEditorProps {
+	/** Show the static notes while you work too, as a build will. A build always shows them, whatever this says. Default `false`. */
+	hideTools?: boolean;
+}
+
+/**
+ * Props for `AnnotationsStatic`: the annotations as published, with no editing.
+ */
+export interface AnnotationsStaticProps {
+	/** The annotations to draw. Default `[]`. */
+	annotations?: Annotation[];
+}

@@ -3,8 +3,7 @@
   Diamond-shaped handle marking the annotation's anchor point — the spot that
   pins to the data point.
 
-  Drag it to put the anchor anywhere in the box. Option-click the annotation to
-  jump between the nine presets instead, or use the arrow keys to nudge it.
+  Drag it to put the anchor anywhere in the box, or use the arrow keys to nudge it.
   Only shows in edit mode, while the annotation is hovered.
 -->
 <script>

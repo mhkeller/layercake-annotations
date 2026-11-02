@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { ANCHOR_PRESETS } from '../src/lib/modules/anchorPresets.js';
+import { configLogs, moveAnchor } from './helpers.js';
 
 /**
  * What the editor does with presses, keys and drags.
@@ -77,25 +77,6 @@ async function arrowPaths(chart) {
 	return chart
 		.locator('path.arrow-visible')
 		.evaluateAll((paths) => paths.map((p) => p.getAttribute('d')));
-}
-
-/**
- * Which preset the anchor sits on. The box carries the anchor as an inline
- * `translate: -x% -y%`, and leaves the property off while both are zero.
- */
-async function anchorIndex(box) {
-	const value = await box.evaluate((el) => el.style.translate);
-	const [x = 0, y = 0] = value ? value.split(/\s+/).map((part) => -parseFloat(part)) : [];
-	return ANCHOR_PRESETS.findIndex((preset) => preset.x === x && preset.y === y);
-}
-
-/** Option+click the note to move its anchor forward by `steps` presets. */
-async function stepAnchor(box, steps) {
-	for (let i = 0; i < steps; i++) {
-		const next = ((await anchorIndex(box)) + 1) % ANCHOR_PRESETS.length;
-		await box.click({ modifiers: ['Alt'], force: true });
-		await expect.poll(() => anchorIndex(box)).toBe(next);
-	}
 }
 
 test('starting to edit a second note straight after the first keeps Backspace in the text', async ({
@@ -578,9 +559,9 @@ test('resizing with the arrow keys holds the left edge still, at a non-zero anch
 	const chart = await editableChart(page, LINE);
 	const box = chart.locator('.draggable').first();
 
-	// One step from the top-left default is top-center: the anchor sits halfway
-	// along the box, so a wider box has to move its anchor to keep its left edge.
-	await stepAnchor(box, 1);
+	// Top-center: the anchor sits halfway along the box, so a wider box has to
+	// move its anchor to keep its left edge.
+	await moveAnchor(page, box, 50, 0);
 	const before = await box.boundingBox();
 
 	await chart.locator('.grabber.east').first().focus();
@@ -641,23 +622,30 @@ test('editing text logs no Svelte ownership warning', async ({ page }) => {
 	expect(messages.filter((m) => m.includes('ownership_invalid_mutation'))).toEqual([]);
 });
 
-test('with no save hook, an edit is logged to the console as a config to paste back', async ({
-	page
+test('Copy puts the config on the clipboard to paste back, and nothing is logged', async ({
+	page,
+	context
 }) => {
+	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+	const logged = configLogs(page);
+
 	const chart = await editableChart(page, LINE);
 	const text = chart.locator('.layercake-annotation').first();
-
-	// The demo passes no `onsave`, so the config goes to the console, a moment
-	// after the last change.
-	const logged = page.waitForEvent('console', (message) => message.text().includes('Typed over'));
 
 	await text.dblclick({ force: true });
 	await expect(chart.locator('.textarea')).toBeFocused();
 	await page.keyboard.type('Typed over');
 	await page.keyboard.press('Enter');
+	await expect(text.locator('pre')).toHaveText('Typed over');
 
-	const message = (await logged).text();
-	const config = JSON.parse(message.slice(message.indexOf('[')));
+	// Found inside the tab, because the layer that adds notes is a button too.
+	const copy = chart.locator('.layercake-annotations-tab').getByRole('button');
+	await copy.click();
+	await expect(copy).toHaveText('Copied');
+
+	// The demo's config has no dates, so the text is JSON.
+	const config = JSON.parse(await page.evaluate(() => navigator.clipboard.readText()));
 
 	// The whole config, with the edit in it and the rest as it was.
 	expect(config).toHaveLength(1);
@@ -665,6 +653,33 @@ test('with no save hook, an edit is logged to the console as a config to paste b
 	expect(config[0].text).toBe('Typed over');
 	expect(Object.keys(config[0].data)).toEqual(['myX', 'myY']);
 	expect(config[0].arrows).toHaveLength(1);
+
+	// The demo passes no `onsave`, so the edit saved nothing. Long enough for a
+	// save a second after it to have come, had one been waiting.
+	await page.waitForTimeout(1300);
+	expect(logged).toEqual([]);
+});
+
+test('Backspace deletes a hovered note while the Editable switch has focus', async ({ page }) => {
+	const chart = await editableChart(page, LINE);
+	const toggle = chart.getByRole('checkbox');
+
+	// Off and on again. The switch keeps the focus the clicks gave it.
+	await toggle.click();
+	await expect(chart.locator('.static-wrapper')).toBeAttached();
+	await toggle.click();
+	await expect(toggle).toBeFocused();
+
+	const box = chart.locator('.draggable').first();
+	await expect(box).toBeAttached();
+	const middle = await centre(box);
+	await page.mouse.move(middle.x, middle.y);
+	await expect(box).toHaveClass(/hovering/);
+
+	// A checkbox is pressed, not typed into, so the key belongs to the chart.
+	await page.keyboard.press('Backspace');
+	await expect(chart.locator('.draggable')).toHaveCount(0);
+	await expect(toggle).toBeFocused();
 });
 
 test('a pointercancel in the middle of a drag ends it', async ({ page }) => {

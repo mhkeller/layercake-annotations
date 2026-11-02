@@ -121,7 +121,7 @@
 
 	/** Toggle clockwise on Cmd+click (Ctrl+click on Windows and Linux) - cycle order depends on side */
 	function onclick(e) {
-		if (!arrow || !(hasCmdOrCtrl(e) && !e.altKey)) return;
+		if (!arrow || !hasCmdOrCtrl(e)) return;
 
 		let newClockwise;
 		if (side === 'east') {

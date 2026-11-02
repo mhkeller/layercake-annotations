@@ -1,10 +1,13 @@
 <!--
-	A test fixture for tests/save.test.js. It mounts a chart the way a host app
-	would, with `mount` and a context, and keeps a record of every save.
+	A test fixture for tests/save.test.js and tests/frame.test.js. It mounts a
+	chart the way a host app would, with `mount` and a context, and keeps a record
+	of every save.
 
 	The query string picks the case:
 	  hook=onsave | context | both | none   who is given a save function
 	  scale=linear | time                   the chart's x scale
+	  ui=own | frame                        a checkbox of the page's own next to
+	                                        AnnotationsEditorPlain, or AnnotationsEditor's frame
 -->
 <script>
 	import { mount, unmount } from 'svelte';
@@ -92,6 +95,7 @@
 			target,
 			props: {
 				scale: query.get('scale') === 'time' ? 'time' : 'linear',
+				ui: query.get('ui') === 'frame' ? 'frame' : 'own',
 				onsave: ['onsave', 'both'].includes(hook) ? onsave : undefined
 			},
 			context: new Map(

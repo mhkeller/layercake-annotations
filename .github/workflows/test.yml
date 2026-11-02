@@ -8,7 +8,8 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # ubuntu-latest is 26.04 now, which Playwright 1.57 has no Chromium build for.
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4

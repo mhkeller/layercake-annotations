@@ -6,6 +6,12 @@
 	--yellow: #f4b400;
 	--blue: #1f4e9c;
 	--display: 'Jost', 'Futura', 'Century Gothic', sans-serif;
+
+	/* The editor's frame, in the page's colors and display font. */
+	--layercake-annotations-frame-color-editable: var(--yellow);
+	--layercake-annotations-frame-ink: var(--ink);
+	--layercake-annotations-frame-focus: var(--blue);
+	--layercake-annotations-frame-font: var(--display);
 }
 
 body,

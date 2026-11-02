@@ -11,7 +11,7 @@ const INDENT = '  ';
  * @param {unknown} value - The config, as plain objects and arrays.
  * @returns {string}
  */
-export default function toSource(value) {
+export default function serializeAnnotations(value) {
 	return write(value, '') ?? 'undefined';
 }
 

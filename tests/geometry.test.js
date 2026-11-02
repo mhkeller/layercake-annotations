@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { ANCHOR_PRESETS } from '../src/lib/modules/anchorPresets.js';
+import { anchorOf, moveAnchor } from './helpers.js';
 
 /**
  * Numeric geometry checks.
@@ -20,6 +20,19 @@ const CHART = '.chart-container.line';
 /** The annotation box, whichever mode drew it. */
 const BOX = `${CHART} .draggable, ${CHART} .static-wrapper`;
 
+/** The corners, the middle of each edge, and the centre, as anchor percentages. */
+const ANCHORS = [
+	{ x: 0, y: 0 },
+	{ x: 50, y: 0 },
+	{ x: 100, y: 0 },
+	{ x: 100, y: 50 },
+	{ x: 100, y: 100 },
+	{ x: 50, y: 100 },
+	{ x: 0, y: 100 },
+	{ x: 0, y: 50 },
+	{ x: 50, y: 50 }
+];
+
 test.beforeEach(async ({ page }) => {
 	// No wait here: every test opens with setEditMode, which waits on the box it needs.
 	await page.goto('/');
@@ -37,33 +50,9 @@ async function setEditMode(page, enabled) {
 	).toBeAttached();
 }
 
-/**
- * Which preset the anchor sits on. The box carries the anchor as an inline
- * `translate: -x% -y%`, and leaves the property off while both are zero.
- */
-async function anchorIndex(page) {
-	const value = await page
-		.locator(BOX)
-		.first()
-		.evaluate((el) => el.style.translate);
-	// A browser may drop a trailing zero when it serializes the style, so a part
-	// that isn't there is zero.
-	const [x = 0, y = 0] = value ? value.split(/\s+/).map((part) => -parseFloat(part)) : [];
-	return ANCHOR_PRESETS.findIndex((preset) => preset.x === x && preset.y === y);
-}
-
-/**
- * Option+click the annotation to move the anchor forward by `steps` presets,
- * counting from wherever it is now. Each step waits for the box's inline style
- * to show it landed.
- */
-async function stepAnchor(page, steps) {
-	const draggable = page.locator(`${CHART} .draggable`).first();
-	for (let i = 0; i < steps; i++) {
-		const next = ((await anchorIndex(page)) + 1) % ANCHOR_PRESETS.length;
-		await draggable.click({ modifiers: ['Alt'], force: true });
-		await expect.poll(() => anchorIndex(page)).toBe(next);
-	}
+/** Move the line chart's anchor, in edit mode. */
+function setAnchor(page, x, y) {
+	return moveAnchor(page, page.locator(`${CHART} .draggable`).first(), x, y);
 }
 
 /** Where an SVG path begins, in viewport pixels. */
@@ -88,9 +77,8 @@ async function boxRect(page) {
 test('drawn arrow starts where its source handle sits, at a non-zero anchor', async ({ page }) => {
 	await setEditMode(page, true);
 
-	// Four steps from the top-left default is bottom-right, so anchorY is 100 and
-	// the anchor term can't cancel.
-	await stepAnchor(page, 4);
+	// Bottom-right, so anchorY is 100 and the anchor term can't cancel.
+	await setAnchor(page, 100, 100);
 
 	const chart = page.locator(CHART);
 	await chart.locator('.draggable').first().hover({ force: true });
@@ -115,10 +103,10 @@ test('arrow stays attached to the annotation in static mode, at a non-zero ancho
 	page
 }) => {
 	await setEditMode(page, true);
-	await stepAnchor(page, 4);
+	await setAnchor(page, 100, 100);
 	await setEditMode(page, false);
 	// The static box carries the same anchor, so its style says the swap is done.
-	await expect.poll(() => anchorIndex(page)).toBe(4);
+	await expect.poll(() => anchorOf(page.locator(BOX).first())).toEqual({ x: 100, y: 100 });
 
 	const box = await boxRect(page);
 	const arrow = page.locator(`${CHART} path.arrow-visible`).first();
@@ -139,8 +127,8 @@ test('moving the anchor leaves an attached arrow where it was', async ({ page })
 
 	const before = await pathStart(arrow);
 
-	// Four steps is bottom-right: the anchor moves a full box width and height.
-	await stepAnchor(page, 4);
+	// To bottom-right: the anchor moves a full box width and height.
+	await setAnchor(page, 100, 100);
 
 	const after = await pathStart(arrow);
 
@@ -159,14 +147,13 @@ test('the handle that starts an arrow sits on the box, not on the anchor', async
 
 	const offenders = [];
 
-	for (let i = 0; i < ANCHOR_PRESETS.length; i++) {
-		if (i > 0) await stepAnchor(page, 1);
+	for (const { x, y } of ANCHORS) {
+		await setAnchor(page, x, y);
 
 		const box = await boxRect(page);
 		const grip = await centre(handle);
 		const middle = box.y + box.height / 2;
 		if (Math.abs(grip.y - middle) > 2) {
-			const { x, y } = ANCHOR_PRESETS[i];
 			offenders.push(
 				`anchor ${x}/${y}: handle at y=${grip.y.toFixed(1)}, box middle is ${middle.toFixed(1)}`
 			);
@@ -176,21 +163,20 @@ test('the handle that starts an arrow sits on the box, not on the anchor', async
 	expect(offenders).toEqual([]);
 });
 
-test('every anchor preset keeps the arrow on the annotation', async ({ page }) => {
+test('every anchor position keeps the arrow on the annotation', async ({ page }) => {
 	await setEditMode(page, true);
 
 	const chart = page.locator(CHART);
 	const arrow = chart.locator('path.arrow-visible').first();
 	const offenders = [];
 
-	for (let i = 1; i < ANCHOR_PRESETS.length; i++) {
-		await stepAnchor(page, 1);
+	for (const { x, y } of ANCHORS.slice(1)) {
+		await setAnchor(page, x, y);
 
 		const box = await boxRect(page);
 		const start = await pathStart(arrow);
 		const inside = start.y >= box.y - 2 && start.y <= box.y + box.height + 2;
 		if (!inside) {
-			const { x, y } = ANCHOR_PRESETS[i];
 			offenders.push(
 				`anchor ${x}/${y}: arrow starts at y=${start.y.toFixed(1)}, box is ${box.y.toFixed(1)}..${(box.y + box.height).toFixed(1)}`
 			);

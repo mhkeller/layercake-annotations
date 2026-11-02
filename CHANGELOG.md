@@ -1,5 +1,51 @@
 # Changelog
 
+# 2.0.0
+
+> 2026-09-26
+
+This release changes what the `AnnotationsEditor` component is. In 1.x it was the editor and nothing else: the notes, their arrows and their handles. To switch editing on and off, or to get the annotations out of the browser, you built your own controls. In 2.0.0, `AnnotationsEditor` comes with those controls built in. The bare editor is still available as `AnnotationsEditorPlain`. And `Annotations` is now the editor while you develop and the static notes in a production build.
+
+**BREAKING CHANGE**: `AnnotationsEditor` now draws its own editing controls. A colored outline goes around the chart's plotting area, the region inside the axes where a click adds a note. A small tab in the outline's top-right corner has two controls:
+
+- an **Editable** checkbox, which switches between editing the notes and seeing them as a published chart will show them;
+- a **Copy** button, which copies the annotations to the clipboard as JavaScript you can paste straight into your code (the same text `onsave` receives).
+
+Its props are `annotations` and `editable` props – both bindable – and `onsave`. It is meant for placing notes while you build a chart. A published chart should use `AnnotationsStatic`, which leaves out the interface code. The README's Production builds section shows how to switch between them.
+
+**BREAKING CHANGE**: the 1.x `AnnotationsEditor`, the editor with no controls of its own, is no longer exported under that name. `<AnnotationsEditorPlain bind:annotations {onsave} />` is the same component under its new name.
+
+**BREAKING CHANGE**: `Annotations` changed. In 1.x it showed the editor or the static notes as its `editable` prop said, in every build. In 2.0.0 it is `AnnotationsEditor`, frame included, while you develop, and always the static notes in a production build. Its `editable` prop now sets the frame's checkbox. For the 1.x behavior, swap `AnnotationsEditorPlain` and `AnnotationsStatic` in an `{#if editable}` of your own.
+
+**New**: `Annotations` is the component most charts want. The bundler leaves the editor's code out of a production build, so you no longer need an `{#if}` of your own to switch between editor and static notes. A new `hideTools` prop shows the static notes while you develop too. It has no effect in a production build.
+
+**BREAKING CHANGE**: editing no longer prints the annotations to the browser console. In 1.x, if you passed no `onsave`, the annotations were logged a second after every edit so you could copy them from there. Now, with no `onsave` and no `saveAnnotationConfig` function in context, nothing happens after an edit. To get the annotations out, press Copy, pass `onsave`, or call the new `serializeAnnotations` function.
+
+**BREAKING CHANGE**: Option+click (Alt+click) on an annotation no longer steps its anchor point through nine preset positions. Drag the anchor's diamond to put it anywhere in the box, or nudge it with the arrow keys once the diamond has focus.
+
+| In 1.x                                              | In 2.0.0                                                                                                                                            |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<AnnotationsEditor bind:annotations />`            | `<AnnotationsEditorPlain bind:annotations />`, or `<Annotations>` to get the built-in controls while you develop and the static notes in production |
+| `<Annotations bind:annotations {editable} />`       | `{#if editable}<AnnotationsEditorPlain bind:annotations />{:else}<AnnotationsStatic {annotations} />{/if}`                                          |
+| The annotations logged to the console after an edit | The Copy button, `onsave`, or `serializeAnnotations($state.snapshot(annotations))`                                                                  |
+
+**New**: `serializeAnnotations` is exported. It turns an annotations array into JavaScript text. The text reads like JSON, except that each date is written as `new Date("…")`, so it loads back as a date. Copy and `onsave` produce the same text. Use it if you use `AnnotationsEditorPlain` with your own Copy button.
+
+**New**: a Vite plugin, `annotations()` from `@mhkeller/layercake-annotations/vite`, and `saveTo(file)`, which returns an `onsave` that writes the config into a file in your project while you work. Saving to a file used to mean writing your own server endpoint. Now it takes the plugin in `vite.config.js` and `onsave={saveTo('src/routes/annotations.js')}`. The plugin runs only on the dev server, only accepts saves from the dev server's own pages, only writes existing files whose names end in `annotations.js`, unless you set `include`, and only replaces data with data: it won't write code, or overwrite a file that holds any. A save doesn't reload the page, and an edit still waiting to be saved is sent when the page reloads or closes. The README's Saving to a file in your project section shows the setup.
+
+**New**: the outline's colors and font can be set with CSS custom properties: `--layercake-annotations-frame-color`, `--layercake-annotations-frame-color-editable`, `--layercake-annotations-frame-ink`, `--layercake-annotations-frame-focus` and `--layercake-annotations-frame-font`. The README lists what each one sets and its default.
+
+**New**: TypeScript types for each component's props: `AnnotationsProps`, `AnnotationsEditorProps` and `AnnotationsStaticProps`. Each prop's description includes its default, so your editor shows it on hover.
+
+Fixes:
+
+- Hovering a note and pressing Backspace or Delete removes the note. The key used to do nothing while any `<input>` had focus, including a checkbox like the new Editable switch, because the editor treated every input as a place you were typing. Now only inputs you type into, like text fields, block it.
+- Clicking outside a note while you are editing its text now ends the edit before the click reaches anything else on the page. In Safari and Firefox on macOS, clicking a button doesn't move focus to it, so the edit used to still be open when the button's click handler ran. A button that read the annotations, like a Copy button, got the text from before the edit.
+
+Also in this release:
+
+- The README has a new Production builds section. It shows how to use the editor in development and `AnnotationsStatic` in production, with no editor code in the production build.
+
 # 1.1.0
 
 > 2026-09-20

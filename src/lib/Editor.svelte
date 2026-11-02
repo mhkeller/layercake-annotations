@@ -1,9 +1,11 @@
+<!--
+  @component
+  Exported as `AnnotationsEditorPlain`: the editor with no UI of its own. Bring your own switch and Copy button, or use `AnnotationsEditor` for the framed one.
+ -->
 <script>
-	/** @typedef {import('./types.js').Annotation} Annotation */
 	/** @typedef {import('./types.js').Arrow} Arrow */
 	/** @typedef {import('./types.js').HoverState} HoverState */
 	/** @typedef {import('./types.js').DragState} DragState */
-	/** @typedef {import('./types.js').OnSaveFn} OnSaveFn */
 	/** @typedef {import('./types.js').SaveAnnotationConfigFn} SaveAnnotationConfigFn */
 	/**
 	 * @template T
@@ -20,12 +22,12 @@
 	import debounce from './modules/debounce.js';
 	import createRef from './modules/createRef.svelte.js';
 	import newAnnotation from './modules/newAnnotation.js';
-	import toSource from './modules/configSource.js';
+	import serializeAnnotations from './modules/serializeAnnotations.js';
 	import { dataKeys, resolveAnnotation } from './modules/coordinates.js';
 
 	const markerId = $props.id();
 
-	/** @type {{ annotations?: Annotation[], onsave?: OnSaveFn }} */
+	/** @type {import('./types.js').AnnotationsEditorPlainProps} */
 	let { annotations: annos = $bindable([]), onsave } = $props();
 
 	/**
@@ -51,22 +53,27 @@
 	const saveFromContext = getContext('saveAnnotationConfig');
 
 	/**
-	 * Save the config, to the first of three places. It reads the annotations when
-	 * it fires, as a plain copy.
+	 * Send the config to the first of two places. It reads the annotations when it
+	 * fires, as a plain copy.
 	 *
 	 * A page passes `onsave` and is handed the config as JavaScript text, then the
 	 * copy. An app that mounts a chart it didn't write has no prop to pass, so it
 	 * puts a function in context under `saveAnnotationConfig`. That one is handed
-	 * the copy alone: such an app checks the data and writes it out itself. With
-	 * neither, the text is logged to the console for copy-paste.
+	 * the copy alone: such an app checks the data and writes it out itself.
 	 */
-	const save = debounce(() => {
+	const send = debounce(() => {
 		const config = $state.snapshot(annos);
 
-		if (onsave) onsave(toSource(config), config);
-		else if (saveFromContext) saveFromContext(config);
-		else console.log('Annotations config:', toSource(config));
+		if (onsave) onsave(serializeAnnotations(config), config);
+		else saveFromContext?.(config);
 	}, 1_000);
+
+	/**
+	 * Save a second after the last edit. With nowhere to send the config, nothing waits.
+	 */
+	function save() {
+		if (onsave || saveFromContext) send();
+	}
 
 	/**
 	 * State vars
@@ -128,10 +135,10 @@
 		if (e.key === 'Enter' && !e.repeat) addAnnotation(k.width / 2, k.height / 2);
 	}
 
-	// Annotations.svelte swaps this component out when `editable` goes false, so
-	// let a save that's already waiting land instead of losing it.
+	// A page swaps this component out when editing goes off, so let a save that's
+	// already waiting land instead of losing it.
 	onDestroy(() => {
-		save.flush();
+		send.flush();
 	});
 
 	/**
@@ -194,15 +201,28 @@
 		updateArrows(id, (arrows) => arrows.filter((a) => a.side !== side));
 	}
 
+	// Inputs that are pressed rather than typed into. One keeps focus after a click,
+	// like the frame's Editable switch, and Backspace still belongs to the chart.
+	const PRESSED_INPUTS = [
+		'checkbox',
+		'radio',
+		'button',
+		'submit',
+		'reset',
+		'image',
+		'range',
+		'color',
+		'file'
+	];
+
 	/**
 	 * Whether a key press lands in something that takes typing
 	 * @param {EventTarget | undefined} target
 	 */
 	function takesTyping(target) {
-		return (
-			target instanceof HTMLElement &&
-			(target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
-		);
+		if (!(target instanceof HTMLElement)) return false;
+		if (target instanceof HTMLInputElement) return !PRESSED_INPUTS.includes(target.type);
+		return target.isContentEditable || ['TEXTAREA', 'SELECT'].includes(target.tagName);
 	}
 
 	/**
@@ -269,7 +289,8 @@
 	</div>
 </Html>
 
-<svelte:window {onkeydown} />
+<!-- A reload or a closed tab destroys no component, so a save still waiting goes out as the page leaves. -->
+<svelte:window {onkeydown} onpagehide={() => send.flush()} />
 
 <style>
 	.note-listener {

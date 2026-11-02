@@ -1,6 +1,6 @@
 {
 	"name": "@mhkeller/layercake-annotations",
-	"version": "1.1.0",
+	"version": "2.0.0",
 	"description": "Interactive text annotations with swoopy arrows for Layer Cake charts",
 	"homepage": "https://mhkeller.github.io/layercake-annotations/",
 	"repository": {
@@ -30,6 +30,10 @@
 			"svelte": "./dist/index.js",
 			"default": "./dist/index.js"
 		},
+		"./vite": {
+			"types": "./dist/vite.d.ts",
+			"default": "./dist/vite.js"
+		},
 		"./types": {
 			"types": "./dist/types.d.ts"
 		}
@@ -42,7 +46,13 @@
 	],
 	"peerDependencies": {
 		"layercake": "^11.0.0",
-		"svelte": ">=5.40"
+		"svelte": ">=5.40",
+		"vite": ">=6.0.0"
+	},
+	"peerDependenciesMeta": {
+		"vite": {
+			"optional": true
+		}
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.57.0",
@@ -64,5 +74,8 @@
 	},
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"esm-env": "^1.2.2"
+	}
 }

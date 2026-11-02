@@ -1,12 +1,15 @@
 import { test, expect } from '@playwright/test';
 
+import { openFixture, chartAnnotations, configLogs, drag } from './helpers.js';
+
 /**
  * Who is told about a save, what they are handed, and when.
  *
  * The editor saves to one place, a second after the last edit. The `onsave` prop
  * is handed the config as JavaScript text, then a plain copy of the annotations.
  * Or else a function in context under `saveAnnotationConfig` is handed the copy
- * alone. Or else the text is logged to the console.
+ * alone. With neither, nothing is saved and nothing is logged: the config is
+ * there to copy when it is wanted.
  *
  * These run on a page of their own, src/routes/fixtures/save, which mounts a
  * chart the way a host app would and takes its case from the query string. The
@@ -14,52 +17,14 @@ import { test, expect } from '@playwright/test';
  * call into `window.__saves` from inside the call, where the real arguments are.
  */
 
-/** Open the fixture on one case, once its note is on the page. */
-async function openFixture(page, query) {
-	await page.goto(`/fixtures/save?${query}`);
-	const box = page.locator('.draggable').first();
-	await expect(box).toBeAttached();
-	return box;
-}
-
 /** Every record the page's save functions have made so far. */
 function saves(page) {
 	return page.evaluate(() => /** @type {any} */ (window).__saves);
 }
 
-/** What the chart holds right now, as a plain copy. */
-function chartAnnotations(page) {
-	return page.evaluate(() => /** @type {any} */ (window).__chart.annotations());
-}
-
 /** Milliseconds since the page opened, on the clock the records use. */
 function pageClock(page) {
 	return page.evaluate(() => performance.now());
-}
-
-/** Every line the editor's own logger has printed. */
-function configLogs(page) {
-	/** @type {string[]} */
-	const lines = [];
-	page.on('console', (message) => {
-		if (message.text().includes('Annotations config:')) lines.push(message.text());
-	});
-	return lines;
-}
-
-/** Drag a note by its middle. Every move of the drag is an edit. */
-async function drag(page, box, dx, dy) {
-	const b = await box.boundingBox();
-	const start = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-
-	await page.mouse.move(start.x, start.y);
-	await page.mouse.down();
-	for (const step of [0.3, 0.7, 1]) {
-		await page.mouse.move(start.x + dx * step, start.y + dy * step);
-	}
-	await page.mouse.up();
-
-	await expect.poll(async () => Math.round((await box.boundingBox()).x - b.x)).toBe(dx);
 }
 
 test('onsave is called once, about a second after a drag, with the text and then a plain copy', async ({
@@ -132,14 +97,16 @@ test('with both, only onsave is called and nothing is logged', async ({ page }) 
 	expect(logs).toEqual([]);
 });
 
-test('with neither, the text is logged to the console', async ({ page }) => {
+test('with neither, an edit saves nothing and logs nothing', async ({ page }) => {
 	const logs = configLogs(page);
 	const box = await openFixture(page, 'hook=none');
 
 	await drag(page, box, 60, 30);
 
-	await expect.poll(() => logs).toHaveLength(1);
-	expect(logs[0]).toContain('"text": "A note"');
+	// Long enough for a save a second after the edit to have come, had one been waiting.
+	await page.waitForTimeout(1300);
+	expect(await saves(page)).toEqual([]);
+	expect(logs).toEqual([]);
 });
 
 test('on a time scale the text holds new Date("…") and the annotations hold a real Date', async ({
@@ -163,29 +130,39 @@ test('on a time scale the text holds new Date("…") and the annotations hold a 
 	expect(save.annotations[0].data.date).not.toEqual(new Date('2024-03-15T00:00:00.000Z'));
 });
 
-test('switching edit mode off straight after an edit saves at once, and only once', async ({
-	page
-}) => {
-	const box = await openFixture(page, 'hook=onsave');
+// Two switches that turn editing off: a checkbox of the page's own next to
+// `AnnotationsEditorPlain`, and the one in the corner of `AnnotationsEditor`'s frame. Either
+// way it is the page's one checkbox.
+const switches = [
+	{ name: "the page's own checkbox", ui: 'own' },
+	{ name: "the frame's switch", ui: 'frame' }
+];
 
-	const pressed = await pageClock(page);
-	await drag(page, box, 60, 30);
-	await page.getByRole('checkbox').click();
-	await expect(page.locator('.static-wrapper')).toBeAttached();
+for (const { name, ui } of switches) {
+	test(`switching edit mode off with ${name} straight after an edit saves at once, and only once`, async ({
+		page
+	}) => {
+		const box = await openFixture(page, `hook=onsave&ui=${ui}`);
 
-	await expect.poll(() => saves(page)).toHaveLength(1);
-	const [save] = await saves(page);
+		const pressed = await pageClock(page);
+		await drag(page, box, 60, 30);
+		await page.getByRole('checkbox').click();
+		await expect(page.locator('.static-wrapper')).toBeAttached();
 
-	// A save left to the clock comes a second or more after the press. This one
-	// came sooner, so it is the switch that sent it.
-	expect(save.at - pressed).toBeLessThan(1000);
-	expect(save.annotations).toEqual(await chartAnnotations(page));
+		await expect.poll(() => saves(page)).toHaveLength(1);
+		const [save] = await saves(page);
 
-	// Long enough for the save that was waiting to have fired, had it been left
-	// waiting.
-	await page.waitForTimeout(1300);
-	expect(await saves(page)).toHaveLength(1);
-});
+		// A save left to the clock comes a second or more after the press. This one
+		// came sooner, so it is the switch that sent it.
+		expect(save.at - pressed).toBeLessThan(1000);
+		expect(save.annotations).toEqual(await chartAnnotations(page));
+
+		// Long enough for the save that was waiting to have fired, had it been left
+		// waiting.
+		await page.waitForTimeout(1300);
+		expect(await saves(page)).toHaveLength(1);
+	});
+}
 
 test('several edits in quick succession give one save, with the last position', async ({
 	page
